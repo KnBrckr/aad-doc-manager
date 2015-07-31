@@ -404,14 +404,23 @@ if (! class_exists("aad_doc_manager_admin")) {
 				 */
 				$table = array();
 			    while (($row = fgetcsv($handle, 1000, ",", '"')) !== FALSE) {
-					// Count of Columns in this row and track maximum observed
+					/**
+					 * Count of Columns in this row and track maximum observed
+					 */
 					$columns = count($row);
 					if ($columns > $max_cols) $max_cols = $columns;
-
-					$table[] = $row;
+					
+					
+					/**
+					 * pre-process data to make sure quoted special characters (i.e. '\n' for new-line)
+					 * are properly stored in DB.
+					 */
+					// FIXME - Is this str_replace the right method?  Maybe something else should be done to escape the content?
+					$table[] = array_map(function ($col_data) { return str_replace("\n", "\\n", $col_data); }, $row);
 			    }
 			    fclose($handle);
 				
+				error_log(var_export($table[0],true));
 				/**
 				 * Generate headers if not provided
 				 */
@@ -448,8 +457,11 @@ if (! class_exists("aad_doc_manager_admin")) {
 					wp_die('Error adding row count meta data, CSV data deleted.');
 				}
 				
+				// FIXME Save uploaded file in media area - and manage a revision count
+				
 				// FIXME Add result reporting
 				wp_redirect(menu_page_url(self::parent_slug));
+				exit;
 			}
 		}
 		
