@@ -22,10 +22,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-// FIXME Enable editing of headers on saved files
-// FIXME Add settings screen to control available document types
+// TODO Enable editing of headers on saved files
 
-// Protect from direct execution
+/**
+ * Protect from direct execution
+ */
 if (!defined('ABSPATH')) {
 	header('Status: 403 Forbidden');
   header('HTTP/1.1 403 Forbidden');
@@ -67,6 +68,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 			/**
 			 * List of accepted document types
 			 */
+			// TODO Add settings screen to control available document types
 			$this->accepted_doc_types = array('text/csv');
 			
 			/**
@@ -158,7 +160,6 @@ if (! class_exists("aad_doc_manager_admin")) {
 				// // Add style sheet and scripts needed in the options page
 				// add_action('admin_print_scripts-' . $slug, array($this, 'enqueue_admin_scripts'));
 				// add_action('admin_print_styles-' . $slug, array($this, 'enqueue_admin_styles'));
-				// // FIXME $this->slug_edit_variations_table_page = $slug; // Save identifier for later
 
 			} // End if
 		}
@@ -243,7 +244,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 							if (! current_user_can('delete_post', $post_id))
 								wp_die('You are not allowed to move this item to the Trash.');
 							
-							if (wp_check_post_lock($post_id)) { // FIXME - How to lock a post?
+							if (wp_check_post_lock($post_id)) { // TODO - How to lock a post?
 								$locked++;
 								continue;
 							}
@@ -355,7 +356,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 				<form action method="post" accept-charset="utf-8">
 					<input type="hidden" name="page" value="<?php echo self::parent_slug ?>">
 					<?php
-//	FIXME				$this->doc_table->search_box('search', 'search_id'); // Must follow prepare_items() call
+//	TODO				$this->doc_table->search_box('search', 'search_id'); // Must follow prepare_items() call
 					$this->doc_table->display();
 					?>
 				</form>
@@ -393,7 +394,6 @@ if (! class_exists("aad_doc_manager_admin")) {
 				/**
 				 * Confirm file is a valid type
 				 */
-				// FIXME Add document types
 				if (! empty($_FILES) && isset($_FILES['document']) && $_FILES['document']['error'] == UPLOAD_ERR_OK) {
 					$doc_type = $_FILES['document']['type'];
 					if (! in_array($doc_type, $this->accepted_doc_types)) {
@@ -490,16 +490,16 @@ if (! class_exists("aad_doc_manager_admin")) {
 				 * Save meta data related to document content
 				 */
 				if (isset($doc_content)) {
-					// FIXME Remove old document meta data
+					// TODO Remove old document meta data
 					foreach ($doc_content['post_meta'] as $key => $value) {
 						update_post_meta($post_id, $key, $value);
 					}
 				}
 
-				// FIXME Save uploaded file in media area - and manage a revision count
-				// FIXME On post delete cleanup the media area
+				// TODO Save uploaded file in media area - and manage a revision count
+				// TODO On post delete cleanup the media area
 			
-				// FIXME Add result reporting
+				// TODO Add result reporting
 				wp_redirect(menu_page_url(self::parent_slug));
 				exit;
 			} // End if			
@@ -556,7 +556,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 			if (($handle = fopen($path, "r")) !== FALSE) {
 				// If first row has headers grab them
 				if ($csv_has_col_headers) {
-					// FIXME Allow for alternate field separator characters
+					// TODO Allow for alternate field separator characters
 					$row = fgetcsv($handle, 1000, ",", '"');
 					if ($row === FALSE) {
 						fclose($handle);
@@ -629,8 +629,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 			/**
 			 * Document types accepted for upload
 			 */
-			// FIXME Add more types and make it editable in admin settings
-			$accept_doc_types = ".csv,text/csv";
+			$accepted_doc_types = implode($this->accepted_doc_types, ",");
 			
 			/**
 			 * Updating an existing document?
@@ -658,8 +657,6 @@ if (! class_exists("aad_doc_manager_admin")) {
 			
 			$action = $post ? $this->labels['edit_item'] : $this->labels['new_item'];
 
-			// FIXME Remember checkbox state for existing documents
-			// FIXME Make file a mandatory field when adding a new document
 			?>
 			<div class="wrap">
 				<h2><?php echo $action; ?></h2>
@@ -702,7 +699,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 							</div>
 							<div>
 								<label for="document">Select document to upload</label><br>
-								<input type="file" id="document" name="document" value="" size="40" accept="<?php echo $accept_doc_types ?>" <?php echo $file_required; ?>/>
+								<input type="file" id="document" name="document" value="" size="40" accept="<?php echo $accepted_doc_types ?>" <?php echo $file_required; ?>/>
 							</div>
 						</div>
 					</div>

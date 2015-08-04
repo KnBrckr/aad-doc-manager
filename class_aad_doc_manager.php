@@ -29,7 +29,7 @@ if (!defined('ABSPATH')) {
   exit();
 }
 
-// FIXME Add shortcode to download target document
+// TODO Add shortcode to download target document
 
 if (! class_exists("aad_doc_manager")) {
 	class aad_doc_manager
@@ -129,7 +129,7 @@ if (! class_exists("aad_doc_manager")) {
 			if (! $doc_id) return ""; // No id value received - nothing to do
 			
 			/**
-			 * FIXME - Retrieve the post
+			 * Retrieve the post
 			 */
 			$post = get_post($doc_id);
 			if (!$post) return;
@@ -140,39 +140,45 @@ if (! class_exists("aad_doc_manager")) {
 			if (self::post_type != $post->post_type || 'publish' != $post->post_status) return;
 			
 			$table = unserialize($post->post_content);
-			$col_headers = get_post_meta($doc_id, 'csv_col_headers', true);
+			$col_headers = array_map(function($col_data){ return sanitize_text_field($col_data);}, get_post_meta($doc_id, 'csv_col_headers', true));
+			$columns = get_post_meta($doc_id, 'csv_cols', true);
 
 			$result = '<div class="aad-doc-manager">'; // Start of table/list output
 			
-			// FIXME Use wp_is_mobile() to select output format?
-			// FIXME Add back-to-top navigation - float it on side?  Every 10?
+			// TODO Use wp_is_mobile() to select output format?
+			// TODO Add back-to-top navigation - float it on side?  Every 10?
 			
-			/**
-			 * Build table format for display on wide screens
-			 */
-			$result .= '<table class="full-width">';
-			$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . sanitize_text_field($col_data) . "</th>"; }, $col_headers)) . '</tr></thead>';
-			// FIXME Output Column headers
-			$result .= '<tbody>';
-			foreach ($table as $index => $row) {
-				$result .= "<tr><td>" . intval($index + 1)  . "</td>";
-				$result .= implode(array_map(function ($col_data){ return "<td>" . str_replace("\n", "<br />", esc_textarea($col_data)) . "</td>"; }, $row));
-				$result .= "</tr>";
+			if (wp_is_mobile()) {
+				/**
+				 * Build list format for display on narrow screens
+				 */
+				$result .= '<ol class="mobile">';
+				foreach ($table as $index => $row) {
+					$result .= "<li>";
+					$result .= "<dl>";
+					for ($col=0; $col < $columns; $col++) {
+						if ("" != $row[$col]) {
+							$result .= "<dt>" . $col_headers[$col] . "</dt>";
+							$result .= "<dd>" . str_replace("\n", "<br />", esc_textarea($row[$col])) . "</dd>";
+						}
+					}
+					$result .= "</dl>";
+				}
+				$result .= "</ol>";
+			} else {
+				/**
+				 * Build table format for display on wide screens
+				 */
+				$result .= '<table class="full-width">';
+				$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . $col_data . "</th>"; }, $col_headers)) . '</tr></thead>';
+				$result .= '<tbody>';
+				foreach ($table as $index => $row) {
+					$result .= "<tr><td>" . intval($index + 1)  . "</td>";
+					$result .= implode(array_map(function ($col_data){ return "<td>" . str_replace("\n", "<br />", esc_textarea($col_data)) . "</td>"; }, $row));
+					$result .= "</tr>";
+				}
+				$result .= "</tbody></table>";
 			}
-			$result .= "</tbody></table>";
-			
-			/**
-			 * Build list format for display on narrow screens
-			 */
-			$result .= '<ol class="mobile">';
-			// FIXME Output Column headers
-			foreach ($table as $index => $row) {
-				$result .= "<li>" . $row[0];
-				$result .= "<ul>";
-				$result .= implode(array_map(function ($col_data){ return "<li>" . str_replace("\n", "<br />", esc_textarea($col_data)); }, $row));
-				$result .= "</ul>";
-			}
-			$result .= "</ol>";
 			
 			$result .= "</div>"; // Close the containing div
 

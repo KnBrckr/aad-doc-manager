@@ -251,7 +251,7 @@ if (! class_exists("aad_doc_manager_Table")) {
 			 * Pagination of table elements
 			 */
 	        //How many to display per page?
-	        $perpage = $this->get_items_per_page('cvs_files_per_page', 20); // FIXME Default 20, but allow admin screen to set
+	        $perpage = $this->get_items_per_page('cvs_files_per_page', 20); // TODO Allow admin screen to set
 	        //Which page is this?
 			$paged = $this->get_pagenum();
 			
