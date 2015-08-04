@@ -29,22 +29,7 @@ if (!defined('ABSPATH')) {
   exit();
 }
 
-/*
-			if (isset($this->header_names)) {
-				echo "<table>";
-				echo "<tr><th>Row</th>";
-				array_map(function ($col_data) { echo "<th>" . str_replace("\n", "<br />", $col_data) . "</th>"; }, $this->header_names);
-				echo "</tr>";
-				foreach ($this->table as $index => $row) {
-					echo "<tr><td>$index</td>";
-					array_map(function ($col_data) { echo "<td>" . str_replace("\n", "<br />", $col_data) . "</td>"; }, $row);
-					echo "</tr>";
-					if ($index > 4) break;
-				}
-				echo "</table>";
-			}
-
-*/
+// FIXME Add shortcode to download target document
 
 if (! class_exists("aad_doc_manager")) {
 	class aad_doc_manager
@@ -69,8 +54,8 @@ if (! class_exists("aad_doc_manager")) {
 				'all_items'          => 'All Documents',
 				'add_new'            => 'Upload Document',
 				'add_new_item'       => 'Upload Document',
-				'edit_item'          => 'Manage Document',
-				'new_item'           => 'Upload Document',
+				'edit_item'          => 'Update Document',
+				'new_item'           => 'Upload New Document',
 				'view_item'          => 'View Document',
 				'search_item'        => 'Search Document',
 				'not_found'          => 'No Documents found',
@@ -139,12 +124,14 @@ if (! class_exists("aad_doc_manager")) {
 		function sc_csv_view($attrs, $content = null)
 		{
 			$a = shortcode_atts( array( 'id' => null), $attrs );
-			if (! $a['id']) return ""; // No id value received - nothing to do
+			$doc_id = intval($a['id']);
+			
+			if (! $doc_id) return ""; // No id value received - nothing to do
 			
 			/**
 			 * FIXME - Retrieve the post
 			 */
-			$post = get_post((int)$a['id']);
+			$post = get_post($doc_id);
 			if (!$post) return;
 			
 			/**
@@ -152,21 +139,27 @@ if (! class_exists("aad_doc_manager")) {
 			 */
 			if (self::post_type != $post->post_type || 'publish' != $post->post_status) return;
 			
-			$table = json_decode($post->post_content);
+			$table = unserialize($post->post_content);
+			$col_headers = get_post_meta($doc_id, 'csv_col_headers', true);
+
+			$result = '<div class="aad-doc-manager">'; // Start of table/list output
+			
+			// FIXME Use wp_is_mobile() to select output format?
+			// FIXME Add back-to-top navigation - float it on side?  Every 10?
 			
 			/**
 			 * Build table format for display on wide screens
 			 */
-			$result = '<div class="aad-doc-manager"><table class="full-width">';
+			$result .= '<table class="full-width">';
+			$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . sanitize_text_field($col_data) . "</th>"; }, $col_headers)) . '</tr></thead>';
 			// FIXME Output Column headers
+			$result .= '<tbody>';
 			foreach ($table as $index => $row) {
-				$result .= "<tr><td>$index</td>";
-				// FIXME Newline handling broken
-				// FIXME Escape the data before output
-				$result .= implode(array_map(function ($col_data){ return "<td>" . str_replace("\n", "<br />", $col_data) . "</td>"; }, $row));
+				$result .= "<tr><td>" . intval($index + 1)  . "</td>";
+				$result .= implode(array_map(function ($col_data){ return "<td>" . str_replace("\n", "<br />", esc_textarea($col_data)) . "</td>"; }, $row));
 				$result .= "</tr>";
 			}
-			$result .= "</table>";
+			$result .= "</tbody></table>";
 			
 			/**
 			 * Build list format for display on narrow screens
@@ -176,9 +169,7 @@ if (! class_exists("aad_doc_manager")) {
 			foreach ($table as $index => $row) {
 				$result .= "<li>" . $row[0];
 				$result .= "<ul>";
-				// FIXME Newline handling broken
-				// FIXME Escape the data before output
-				$result .= implode(array_map(function ($col_data){ return "<li>" . str_replace("\n", "<br />", $col_data); }, $row));
+				$result .= implode(array_map(function ($col_data){ return "<li>" . str_replace("\n", "<br />", esc_textarea($col_data)); }, $row));
 				$result .= "</ul>";
 			}
 			$result .= "</ol>";

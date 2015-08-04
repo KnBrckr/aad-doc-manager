@@ -39,6 +39,27 @@ if (! class_exists("aad_doc_manager_Table")) {
 		protected $post_type;
 		
 		/**
+		 * Menu page URL for upload page - used to generate URL to update existing documents
+		 *
+		 * @var string
+		 */
+		protected $upload_url;
+		
+		/**
+		 * Base URL for displaying table page - used to generate links to table page
+		 *
+		 * @var string
+		 */
+		protected $table_url;
+		
+		/**
+		 * Labels describing object]
+		 *
+		 * @var array
+		 */
+		protected $labels;
+		
+		/**
 		 * True if active page is for Trash posts
 		 *
 		 * @var boolean
@@ -53,6 +74,9 @@ if (! class_exists("aad_doc_manager_Table")) {
 			parent::__construct($args);
 			 
 			$this->post_type = $args['post_type'];
+			$this->upload_url = $args['upload_url'];
+			$this->table_url = $args['table_url'];
+			$this->labels = $args['labels'];
 		}
 		
 		/**
@@ -100,7 +124,7 @@ if (! class_exists("aad_doc_manager_Table")) {
 				/**
 				 * Setup view link
 				 */
-				$url = add_query_arg('post_status', $status_name);
+				$url = add_query_arg('post_status', $status_name, $this->table_url);
 				$views[$status_name] = "<a href='$url'$class>" . sprintf( translate_nooped_plural( $status->label_count, $num_posts->$status_name ), number_format_i18n( $num_posts->$status_name ) ) . '</a>';
 			}
 			
@@ -118,7 +142,7 @@ if (! class_exists("aad_doc_manager_Table")) {
 	 		<div class="alignleft actions">
 				<?php
 	 			if ($this->is_trash && current_user_can('delete_posts')) {
-	 			submit_button( __( 'Empty Trash' ), 'apply', 'delete_all', false );
+		 			submit_button( __( 'Empty Trash' ), 'apply', 'delete_all', false );
 	 			}
 	 		   ?>
 	 		</div>
@@ -292,6 +316,17 @@ if (! class_exists("aad_doc_manager_Table")) {
 		{
 			$actions = array();
 			
+			/**
+			 * Actions for published documents
+			 */
+			if (! $this->is_trash) {
+				$url = add_query_arg('doc_id', $post->ID, $this->upload_url);
+				$actions['update'] = "<a title='" . $this->labels['edit_item'] . "' href='$url'>" . $this->labels['edit_item'] . "</a>";
+			}
+			
+			/**
+			 * Display trash, restore, permanently delete options based on context
+			 */
 			if ( current_user_can( 'delete_post', $post->ID ) ) {
 				if ( 'trash' == $post->post_status ) {
 			        $post_type_object = get_post_type_object( $post->post_type );

@@ -23,6 +23,7 @@
 */
 
 // FIXME Enable editing of headers on saved files
+// FIXME Add settings screen to control available document types
 
 // Protect from direct execution
 if (!defined('ABSPATH')) {
@@ -46,6 +47,13 @@ if (! class_exists("aad_doc_manager_admin")) {
 		const nonce = 'aad-doc-manager-nonce';
 		
 		/**
+		 * Accepted document types
+		 *
+		 * @var array of strings
+		 */
+		protected $accepted_doc_types;
+		
+		/**
 		 * Errors and warnings to display on admin screens
 		 *
 		 * @var array 
@@ -56,13 +64,24 @@ if (! class_exists("aad_doc_manager_admin")) {
 		{
 			parent::__construct();
 			
-			// Empty list of admin notices
+			/**
+			 * List of accepted document types
+			 */
+			$this->accepted_doc_types = array('text/csv');
+			
+			/**
+			 * Empty list of admin notices
+			 */
 			$this->admin_notices = array();
 
-			// Setup admin page for managing Documents
+			/**
+			 * Setup admin page for managing Documents
+			 */
 			add_action('admin_menu', array($this, 'action_admin_menu'));
 
-			// Do plugin initialization
+			/**
+			 * Do plugin initialization
+			 */
 			add_action('admin_init', array($this, 'action_admin_init'));
 		}
 				
@@ -73,8 +92,10 @@ if (! class_exists("aad_doc_manager_admin")) {
 		 */
 		function action_admin_init()
 		{
-			// FIXME User must be able to ...
-			// if (! current_user_can('something')) return;
+			/**
+			 * Add section for reporting configuration errors and notices
+			 */
+			add_action('admin_notices', array( $this, 'render_admin_notices'));
 		}
 		
 		/**
@@ -102,7 +123,9 @@ if (! class_exists("aad_doc_manager_admin")) {
 			 * No need to add actions or create sub-pages if that's the case
 			 */
 			if ($hook_suffix) {
-				// Pre-render processing for the table screen
+				/**
+				 * Pre-render processing for the table screen
+				 */
 				add_action('load-' . $hook_suffix, array($this, 'action_load_table_page'));
 
 				/**
@@ -166,7 +189,10 @@ if (! class_exists("aad_doc_manager_admin")) {
 				'singular' => $this->labels['singular_name'], // Singular Label
 				'plural' => $this->labels['name'], // Plural label
 				'ajax' => false, // Will not support AJAX on this table
-				'post_type' => self::post_type
+				'post_type' => self::post_type,
+				'upload_url' => menu_page_url(self::upload_slug, false),
+				'table_url' => menu_page_url(self::parent_slug, false),
+				'labels' => $this->labels
 			));
 			
 			$pagenum = $this->doc_table->get_pagenum();
@@ -199,7 +225,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 				} elseif (!empty($_REQUEST['doc_ids']))
 					$post_ids = array_map('intval', $_REQUEST['doc_ids']);
 				else {
-					wp_redirect( $sendback );
+					wp_redirect( $sendback ); // List of posts not provided, bail out
 					exit;
 				}
 				
@@ -284,7 +310,20 @@ if (! class_exists("aad_doc_manager_admin")) {
 				 */
 				wp_redirect(remove_query_arg(array('_wp_http_referer', '_wpnonce'), wp_unslash($_SERVER['REQUEST_URI'])));
 				exit;
-			}
+			} // End if
+			
+			/**
+			 * Report on earlier bulk action
+			 */
+			$locked = isset($_REQUEST['locked']) ? intval($_REQUEST['locked']) : NULL;
+			$trashed = isset($_REQUEST['trashed']) ? intval($_REQUEST['trashed']) : NULL;
+			$deleted = isset($_REQUEST['deleted']) ? intval($_REQUEST['deleted']) : NULL;
+			$untrashed = isset($_REQUEST['untrashed']) ? intval($_REQUEST['untrashed']) : NULL;
+			
+			if ($locked) $this->log_admin_notice("yellow", "Skipped $locked locked documents.");
+			if ($trashed) $this->log_admin_notice("green", "Moved $trashed documents to the trash.");
+			if ($deleted) $this->log_admin_notice("green", "Permanently deleted $deleted documents from trash.");
+			if ($untrashed) $this->log_admin_notice("green", "Restored $untrashed documents from trash.");
 		}
 		
 		/**
@@ -297,8 +336,6 @@ if (! class_exists("aad_doc_manager_admin")) {
 		 */
 		function render_table_page()
 		{
-			// FIXME - Add reporting of results from bulk actions and Document upload
-			
 			/**
 			 * User must be able to edit posts
 			 */
@@ -339,57 +376,191 @@ if (! class_exists("aad_doc_manager_admin")) {
 			 */
 			if (!current_user_can('edit_posts')) 
 				wp_die('Do you belong here?');
-			
-			/**
-			 * Confirm action bound for this page
-			 */
-			if (empty($_REQUEST) || ! isset($_REQUEST['submit']) || $_REQUEST['submit'] != $this->labels['new_item'] )
-				return;
 
-			/**
-			 * Is nonce valid? check_admin_referrer will die if invalid
-			 */
-			check_admin_referer(self::upload_slug, self::nonce);
+			$action = $this->upload_action();
+			$post = array(); // New/Updated Post content
+			$post['post_title'] = '';
 			
 			/**
-			 * Confirm file is a valid type
+			 * If a valid action has been requested ...
 			 */
-			if (empty($_FILES) || ! isset($_FILES['document']) || 'text/csv' != $_FILES['document']['type']) { // FIXME document
-				// FIXME Setup error
-				return;
+			if ($action) {
+				/**
+				 * Is nonce valid? check_admin_referrer will die if invalid
+				 */
+				check_admin_referer(self::upload_slug, self::nonce);
+			
+				/**
+				 * Confirm file is a valid type
+				 */
+				// FIXME Add document types
+				if (! empty($_FILES) && isset($_FILES['document']) && $_FILES['document']['error'] == UPLOAD_ERR_OK) {
+					$doc_type = $_FILES['document']['type'];
+					if (! in_array($doc_type, $this->accepted_doc_types)) {
+						$this->log_admin_notice('red', "Document type ". esc_attr($doc_type) . " is not supported.");
+						// TODO Handle error via redirect
+						return;
+					}
+					$post['post_mime_type'] = $doc_type;
+					
+					if (! isset($_FILES['document']['name']))
+						wp_die("Malformed request detected in " . __FILE__);
+					$post['post_title'] = $_FILES['document']['name'];
+
+					/**
+					 * Confirm name provided and temp filename is a valid uploaded file
+					 */
+					$tmp_file = $_FILES['document']['tmp_name'];
+					if (! is_uploaded_file($tmp_file))
+						wp_die('Something fishy is going on, file does not appear to have been uploaded');
+
+					$doc_content = $this->get_document_content($doc_type, $tmp_file);
+					if (isset($doc_content['error']))
+						wp_die($doc_content['error']);
+				} else {
+					/**
+					 * New uploads require a file to be provided
+					 */
+					if ('new' == $action) {
+						$this->log_admin_notice('red', "Missing Upload Document");
+						return;
+					}
+
+					$doc_name = ''; // If no file provided, setup blank name for later
+				}
+
+				/**
+				 * Document title from request if provided, otherwise use filename
+				 */
+				$post['post_title'] =
+					sanitize_text_field(isset($_REQUEST['doc_title']) && '' != $_REQUEST['doc_title'] ? 
+					$_REQUEST['doc_title'] : $post['post_title']);
+				
+				/**
+				 * Update post content if new document uploaded
+				 *   already confirmed that a file was supplied for new document creation
+				 */
+				if (isset($doc_content)) {
+					$post['post_content'] = $doc_content['post_content'];
+				}
+				
+				switch ($action) {
+				case 'new':
+					/**
+					 * Insert new post
+					 */
+					$post['post_excerpt'] = '';
+					$post['post_type'] = self::post_type;
+					$post['post_status'] = 'publish';
+					$post['comment_status'] = 'closed';
+					$post['ping_status'] = 'closed';
+					
+					$post_id = wp_insert_post($post);
+
+					if (!$post_id)
+						wp_die('Error inserting post data');
+					break;
+					
+				case 'update':	
+					/**
+					 * Update existing post
+					 */
+					$post_id = isset($_REQUEST['doc_id']) ? intval($_REQUEST['doc_id']) : NULL;
+					if (!$post_id) {
+						wp_die('Bad Request - No post id to update');
+					}
+					$post['ID'] = $post_id;
+					
+					/**
+					 * Make sure we're updating proper post type
+					 */
+					$old_post = get_post($post_id);
+					if ($old_post && $old_post->post_type != self::post_type) {
+						wp_die('Sorry - Request to update invalid document id');
+					}
+					
+					/**
+					 * Update the post
+					 */
+					wp_update_post($post);
+					break;
+				}
+
+				/**
+				 * Save meta data related to document content
+				 */
+				if (isset($doc_content)) {
+					// FIXME Remove old document meta data
+					foreach ($doc_content['post_meta'] as $key => $value) {
+						update_post_meta($post_id, $key, $value);
+					}
+				}
+
+				// FIXME Save uploaded file in media area - and manage a revision count
+				// FIXME On post delete cleanup the media area
+			
+				// FIXME Add result reporting
+				wp_redirect(menu_page_url(self::parent_slug));
+				exit;
+			} // End if			
+		}
+		
+		/**
+		 * Determine which action is being taken during file upload
+		 *
+		 * @return string, name of action or NULL
+		 */
+		private function upload_action()
+		{
+			if (empty($_REQUEST) || ! isset($_REQUEST['submit']))
+				return NULL;
+			elseif ($_REQUEST['submit'] == $this->labels['new_item'])
+				return "new";
+			elseif ($_REQUEST['submit'] == $this->labels['edit_item'])
+				return "update";
+			else
+				return NULL;
+		}
+		
+		/**
+		 * Creates "post_content" based on input type
+		 *   - CSV Files will be pre-processed into a serial encoded table
+		 *   - All others have empty post-content
+		 *
+		 * As a part of processing data, some post meta data may also be needed related to the document type.
+		 * It is returned as an associative array of name=>value pairs.
+		 *
+		 * @return associative array(
+		 * 		'post_content' => string, post content
+		 *      'post_meta' => associative array (name => value pairs)
+		 *    )
+		 */
+		private function get_document_content($doc_type, $path)
+		{
+			if ("text/csv" != $doc_type) {
+				return array(
+					'post_content' => '',
+					'post_meta' => array()
+				);
 			}
-			
-			/**
-			 * Confirm name was provided
-			 */
-			if (! isset($_FILES['document']['name']))
-				wp_die("Invalid Request detected in " . __FILE__);
-			
-			/**
-			 * Fields needed to insert a post into WP
-			 */
-			$post_title = wp_strip_all_tags($_FILES['document']['name']);
 			
 			/**
 			 * Does CSV file include column headers in the first row?
 			 */
-			$headers = isset($_REQUEST['header-row']) && "yes" == $_REQUEST['header-row'];
+			$csv_has_col_headers = isset($_REQUEST['csv-has-col-headers']) && "yes" == $_REQUEST['csv-has-col-headers'];
 			
 			/**
 			 * Process received CSV file
 			 */
-			$tmp_file = $_FILES['document']['tmp_name'];
-			if (! is_uploaded_file($tmp_file))
-				wp_die('Something fishy is going on, file does not appear to have been uploaded');
-			
-			if (($handle = fopen($tmp_file, "r")) !== FALSE) {
+			$table = array();
+			if (($handle = fopen($path, "r")) !== FALSE) {
 				// If first row has headers grab them
-				if ($headers) {
+				if ($csv_has_col_headers) {
 					// FIXME Allow for alternate field separator characters
 					$row = fgetcsv($handle, 1000, ",", '"');
 					if ($row === FALSE) {
-						// FIXME Report Empty or bad CSV file
-						return;
+						fclose($handle);
+						return array('error' => 'Unable to parse CSV contents.');
 					}
 					
 					// Replace line breaks with html
@@ -402,25 +573,16 @@ if (! class_exists("aad_doc_manager_admin")) {
 				/**
 				 * Collect the table rows
 				 */
-				$table = array();
 			    while (($row = fgetcsv($handle, 1000, ",", '"')) !== FALSE) {
 					/**
 					 * Count of Columns in this row and track maximum observed
 					 */
 					$columns = count($row);
 					if ($columns > $max_cols) $max_cols = $columns;
-					
-					
-					/**
-					 * pre-process data to make sure quoted special characters (i.e. '\n' for new-line)
-					 * are properly stored in DB.
-					 */
-					// FIXME - Is this str_replace the right method?  Maybe something else should be done to escape the content?
-					$table[] = array_map(function ($col_data) { return str_replace("\n", "\\n", $col_data); }, $row);
+					$table[] = $row;
 			    }
 			    fclose($handle);
 				
-				error_log(var_export($table[0],true));
 				/**
 				 * Generate headers if not provided
 				 */
@@ -430,39 +592,22 @@ if (! class_exists("aad_doc_manager_admin")) {
 						$header_names[$col] = "Column " . strval($col+1);
 					}
 				}
-								
-				/**
-				 * Save table as post data
-				 */
-				$post_id = wp_insert_post(array(
-					'post_content' => json_encode($table),
-					'post_title' => $post_title,
-					'post_excerpt' => '',
-					'post_type' => self::post_type,
-					'post_status' => 'publish'
-				));
-				
-				if (!$post_id)
-					wp_die('Error inserting post data');
-				
-				$meta_id = update_post_meta($post_id, 'csv_col_headers', json_encode($header_names));
-				if (! $meta_id) {
-					wp_delete_post($post_id);
-					wp_die('Error adding header meta data, CSV data deleted.');
-				}
-				
-				$meta_id = update_post_meta($post_id, 'csv_rows', count($table));
-				if (! $meta_id) {
-					wp_delete_post($post_id);
-					wp_die('Error adding row count meta data, CSV data deleted.');
-				}
-				
-				// FIXME Save uploaded file in media area - and manage a revision count
-				
-				// FIXME Add result reporting
-				wp_redirect(menu_page_url(self::parent_slug));
-				exit;
-			}
+			} else {
+				return array('error' => 'Could not open uploaded file.');
+			} // End if
+			
+			/**
+			 * Setup return data
+			 */
+			$retarray = array();
+			$retarray['post_content'] = serialize($table);
+			$retarray['post_meta'] = array(
+				'csv_cols' => $max_cols,
+				'csv_rows' => count($table),
+				'csv_col_headers' => $header_names,
+				'csv_has_col_headers' => $csv_has_col_headers
+			);
+			return $retarray;
 		}
 		
 		/**
@@ -480,23 +625,90 @@ if (! class_exists("aad_doc_manager_admin")) {
 				wp_die( __('You do not have sufficient permissions to access this page.') );
 				return;
 			}
-							
-			// FIXME Display info about existing CSV data if editing existing file?
-			// FIXME Make file a mandatory field
+			
+			/**
+			 * Document types accepted for upload
+			 */
+			// FIXME Add more types and make it editable in admin settings
+			$accept_doc_types = ".csv,text/csv";
+			
+			/**
+			 * Updating an existing document?
+			 */
+			$doc_id = isset($_REQUEST['doc_id']) ? intval($_REQUEST['doc_id']) : NULL;
+			$post = $doc_id ? get_post($doc_id) : NULL;
+			
+			/**
+			 * Setup default values for new vs. updating existing document
+			 */
+			if (! $post || $post->post_type != self::post_type) { // Don't allow other post-types
+				$doc_id = NULL;
+				$post = NULL;
+				$title = isset($_REQUEST['doc_title']) ? $_REQUEST['doc_title'] : "";
+				$checked = "checked";
+				$file_required = "required";
+			} else {
+				$doc_type = get_post_meta($doc_id, 'doc_type', true);
+				$title = $post->post_title;
+				$csv_rows = get_post_meta($doc_id, 'csv_rows', true);
+				$csv_cols = get_post_meta($doc_id, 'csv_cols', true);
+				$checked = get_post_meta($doc_id, 'csv_has_col_headers', true) == 'yes' ? 'checked' : '';
+				$file_required = "";
+			}
+			
+			$action = $post ? $this->labels['edit_item'] : $this->labels['new_item'];
+
+			// FIXME Remember checkbox state for existing documents
+			// FIXME Make file a mandatory field when adding a new document
 			?>
-			<form action method="post" accept-charset="utf-8" enctype="multipart/form-data">
-				<input type="hidden" name="page" value="<?php echo self::upload_slug ?>">
-				<?php wp_nonce_field(self::upload_slug, self::nonce); ?>
-				<p class="description">
-					Upload a [New|Replace] CSV File.
-				</p>
-				<p>
-					<input type="checkbox" checked id="header-row" name="header-row" value="yes">
-					<label for="header-row">First Row of CSV file contains column names</label>
-				</p>
-				<p><input type="file" id="document" name="document" value="" size="40" accept=".csv,text/csv" /></p>
-				<p><input type="submit" name="submit" value="<?php echo $this->labels['new_item'] ?>"></p>
-			</form>
+			<div class="wrap">
+				<h2><?php echo $action; ?></h2>
+				<form action method="post" accept-charset="utf-8" enctype="multipart/form-data">
+					<input type="hidden" name="page" value="<?php echo self::upload_slug ?>">
+					<?php if ($doc_id) : ?>
+						<input type="hidden" name="doc_id" value="<?php echo $doc_id; ?>" id="doc_id">
+					<?php endif; ?>
+					<?php wp_nonce_field(self::upload_slug, self::nonce); ?>
+					<div class="titlewrap">
+						<label for="title" class="title-prompt-text">Document Title:</label>
+						<input type="text" name="doc_title" value="<?php echo esc_attr($title); ?>" id="title" size="50" autocomplete="off" placeholder="Defaults to name of uploaded file if none specified">
+					</div>
+					<?php if ($doc_id) : ?>
+						<div class="postbox">
+							<h3>Uploaded Document Info</h3>
+							<div class="inside">
+								<dl>
+									<dt>Document Type</dt>
+									<dd><?php echo esc_attr($post->post_mime_type); ?></dd>
+									<dt>Date Created</dt>
+									<dd><?php echo esc_attr($post->post_date); ?></dd>
+									<dt>Date Last Modified</dt>
+									<dd><?php echo esc_attr($post->post_modified); ?></dd>
+									<dt>Rows</dt>
+									<dd><?php echo intval($csv_rows); ?></dd>
+									<dt>Columns</dt>
+									<dd><?php echo intval($csv_cols); ?></dd>
+								</dl>
+							</div>
+						</div>
+					<?php endif; ?>
+					<div class="postbox">
+						<h3>Upload</h3>
+						<div class="inside">
+							<div>
+								For CSV File Upload (ignored for other document types):<br>
+								<input type="checkbox" <?php echo $checked; ?> id="csv-has-col-headers" name="csv-has-col-headers" value="yes">
+								<label for="csv-has-col-headers">First Row contains column names</label>							
+							</div>
+							<div>
+								<label for="document">Select document to upload</label><br>
+								<input type="file" id="document" name="document" value="" size="40" accept="<?php echo $accept_doc_types ?>" <?php echo $file_required; ?>/>
+							</div>
+						</div>
+					</div>
+					<?php submit_button( $action, 'apply', 'submit', false ); ?>
+				</form>
+			</div>
 			<?php
 		}
 				
