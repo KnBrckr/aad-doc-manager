@@ -151,6 +151,8 @@ if (! class_exists("aad_doc_manager")) {
 			if (wp_is_mobile()) {
 				/**
 				 * Build list format for display on narrow screens
+				 *
+				 * Column headers sanitized above
 				 */
 				$result .= '<ol class="mobile">';
 				foreach ($table as $index => $row) {
@@ -168,6 +170,8 @@ if (! class_exists("aad_doc_manager")) {
 			} else {
 				/**
 				 * Build table format for display on wide screens
+				 *
+				 * Column headers sanitized above
 				 */
 				$result .= '<table class="full-width">';
 				$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . $col_data . "</th>"; }, $col_headers)) . '</tr></thead>';
