@@ -37,7 +37,7 @@ if (! class_exists("aad_doc_manager")) {
 		/**
 		 * Plugin version
 		 */
-		const PLUGIN_VER = "0.1";
+		const PLUGIN_VER = "0.5";
 
 		/**
 		 * Custom Post Type id

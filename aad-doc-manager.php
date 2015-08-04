@@ -3,7 +3,7 @@
 Plugin Name: Document Manager
 Plugin URI:  http://action-a-day.com/
 Description: Custom post type to manage documents for display and download
-Version:     0.1
+Version:     0.5
 Author:      Kenneth J. Brucker
 Author URI:  http://action-a-day.com
 License:     GPL2
