@@ -90,6 +90,8 @@ if (! class_exists("aad_doc_manager")) {
 			
 			add_action('wp_enqueue_scripts', array($this, 'action_enqueue_scripts'));
 			add_action('wp_enqueue_scripts', array($this, 'action_enqueue_styles'));
+			
+			add_action('wp_footer', array($this, 'action_wp_footer'));
 		} // End function action_init()
 		
 		/**
@@ -166,7 +168,7 @@ if (! class_exists("aad_doc_manager")) {
 				'1.10.7', 										// DataTables version
 				'all'											// All media types
 			);
-			wp_enqueue_style('aad-doc-manager-datatable-css');
+			wp_enqueue_style('aad-doc-manager-datatable-responsive-css');
 		}
 		
 		/**
@@ -203,58 +205,45 @@ if (! class_exists("aad_doc_manager")) {
 
 			$result = '<div class="aad-doc-manager">'; // Start of table/list output
 			
-			// TODO Add back-to-top navigation - float it on side?  Every 10?
-			
-			if (false /* wp_is_mobile() */) { // FIXME Is wp_is_mobile needed with the responsive data table?
-				/**
-				 * Build list format for display on narrow screens
-				 *
-				 * Column headers sanitized above
-				 */
-				$result .= '<ol class="mobile">';
-				foreach ($table as $index => $row) {
-					$result .= "<li>";
-					$result .= "<dl>";
-					for ($col=0; $col < $columns; $col++) {
-						if ("" != $row[$col]) {
-							$result .= "<dt>" . $col_headers[$col] . "</dt>";
-							$result .= "<dd>" . str_replace("\n", "<br />", esc_textarea($row[$col])) . "</dd>";
-						}
-					}
-					$result .= "</dl>";
-				}
-				$result .= "</ol>";
-			} else {
-				/**
-				 * Add javascript to get DataTables running
-				 */
-				// FIXME Only do this once on a page!
-				?>
-				<script type="text/javascript">
-				jQuery(document).ready(function() {
-				    jQuery('.aad-doc-manager-csv').DataTable();
-				} );
-				</script>
-				<?php
-				/**
-				 * Build table format for display on wide screens
-				 *
-				 * Column headers sanitized above
-				 */
-				$result .= '<table class="aad-doc-manager-csv responsive no-wrap" width="100%">';
-				$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . $col_data . "</th>"; }, $col_headers)) . '</tr></thead>';
-				$result .= '<tbody>';
-				foreach ($table as $index => $row) {
-					$result .= "<tr><td>" . intval($index + 1)  . "</td>";
-					$result .= implode(array_map(function ($col_data){ return "<td>" . str_replace("\n", "<br />", esc_textarea($col_data)) . "</td>"; }, $row));
-					$result .= "</tr>";
-				}
-				$result .= "</tbody></table>";
+			/**
+			 * Build table format
+			 *
+			 * Column headers sanitized above
+			 */
+			$result .= '<table class="aad-doc-manager-csv responsive no-wrap" width="100%">';
+			$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . $col_data . "</th>"; }, $col_headers)) . '</tr></thead>';
+			$result .= '<tbody>';
+			foreach ($table as $index => $row) {
+				$result .= "<tr><td>" . intval($index + 1)  . "</td>";
+				$result .= implode(array_map(function ($col_data){ return "<td>" . str_replace("\n", "<br />", esc_textarea($col_data)) . "</td>"; }, $row));
+				$result .= "</tr>";
 			}
+			$result .= "</tbody></table>";
 			
 			$result .= "</div>"; // Close the containing div
 
 			return $result;
+		}
+		
+		/**
+		 * WP Action registered for 'wp_footer'
+		 *
+		 * Sends inline javascript required for DataTable operation
+		 *
+		 * @return void
+		 */
+		function action_wp_footer()
+		{
+			/**
+			 * Add javascript to get DataTables running
+			 */
+			?>
+			<script type="text/javascript">
+			jQuery(document).ready(function() {
+			    jQuery('.aad-doc-manager-csv').DataTable();
+			} );
+			</script>
+			<?php	
 		}
 		
 	} // End class aad_doc_manager
