@@ -89,26 +89,84 @@ if (! class_exists("aad_doc_manager")) {
 			add_shortcode('csvview', array($this, 'sc_csv_view'));
 			
 			add_action('wp_enqueue_scripts', array($this, 'action_enqueue_scripts'));
+			add_action('wp_enqueue_scripts', array($this, 'action_enqueue_styles'));
 		} // End function action_init()
 		
 		/**
-		 * WP Action 'wp_queue_scripts'
+		 * WP Action 'wp_enqueue_scripts'
 		 *
 		 * @return void
 		 */
 		function action_enqueue_scripts()
 		{
 			/**
+			 * Enqueue Datatable Jquery plugin
+			 */
+			wp_register_script(
+				'aad-doc-manager-datatable-js',
+				plugins_url('pkgs/DataTables-1.10.7/media/js/jquery.dataTables.min.js', __FILE__),
+				array('jquery'), 								// Depends on jquery
+				'1.10.7', 										// DataTables version
+				true											// Enqueue in footer
+			);
+			wp_enqueue_script('aad-doc-manager-datatable-js');
+			
+			/**
+			 * Enqueue Responsive extension to DataTable
+			 */
+			wp_register_script(
+				'aad-doc-manager-datatable-responsive-js',
+				plugins_url('pkgs/DataTables-1.10.7/extensions/Responsive/js/dataTables.responsive.min.js', __FILE__),
+				array('jquery', 'aad-doc-manager-datatable-js'),// Depends on DataTable
+				'1.10.7', 										// DataTables version
+				true											// Enqueue in footer
+			);
+			wp_enqueue_script('aad-doc-manager-datatable-responsive-js');
+			
+		}
+		
+		/**
+		 * WP Action 'wp_enqueue_styles'
+		 *
+		 * @return void
+		 */
+		function action_enqueue_styles()
+		{
+			/**
 			 * Enqueue plugin CSS file
 			 */
 			wp_register_style(
 				'aad-doc-manager-css', 							// Handle
-				plugins_url('aad-doc-manager.css', __FILE__), 	// URL to CSS file
-				array(), 										// Dependencies
+				plugins_url('aad-doc-manager.css', __FILE__), 	// URL to CSS file, relative to this directory
+				false,	 										// No Dependencies
 				self::PLUGIN_VER,								// CSS Version
 				'all'											// Use for all media types
 			);
 			wp_enqueue_style('aad-doc-manager-css');
+
+			/**
+			 * Enqueue DataTable CSS
+			 */
+			wp_register_style(
+				'aad-doc-manager-datatable-css',
+				plugins_url('pkgs/DataTables-1.10.7/media/css/jquery.dataTables.min.css', __FILE__),
+				false,			 								// No dependencies
+				'1.10.7', 										// DataTables version
+				'all'											// All media types
+			);
+			wp_enqueue_style('aad-doc-manager-datatable-css');
+			
+			/**
+			 * Enqueue DataTable Responsive Extension CSS
+			 */
+			wp_register_style(
+				'aad-doc-manager-datatable-responsive-css',
+				plugins_url('pkgs/DataTables-1.10.7/extensions/Responsive/css/dataTables.responsive.css', __FILE__),
+				false,			 								// No dependencies
+				'1.10.7', 										// DataTables version
+				'all'											// All media types
+			);
+			wp_enqueue_style('aad-doc-manager-datatable-css');
 		}
 		
 		/**
@@ -145,10 +203,9 @@ if (! class_exists("aad_doc_manager")) {
 
 			$result = '<div class="aad-doc-manager">'; // Start of table/list output
 			
-			// TODO Use wp_is_mobile() to select output format?
 			// TODO Add back-to-top navigation - float it on side?  Every 10?
 			
-			if (wp_is_mobile()) {
+			if (false /* wp_is_mobile() */) { // FIXME Is wp_is_mobile needed with the responsive data table?
 				/**
 				 * Build list format for display on narrow screens
 				 *
@@ -169,11 +226,22 @@ if (! class_exists("aad_doc_manager")) {
 				$result .= "</ol>";
 			} else {
 				/**
+				 * Add javascript to get DataTables running
+				 */
+				// FIXME Only do this once on a page!
+				?>
+				<script type="text/javascript">
+				jQuery(document).ready(function() {
+				    jQuery('.aad-doc-manager-csv').DataTable();
+				} );
+				</script>
+				<?php
+				/**
 				 * Build table format for display on wide screens
 				 *
 				 * Column headers sanitized above
 				 */
-				$result .= '<table class="full-width">';
+				$result .= '<table class="aad-doc-manager-csv responsive no-wrap" width="100%">';
 				$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . $col_data . "</th>"; }, $col_headers)) . '</tr></thead>';
 				$result .= '<tbody>';
 				foreach ($table as $index => $row) {

@@ -12,7 +12,7 @@ Custom post type to manage and display uploaded documents.
 
 == Description ==
 
-Custom post type to manage and display uploaded documents. Shortcodes are available to display CSV format documents as inline tables and provide files as embedded links for download. The plugin allows documents to be updated with an invariant post_id so each new upload does not require referring locations to be changed.
+Custom post type to manage and display uploaded documents. A Shortcode is available to display CSV format documents as inline tables. The plugin allows documents to be updated with an invariant post_id so each new upload does not require referring locations to be changed.
 
 =Usage=
 [csvview id=<post_id>]
@@ -38,16 +38,12 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
-= 0.1 =
+= 0.6 =
+* Include DataTable v1.10.7 to make table searchable and more responsive
+
+= 0.5 =
 * First release
 
-== Upgrade Notice ==
+== Future ==
 
-= 0.1 =
-* Alpha version - you don't want it yet
-
-== Extra ==
-
-You may provide arbitrary sections, in the same format as the ones above.  This may be of use for extremely complicated
-plugins where more information needs to be conveyed that doesn't fit into the categories of "description" or
-"installation."  Arbitrary sections will be shown below the built-in sections outlined above.
+* Allow multiple document types to be managed
