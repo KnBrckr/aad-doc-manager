@@ -214,15 +214,36 @@ if (! class_exists("aad_doc_manager")) {
 			$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . $col_data . "</th>"; }, $col_headers)) . '</tr></thead>';
 			$result .= '<tbody>';
 			foreach ($table as $index => $row) {
-				$result .= "<tr><td>" . intval($index + 1)  . "</td>";
-				$result .= implode(array_map(function ($col_data){ return "<td>" . str_replace("\n", "<br />", esc_textarea($col_data)) . "</td>"; }, $row));
-				$result .= "</tr>";
+				$result .= '<tr><td>' . intval($index + 1)  . '</td>';
+				$result .= implode(array_map(function ($col_data){ return '<td>' . $this->nl2list($col_data) . '</td>'; }, $row));
+				$result .= '</tr>';
 			}
-			$result .= "</tbody></table>";
+			$result .= '</tbody></table>';
 			
-			$result .= "</div>"; // Close the containing div
+			$result .= '</div>'; // Close the containing div
 
 			return $result;
+		}
+		
+		/**
+		 * Convert block of text with embedded new lines into a list
+		 *
+		 * @return string, HTML
+		 * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
+		 */
+		private function nl2list($item)
+		{
+			/**
+			 * Split the input on new-line and turn into a list format if more than one line present
+			 */
+			$list = explode("\n", $item);
+			if (count($list) > 1) {
+				/**
+				 * Build list of multi-line item
+				 */
+				return '<ul class="aad-doc-manager-csv-list">' . implode(array_map(function ($li){ return '<li>' . esc_attr($li); }, $list)) . '</ul>';
+			} else 
+				return $item;
 		}
 		
 		/**

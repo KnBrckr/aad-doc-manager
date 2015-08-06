@@ -31,3 +31,12 @@
 	padding: 5px;
 	font-size: 90%;
 }
+
+ul.aad-doc-manager-csv-list {
+	padding: 2px;
+}
+
+ul.aad-doc-manager-csv-list li {
+	margin-bottom: 2px;
+	line-height: 1.25em;
+}
