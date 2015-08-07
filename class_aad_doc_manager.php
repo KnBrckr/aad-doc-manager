@@ -243,7 +243,7 @@ if (! class_exists("aad_doc_manager")) {
 				 */
 				return '<ul class="aad-doc-manager-csv-list">' . implode(array_map(function ($li){ return '<li>' . esc_attr($li); }, $list)) . '</ul>';
 			} else 
-				return $item;
+				return esc_attr($item);
 		}
 		
 		/**
