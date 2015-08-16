@@ -27,16 +27,7 @@ Text Domain: aad-doc-manager
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/*
-
- General Strategy:
- - Search across all fields
- - Provide method to replace document content
- - Provide shortcode that will retrieve the table content for search/display
- - For narrow display use list format for data
- - Use is_uploaded_file() to ensure file was uploaded
-
-*/
+// FIXME Escape all versions of urls as they are emitted
 
 /**
  * Protect from direct execution

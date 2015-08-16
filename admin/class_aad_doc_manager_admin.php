@@ -213,7 +213,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 				 */
 				$sendback = remove_query_arg(array('trashed','untrashed','deleted','locked','doc_ids', 'ids', 'action', 'action2'), wp_get_referer());
 				if (! $sendback)
-					$sendback = menu_page_url(self::parent_slug);
+					$sendback = menu_page_url(self::parent_slug, false); // FIXME This works only if URL contains no embedded '&'
 				$sendback = add_query_arg('paged', $pagenum, $sendback);
 
 				/**
@@ -351,7 +351,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 			?>
 		
 			<div class="wrap">
-				<h2><?php echo $this->labels['name']; ?> <a href="<?php menu_page_url(self::upload_slug); ?>" class="add-new-h2"><?php echo $this->labels['add_new_item']?></a></h2>
+				<h2><?php echo $this->labels['name']; ?> <a href="<?php menu_page_url(self::upload_slug,false); ?>" class="add-new-h2"><?php echo $this->labels['add_new_item']?></a></h2>
 				<?php $this->doc_table->views(); // Display the views available on the table ?>
 				<form action method="post" accept-charset="utf-8">
 					<input type="hidden" name="page" value="<?php echo self::parent_slug ?>">
@@ -500,7 +500,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 				// TODO On post delete cleanup the media area
 			
 				// TODO Add result reporting
-				wp_redirect(menu_page_url(self::parent_slug));
+				wp_redirect(menu_page_url(self::parent_slug, false));
 				exit;
 			} // End if			
 		}
