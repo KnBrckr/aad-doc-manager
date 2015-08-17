@@ -226,7 +226,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 				} elseif (!empty($_REQUEST['doc_ids']))
 					$post_ids = array_map('intval', $_REQUEST['doc_ids']);
 				else {
-					wp_redirect( $sendback ); // List of posts not provided, bail out
+					wp_safe_redirect( $sendback ); // List of posts not provided, bail out
 					exit;
 				}
 				
@@ -303,13 +303,13 @@ if (! class_exists("aad_doc_manager_admin")) {
 						break;
 				} // End Switch
 
-				wp_redirect($sendback);
+				wp_safe_redirect($sendback);
 				exit;
 			} elseif (! empty($_REQUEST['_wp_http_referer'])) {
 				/**
 				 * No action provided, if nonce was given, redirect back without nonce
 				 */
-				wp_redirect(remove_query_arg(array('_wp_http_referer', '_wpnonce'), wp_unslash($_SERVER['REQUEST_URI'])));
+				wp_safe_redirect(remove_query_arg(array('_wp_http_referer', '_wpnonce'), wp_unslash($_SERVER['REQUEST_URI'])));
 				exit;
 			} // End if
 			
@@ -500,7 +500,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 				// TODO On post delete cleanup the media area
 			
 				// TODO Add result reporting
-				wp_redirect(menu_page_url(self::parent_slug, false));
+				wp_safe_redirect(menu_page_url(self::parent_slug, false));
 				exit;
 			} // End if			
 		}
