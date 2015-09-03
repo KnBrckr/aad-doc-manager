@@ -351,7 +351,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 			?>
 		
 			<div class="wrap">
-				<h2><?php echo $this->labels['name']; ?> <a href="<?php menu_page_url(self::upload_slug,false); ?>" class="add-new-h2"><?php echo $this->labels['add_new_item']?></a></h2>
+				<h2><?php echo $this->labels['name']; ?> <a href="<?php menu_page_url(self::upload_slug, true); ?>" class="add-new-h2"><?php echo $this->labels['add_new_item']?></a></h2>
 				<?php $this->doc_table->views(); // Display the views available on the table ?>
 				<form action method="post" accept-charset="utf-8">
 					<input type="hidden" name="page" value="<?php echo self::parent_slug ?>">
@@ -598,6 +598,8 @@ if (! class_exists("aad_doc_manager_admin")) {
 			
 			/**
 			 * Setup return data
+			 * FIXME Serialized data might get further escaped here (& => &amp;) which breaks unserialize - must change.
+			 *       Not able to recreate condition that generated error.
 			 */
 			$retarray = array();
 			$retarray['post_content'] = serialize($table);
