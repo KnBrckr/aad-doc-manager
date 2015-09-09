@@ -524,7 +524,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 		
 		/**
 		 * Creates "post_content" based on input type
-		 *   - CSV Files will be pre-processed into a serial encoded table
+		 *   - CSV Files will be pre-processed into html table, data will also be stored as serialized post meta data
 		 *   - All others have empty post-content
 		 *
 		 * As a part of processing data, some post meta data may also be needed related to the document type.
@@ -598,16 +598,17 @@ if (! class_exists("aad_doc_manager_admin")) {
 			
 			/**
 			 * Setup return data
-			 * FIXME Serialized data might get further escaped here (& => &amp;) which breaks unserialize - must change.
-			 *       Not able to recreate condition that generated error.
+			 * Table will be stored as Post Meta data as well as HTML formatted in post_content
 			 */
 			$retarray = array();
-			$retarray['post_content'] = serialize($table);
+			$retarray['post_content'] = $this->render_csv($header_names, $table);
 			$retarray['post_meta'] = array(
+				'csv_storage_format' => self::CSV_STORAGE_FORMAT, // Save version used to store document content
 				'csv_cols' => $max_cols,
 				'csv_rows' => count($table),
 				'csv_col_headers' => $header_names,
-				'csv_has_col_headers' => $csv_has_col_headers
+				'csv_has_col_headers' => $csv_has_col_headers,
+				'csv_table' => $table
 			);
 			return $retarray;
 		}
@@ -653,7 +654,7 @@ if (! class_exists("aad_doc_manager_admin")) {
 				$title = $post->post_title;
 				$csv_rows = get_post_meta($doc_id, 'csv_rows', true);
 				$csv_cols = get_post_meta($doc_id, 'csv_cols', true);
-				$checked = get_post_meta($doc_id, 'csv_has_col_headers', true) == 'yes' ? 'checked' : '';
+				$checked = get_post_meta($doc_id, 'csv_has_col_headers', true) ? 'checked' : '';
 				$file_required = "";
 			}
 			
@@ -677,6 +678,8 @@ if (! class_exists("aad_doc_manager_admin")) {
 							<h3>Uploaded Document Info</h3>
 							<div class="inside">
 								<dl>
+									<dt>Document Id</dt>
+									<dd><?php echo esc_attr($doc_id); ?></dd>
 									<dt>Document Type</dt>
 									<dd><?php echo esc_attr($post->post_mime_type); ?></dd>
 									<dt>Date Created</dt>

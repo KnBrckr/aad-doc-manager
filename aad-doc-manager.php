@@ -3,7 +3,7 @@
 Plugin Name: Document Manager
 Plugin URI:  http://action-a-day.com/
 Description: Custom post type to manage documents for display and download
-Version:     0.5
+Version:     0.6
 Author:      Kenneth J. Brucker
 Author URI:  http://action-a-day.com
 License:     GPL2
@@ -52,7 +52,7 @@ if (is_admin()) {
 }
 foreach ($required_libs as $lib) {
 	if (!include_once($lib)) {
-		die('Unable to load required library:  "' . $lib . '"');
+		die('Unable to load required library:  "' . $lib . '"');  // $lib is safe
 	}
 }
 

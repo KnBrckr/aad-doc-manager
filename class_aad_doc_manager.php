@@ -37,12 +37,17 @@ if (! class_exists("aad_doc_manager")) {
 		/**
 		 * Plugin version
 		 */
-		const PLUGIN_VER = "0.5";
+		const PLUGIN_VER = "0.6";
 
 		/**
 		 * Custom Post Type id
 		 */
 		const post_type = 'aad-doc-manager';
+		
+		/**
+		 * CSV storage format version
+		 */
+		const CSV_STORAGE_FORMAT = 1;
 		
 		function __construct()
 		{
@@ -199,19 +204,43 @@ if (! class_exists("aad_doc_manager")) {
 			 */
 			if (self::post_type != $post->post_type || 'publish' != $post->post_status) return;
 			
-			$table = unserialize($post->post_content);
-			$col_headers = array_map(function($col_data){ return sanitize_text_field($col_data);}, get_post_meta($doc_id, 'csv_col_headers', true));
-			$columns = get_post_meta($doc_id, 'csv_cols', true);
-
-			$result = '<div class="aad-doc-manager">'; // Start of table/list output
+			/**
+			 * Start of content area
+			 */
+			$result = '<div class="aad-doc-manager">';
 			
 			/**
-			 * Build table format
-			 *
-			 * Column headers sanitized above
+			 * CSV Storage format 1:
+			 *   post_content has pre-rendered HTML, post_meta[csv_table] is table in array form
+			 * Original format (Undefined value for csv_storage_format):
+			 *   post_content is serialized array of table content
 			 */
-			$result .= '<table class="aad-doc-manager-csv responsive no-wrap" width="100%">';
-			$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . $col_data . "</th>"; }, $col_headers)) . '</tr></thead>';
+			if (1 == get_post_meta($doc_id, 'csv_storage_format', true)) {
+				$result .= $post->post_content;
+			} else {
+				$col_headers = get_post_meta($doc_id, 'csv_col_headers', true);
+				$table = unserialize($post->post_content);
+			
+				$result .= $this->render_csv($col_headers, $table);
+			}
+			
+			$result .= '</div>';
+
+			return $result;
+		}
+		
+		/**
+		 * Generate HTML to display table of CSV data
+		 *
+		 * @return string, HTML
+		 */
+		protected function render_csv($headers, $table)
+		{
+			/**
+			 * Build table format
+			 */
+			$result = '<table class="aad-doc-manager-csv responsive no-wrap" width="100%">';
+			$result .= '<thead><tr><th>#</th>' . implode(array_map(function ($col_data) {return "<th>" . sanitize_text_field($col_data) . "</th>"; }, $headers)) . '</tr></thead>';
 			$result .= '<tbody>';
 			foreach ($table as $index => $row) {
 				$result .= '<tr><td>' . intval($index + 1)  . '</td>';
@@ -220,8 +249,6 @@ if (! class_exists("aad_doc_manager")) {
 			}
 			$result .= '</tbody></table>';
 			
-			$result .= '</div>'; // Close the containing div
-
 			return $result;
 		}
 		
