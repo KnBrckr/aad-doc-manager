@@ -164,7 +164,10 @@ if (! class_exists("aad_doc_manager_Table")) {
 	            'cb'      => '<input type="checkbox" />', //Render a checkbox instead of text
 	 			'doc_id' => 'ID',
 	 			'title'   => 'Title',
-	 			'date' => 'Date Added'
+	 			'date' => 'Date Added',
+				'type' => 'Document Type',
+				'rows' => 'Rows',
+				'columns' => 'Columns'
 	 		);
 		
 	 		return $columns;
@@ -182,7 +185,8 @@ if (! class_exists("aad_doc_manager_Table")) {
 			$sortable = array(
 				'doc_id' => array('ID', false),
 				'title' => array('title', false),
-				'date' => array('date', false)
+				'date' => array('date', false),
+				'type' => array('type', false)
 			);
 		
 			return $sortable;
@@ -361,6 +365,47 @@ if (! class_exists("aad_doc_manager_Table")) {
 		function column_doc_id($post)
 		{
 			return esc_attr($post->ID);
+		}
+		
+		/**
+		 * Provide formatted document type
+		 *
+		 * @param post, A post object for display
+		 * @return string, Text or HTML to be placed in table cell
+		 */
+		function column_type($post)
+		{
+			return esc_attr($post->post_mime_type);
+		}
+		
+		/**
+		 * Provide formatted number of rows for CSV files
+		 *
+		 * @param post, A post object for display
+		 * @return string, Text or HTML to be placed in table cell
+		 */
+		function column_rows($post)
+		{
+			if ('text/csv' == $post->post_mime_type) {
+				return esc_attr(get_post_meta($post->ID, 'csv_rows', true));
+			} else {
+				return "";
+			}
+		}
+		
+		/**
+		 * Provide formatted number of columns for CSV files
+		 *
+		 * @param post, A post object for display
+		 * @return string, Text or HTML to be placed in table cell
+		 */
+		function column_columns($post)
+		{
+			if ('text/csv' == $post->post_mime_type) {
+				return esc_attr(get_post_meta($post->ID, 'csv_cols', true));
+			} else {
+				return "";
+			}
 		}
 	} // End class aad_doc_manager_Table
 } // End if
