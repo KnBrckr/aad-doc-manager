@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Document Manager
-Plugin URI:  http://action-a-day.com/
+Plugin URI:  http://action-a-day.com/document-manager-wordpress-plugin/
 Description: Custom post type to manage documents for display and download
-Version:     0.6
+Version:     0.2
 Author:      Kenneth J. Brucker
 Author URI:  http://action-a-day.com
 License:     GPL2
@@ -11,7 +11,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Domain Path: /languages
 Text Domain: aad-doc-manager
 
-    Copyright 2015 Kenneth J. Brucker  (email : ken.brucker@action-a-day.com)
+    Copyright 2016 Kenneth J. Brucker  (email : ken.brucker@action-a-day.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as 

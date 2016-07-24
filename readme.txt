@@ -1,9 +1,9 @@
 === Document Manager ===
 Contributors: draca
-Donate link: http://action-a-day.com
+Donate link: http://action-a-day.com/aad-document-manager
 Tags: csv, viewer, document, manager
 Requires at least: 4.2
-Tested up to: 4.2.2
+Tested up to: 4.5.3
 Stable tag: trunk
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -19,14 +19,14 @@ Custom post type to manage and display uploaded documents. A Shortcode is availa
 
 == Installation ==
 
-1. Upload `plugin-name.php` to the `/wp-content/plugins/` directory
+1. Upload `aad-doc-manager` to the `/wp-content/plugins/` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Frequently Asked Questions ==
 
-= A question that someone might have =
+= No Questions Yet =
 
-An answer to that question.
+Ask a question!
 
 == Screenshots ==
 
@@ -38,11 +38,8 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
-= 0.6 =
+= 0.2 =
 * Include DataTable v1.10.7 to make table searchable and more responsive
-
-= 0.5 =
-* First release
 
 == Future ==
 
