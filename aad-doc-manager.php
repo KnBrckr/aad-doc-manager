@@ -3,7 +3,7 @@
 Plugin Name: Document Manager
 Plugin URI:  http://action-a-day.com/document-manager-wordpress-plugin/
 Description: Custom post type to manage documents for display and download
-Version:     0.2
+Version:     0.3
 Author:      Kenneth J. Brucker
 Author URI:  http://action-a-day.com
 License:     GPL2
@@ -27,15 +27,13 @@ Text Domain: aad-doc-manager
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-// FIXME Escape all versions of urls as they are emitted
-
 /**
  * Protect from direct execution
  */
-if (!defined('ABSPATH')) {
-	header('Status: 403 Forbidden');
-  header('HTTP/1.1 403 Forbidden');
-  exit();
+if ( ! defined( 'ABSPATH' ) ) {
+	header( 'Status: 403 Forbidden' );
+	header( 'HTTP/1.1 403 Forbidden' );
+	exit();
 }
 
 global $aad_doc_manager;
@@ -44,23 +42,24 @@ global $aad_doc_manager;
  * Load the required libraries
  */
 $required_libs = array(
-	'class_aad_doc_manager.php'
+	'classes/aadDocManager.php'
 ); 
-if (is_admin()) {
+if ( is_admin() ) {
 	// For admin pages, setup the extended admin class
-	$required_libs[] = 'admin/class_aad_doc_manager_admin.php';
+	$required_libs[] = 'admin/classes/aadDocManagerAdmin.php';
 }
-foreach ($required_libs as $lib) {
-	if (!include_once($lib)) {
-		die('Unable to load required library:  "' . $lib . '"');  // $lib is safe
+foreach ( $required_libs as $lib ) {
+	if ( ! include_once( $lib ) ) {
+		die( 'Unable to load required library:  "' . $lib . '"' );  // $lib is safe
 	}
 }
 
 /**
  * Instantiate the main plugin class
  */
-if (is_admin()) {
-	$aad_doc_manager = new aad_doc_manager_admin();	
+if ( is_admin() ) {
+	$aad_doc_manager = new aadDocManagerAdmin();
 } else {
-	$aad_doc_manager = new aad_doc_manager();	
+	$aad_doc_manager = new aadDocManager();	
 }
+$aad_doc_manager->plugin_init();

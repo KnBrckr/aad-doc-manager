@@ -15,7 +15,17 @@ Custom post type to manage and display uploaded documents.
 Custom post type to manage and display uploaded documents. A Shortcode is available to display CSV format documents as inline tables. The plugin allows documents to be updated with an invariant post_id so each new upload does not require referring locations to be changed.
 
 =Usage=
-[csvview id=<post_id>]
+[docmgr-csv-table id=<post_id> {date=0|1} {row-number=0|1} {row-colors="color, ..."}]
+	id => document id
+	date => boolean, 1 ==> display document create/update date, whichever is newer in table caption
+	row-number => boolean, 1 ==> Include row numbers
+	row-colors => string, comma separated list of row color for each n-rows.
+
+[docmgr-created id=<post_id>]
+	Displays created date for document
+	
+[docmgr-modified id=<post_id>]
+	Displays modified date for document
 
 == Installation ==
 
@@ -37,6 +47,15 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 2. This is the second screen shot
 
 == Changelog ==
+
+= 0.3 =
+* Update to DataTable v1.10.12
+* CSV rows with fewer columns generate DataTable error
+* Highlight Table Search terms in table
+* Deprecate [csvview] shortcode, replace with [docmgr-csv-table]
+* Add [docmgr-modified] and [docmgr-created] shortcodes
+* Display dates using format from WordPress General Settings
+* Add row-number and row-colors options to [docmgr-csv-table]
 
 = 0.2 =
 * Include DataTable v1.10.7 to make table searchable and more responsive

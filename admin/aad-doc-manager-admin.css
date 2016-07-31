@@ -1,9 +1,9 @@
 /**
- * CSS for Document Manager Plugin
+ * Admin CSS for Document Manager Plugin
  *
  * @package Document Manager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
- * @copyright 2015 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
+ * @copyright 2016 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
  * 
  * This file is part of Document Manager, a plugin for Wordpress.
  *
@@ -21,26 +21,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  **/
 
-.aad-doc-manager table {
-/*	overflow: scroll;*/
-/*	word-wrap: break-word;*/
-/*	padding: 5px;*/
+.fixed .column-doc_id {
+	width: 3%;
 }
 
-.aad-doc-manager-csv caption {
-	text-align: left;
+.fixed .column-rows, .fixed .column-columns, .fixed .column-csv_storage_format {
+	width: 5%;
 }
 
-.aad-doc-manager table td {
-	padding: 5px;
-	font-size: 90%;
-}
-
-ul.aad-doc-manager-csv-list {
-	padding: 2px;
-}
-
-ul.aad-doc-manager-csv-list li {
-	margin-bottom: 2px;
-	line-height: 1.25em;
+.fixed .column-date_modified, 
+.fixed .column-date, 
+.fixed .column-type,
+.fixed .column-shortcode {
+	width: 10%;
 }
