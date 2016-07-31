@@ -39,7 +39,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * Plugin version
 		 */
-		const PLUGIN_VER = "0.3";
+		const PLUGIN_VER = "0.3.1";
 
 		/**
 		 * Custom Post Type id
@@ -54,8 +54,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 *      table array stored in post meta data field csv_table
 		 * 2 => Storage same as (1). 
 		 *      HTML content modified to support highlighting plugin - requires regen of older HTML to support
+		 * 3 => Rendered data stored as meta data - post_content is empty
+		 *      Allows re-save of pre-rendered data without affecting post update date
 		 */
-		const CSV_STORAGE_FORMAT = 2;
+		const CSV_STORAGE_FORMAT = 3;
 		
 		function __construct()
 		{
@@ -309,14 +311,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			$storage_format = get_post_meta( $doc_id, 'csv_storage_format', true );
 			switch ( $storage_format ) {
 			case 1:
+			case 2:
 				/**
 				 * Some formatting changes have been made in HTML - Re-render
 				 *
 				 * Save result only if default options have been selected
 				 */
 
-				$document->post_content = $this->re_render_csv( $doc_id, $attrs, $render_defaults );
-				$result .= $document->post_content;
+				$result .= $this->re_render_csv( $doc_id, $attrs, $render_defaults );
 				break;
 				
 			case self::CSV_STORAGE_FORMAT:
@@ -326,7 +328,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				if ( !$render_defaults || WP_DEBUG) {
 					$result .= $this->re_render_csv( $doc_id, $attrs, false ); // re-render, do not save result in DB
 				} else {
-					$result .= $document->post_content;	// Use pre-rendered content for default display
+					$result .= get_post_meta( $doc_id, 'csv_rendered', true );	// Use pre-rendered content for default display
 				}
 				break;
 
@@ -428,14 +430,13 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			
 			/**
 			 * Save the newly rendered data if requested
+			 *
+			 * There will be obsolete HTML content still stored as $post->post_content.
+			 * Unavoidable as it results in incorrectly modifying the post update date
 			 */
 			if ( $save ) {
-				$document = get_post( $doc_id );
-				$document->post_content = $html;
-				$updated_post_id = wp_update_post( $document );
-				if ( $updated_post_id != 0 ) {
-					update_post_meta( $updated_post_id, 'csv_storage_format', self::CSV_STORAGE_FORMAT );
-				}
+				update_post_meta( $doc_id, 'csv_rendered', $html );
+				update_post_meta( $doc_id, 'csv_storage_format', self::CSV_STORAGE_FORMAT );
 			}
 
 			return $html;

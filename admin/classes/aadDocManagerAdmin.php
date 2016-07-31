@@ -639,7 +639,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			
 			/**
 			 * Setup return data
-			 * Table will be stored as Post Meta data as well as HTML formatted in post_content
+			 * Table will be stored as Post Meta data in serialized and rendered form
 			 */
 			$render_data = array(
 				'col-headers' => $header_names,
@@ -647,14 +647,15 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				'table' => $table
 			);
 			$retarray = array();
-			$retarray['post_content'] = $this->render_csv( $render_data );
+			$retarray['post_content'] = "";
 			$retarray['post_meta'] = array(
 				'csv_storage_format' => self::CSV_STORAGE_FORMAT, // Save version used to store document content
 				'csv_cols' => $max_cols,
 				'csv_rows' => count( $table ),
 				'csv_col_headers' => $header_names,
 				'csv_has_col_headers' => $csv_has_col_headers,
-				'csv_table' => $table
+				'csv_table' => $table,
+				'csv_rendered' => $this->render_csv( $render_data )
 			);
 			return $retarray;
 		}
