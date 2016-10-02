@@ -4,7 +4,7 @@
  *
  * @package Document Manager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
- * @copyright 2016 Kenneth J. Brucker (email: ken@pumastudios.com)
+ * @copyright 2016 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
  *
  * This file is part of Document Manager, a plugin for Wordpress.
  *
@@ -69,7 +69,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			 * List of accepted document types
 			 */
 			// RFE Add settings screen to control available document types
-			$this->accepted_doc_types = array( 'text/csv' );
+			$this->accepted_doc_types = array( 'text/csv', 'application/pdf' );
 			
 			/**
 			 * Empty list of admin notices
@@ -173,7 +173,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				/**
 				 * Pre-render processing for the upload screen
 				 */
-				add_action( 'load-' . $hook_suffix, array($this, 'action_prerender_upload_page' ) );
+				add_action( 'load-' . $hook_suffix, array($this, 'action_save_uploaded_file' ) );
 
 				/**
 				 * Add plugin styles for upload screen
@@ -409,11 +409,13 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		}
 		
 		/**
-		 * Perform pre-render actions associated with the upload page
+		 * Save uploaded file if one has been specified
+		 *
+		 * Redirects back to document list page if a file was uploaded
 		 *
 		 * @return void
 		 */
-		function action_prerender_upload_page()
+		function action_save_uploaded_file()
 		{
 			/**
 			 * User must be able to edit posts
@@ -538,8 +540,20 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						update_post_meta( $post_id, $key, $value );
 					}
 				}
-
-				// RFE Save uploaded file in media area - manage a revision count, cleanup media on post delete
+				
+				/**
+				 * Save uploaded file as media
+				 */
+				
+				// FIXME Revision control for updated files?
+				// FIXME Delete media files when documents removed - Hook into media removal also?
+				
+				$attachment_id = media_handle_upload( 'document', $post_id );
+				
+				if ( is_wp_error( $attachment_id ) ) {
+					// Error on upload
+				}
+				
 				// RFE Add result reporting
 				wp_safe_redirect( menu_page_url( self::parent_slug, false ) );
 				exit;
@@ -726,13 +740,13 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 							<div class="inside">
 								<dl>
 									<dt><?php _e( 'Document ID', 'aad-doc-manager' ); ?></dt>
-									<dd><?php echo esc_attr($doc_id); ?></dd>
+									<dd><?php esc_html_e($doc_id); ?></dd>
 									<dt><?php _e( 'Document Type', 'aad-doc-manager' ); ?></dt>
-									<dd><?php echo esc_attr($post->post_mime_type); ?></dd>
+									<dd><?php esc_html_e($post->post_mime_type); ?></dd>
 									<dt><?php _e( 'Date Created', 'aad-doc-manager' ); ?></dt>
-									<dd><?php echo esc_attr($post->post_date); ?></dd>
+									<dd><?php esc_html_e($post->post_date); ?></dd>
 									<dt><?php _e( 'Date Last Modified', 'aad-doc-manager' ); ?></dt>
-									<dd><?php echo esc_attr($post->post_modified); ?></dd>
+									<dd><?php esc_html_e($post->post_modified); ?></dd>
 									<?php if ( 'text/csv' == $post->post_mime_type ):  ?>
 										<dt><?php _e( 'Rows', 'aad-doc-manager' ); ?></dt>
 										<dd><?php echo intval($csv_rows); ?></dd>
@@ -747,13 +761,19 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						<h3>Upload</h3>
 						<div class="inside">
 							<div>
-								<?php _e( 'For CSV File Upload (ignored for other document types):', 'aad-doc-manager' ); ?><br>
-								<input type="checkbox" <?php echo esc_attr( $checked ); ?> id="csv-has-col-headers" name="csv-has-col-headers" value="yes">
-								<label for="csv-has-col-headers"><?php _e( 'First Row contains column names', 'aad-doc-manager' ); ?></label>							
-							</div>
-							<div>
 								<label for="document"><?php _e( 'Select document to upload', 'aad-doc-manager' ); ?></label><br>
 								<input type="file" id="document" name="document" value="" size="40" accept="<?php echo esc_attr( $accepted_doc_types ); ?>" <?php echo esc_attr( $file_required ); ?>/>
+								<div>
+									<?php 
+									_e( 'Supported file types: ', 'aad-doc-manager' );
+									esc_html_e( implode( $this->accepted_doc_types, ', ' ) ); 
+									?>
+								</div>
+							</div>
+							<div class="upload_option">
+								<?php _e( 'For CSV File Upload (ignored for other document types):', 'aad-doc-manager' ); ?><br />
+								<input type="checkbox" <?php echo esc_attr( $checked ); ?> id="csv-has-col-headers" name="csv-has-col-headers" value="yes">
+								<label for="csv-has-col-headers"><?php _e( 'First Row contains column names', 'aad-doc-manager' ); ?></label>							
 							</div>
 						</div>
 					</div>

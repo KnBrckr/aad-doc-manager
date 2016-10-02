@@ -4,7 +4,7 @@
  *
  * @package Document Manager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
- * @copyright 2016 Kenneth J. Brucker (email: ken@pumastudios.com)
+ * @copyright 2016 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
  *
  * This file is part of Document Manager, a plugin for Wordpress.
  *

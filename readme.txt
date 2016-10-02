@@ -48,6 +48,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= 0.4 =
+* Support PDF uploads
+
 = 0.3.1 =
 * Store pre-rendered CSV table as post meta data
 
