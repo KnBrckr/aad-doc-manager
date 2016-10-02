@@ -109,6 +109,11 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			 * Add section for reporting configuration errors and notices
 			 */
 			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
+			
+			/**
+			 * Catch media deletes via wp-admin/upload.php to remove the associated document
+			 */
+			add_action( 'delete_attachment', array($this, 'action_delete_document'), 10, 1 );
 		}
 		
 		/**
@@ -171,9 +176,9 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				);
 			 
 				/**
-				 * Pre-render processing for the upload screen
+				 * Setup form handler to receive new/updated documents
 				 */
-				add_action( 'load-' . $hook_suffix, array($this, 'action_save_uploaded_file' ) );
+				add_action( 'load-' . $hook_suffix, array($this, 'action_process_upload_form' ) );
 
 				/**
 				 * Add plugin styles for upload screen
@@ -218,13 +223,19 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			/**
 			 * User must be able to edit posts
 			 */
-			if ( ! current_user_can( 'edit_posts' ) )
+			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_die( 'Do you belong here?' );
+            }
+            
+   			/**
+			 * To avoid a processing loop, remove action to catch media deletion via wp-admin/upload.php
+			 */
+			remove_action( 'delete_attachment', array($this, 'action_delete_document') );
 			
 			/**
 			 * Load class used to manage table of Documents
 			 */
-			if ( ! include_once( 'aadDocManagerTable.php' ) ) return;
+            if ( ! include_once( 'aadDocManagerTable.php' ) ) { return; }
 			
 			$this->doc_table = new aadDocManagerTable( array(
 				'singular' => $this->labels['singular_name'], // Singular Label
@@ -237,6 +248,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			));
 			
 			$pagenum = $this->doc_table->get_pagenum();
+            
+            // FIXME Deletes processed through post.php need to remove the media files
 			
 			/**
 			 * Handle bulk actions
@@ -261,10 +274,10 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 */
 				if ( 'delete_all' == $action ) {
 					// Convert 'delete_all' action to delete action with a list
-					$post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type=%s AND post_status = %s", self::post_type, 'trash' ) );
+					$doc_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type=%s AND post_status = %s", self::post_type, 'trash' ) );
 					$action = 'delete';
 				} elseif ( ! empty( $_REQUEST['doc_ids'] ) )
-					$post_ids = array_map( 'intval', $_REQUEST['doc_ids'] );
+					$doc_ids = array_map( 'intval', $_REQUEST['doc_ids'] );
 				else {
 					wp_safe_redirect( $sendback ); // List of posts not provided, bail out
 					exit;
@@ -281,16 +294,16 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 */
 						$trashed = $locked = 0;
 						
-						foreach ( ( array ) $post_ids as $post_id ) {
-							if ( ! current_user_can( 'delete_post', $post_id ) )
+						foreach ( ( array ) $doc_ids as $doc_id ) {
+							if ( ! current_user_can( 'delete_post', $doc_id ) )
 								wp_die( __( 'You are not allowed to move this item to the Trash.', 'aad-doc-manager' ) );
 							
-							if ( wp_check_post_lock( $post_id ) ) { // TODO - How to lock a post?
+							if ( wp_check_post_lock( $doc_id ) ) { // TODO - How to lock a post?
 								$locked++;
 								continue;
 							}
 							
-							if ( ! wp_trash_post( $post_id ) )
+							if ( ! wp_trash_post( $doc_id ) )
 								wp_die( __( 'Error moving post to Trash.', 'aad-doc-manager' ) );
 							
 							$trashed++;
@@ -300,7 +313,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 * Send operation results back
 						 */
 						$sendback = add_query_arg(
-							array( 'trashed' => $trashed, 'ids' => join( ',', $post_ids ), 'locked' => $locked ), 
+							array( 'trashed' => $trashed, 'ids' => join( ',', $doc_ids ), 'locked' => $locked ), 
 							$sendback );
 						break;
 					
@@ -310,11 +323,11 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 */
 						$untrashed = 0;
 						
-						foreach ( ( array ) $post_ids as $post_id ) {
-							if ( ! current_user_can( 'delete_post', $post_id ) )
+						foreach ( ( array ) $doc_ids as $doc_id ) {
+							if ( ! current_user_can( 'delete_post', $doc_id ) )
 								wp_die( __( 'You are not allowed to restore this item from the Trash.', 'aad-doc-manager' ) );
 							
-							if ( ! wp_untrash_post( $post_id ) )
+							if ( ! wp_untrash_post( $doc_id ) )
 								wp_die( __( 'Error in restoring from Trash.', 'aad-doc-manager' ) );
 							
 							$untrashed++;
@@ -329,12 +342,25 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 */
 						$deleted = 0;
 						
-						foreach ( ( array ) $post_ids as $post_id ) {
-							if (! current_user_can( 'delete_post', $post_id ) )
+						foreach ( ( array ) $doc_ids as $doc_id ) {
+							if (! current_user_can( 'delete_post', $doc_id ) )
 								wp_die( __( 'You are not allowed to delete this item.', 'aad-doc-manager' ) );
 							
-							if (! wp_delete_post($post_id))
-								wp_die( __( 'Error in deleting.', 'aad-doc-manager' ) );
+							/**
+							 * Delete related media attachment
+							 */
+							$media_id = get_post_meta( $doc_id, 'document_media_id', true );
+							if ( $media_id ) {
+								if ( ! wp_delete_attachment( $media_id, true ) )
+									wp_die( __( 'Error deleting attached document.', 'aad-doc-manager' ) );
+							}
+														
+							/**
+							 * Delete the document post
+							 */
+							if (! wp_delete_post($doc_id)) {
+								wp_die( __( 'Error in deleting document post.', 'aad-doc-manager' ) );
+                            }
 							
 							$deleted++;
 						}
@@ -409,13 +435,16 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		}
 		
 		/**
-		 * Save uploaded file if one has been specified
+		 * Process upload form content
 		 *
-		 * Redirects back to document list page if a file was uploaded
+		 * Either a new document is being added or an existing document is being updated.
+		 * For updates, a new uploaded file is not required.
+		 *
+		 * Redirects back to document list page if a form was processed
 		 *
 		 * @return void
 		 */
-		function action_save_uploaded_file()
+		function action_process_upload_form()
 		{
 			/**
 			 * User must be able to edit posts
@@ -423,141 +452,174 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			if ( ! current_user_can( 'edit_posts' ) ) 
 				wp_die( __( 'Do you belong here?', 'aad-doc-manager' ) );
 
+			/**
+			 * Has an action been requested?
+			 */
 			$action = $this->upload_action();
-			$post = array(); // New/Updated Post content
-			$post['post_title'] = '';
+			if ( ! $action ) return;
 			
 			/**
-			 * If a valid action has been requested ...
+			 * Is nonce valid? check_admin_referrer will die if invalid.
 			 */
-			if ( $action ) {
-				/**
-				 * Is nonce valid? check_admin_referrer will die if invalid
-				 */
-				check_admin_referer( self::upload_slug, self::nonce );
+			check_admin_referer( self::upload_slug, self::nonce );
 			
+			/**
+			 * To avoid a processing loop, remove action to catch media deletion via wp-admin/upload.php
+			 */
+			remove_action( 'delete_attachment', array($this, 'action_delete_document') );
+			
+			/**
+			 * Initialize new/updated post content
+			 */
+			$post = array();
+			$post['post_title'] = '';
+			
+			switch( $action ) {
+			case 'new':
 				/**
-				 * Confirm file is a valid type
+				 * Adding a new document
 				 */
-				if ( ! empty( $_FILES ) && isset( $_FILES['document'] ) && $_FILES['document']['error'] == UPLOAD_ERR_OK ) {
-					$doc_type = $_FILES['document']['type'];
-					if ( ! in_array( $doc_type, $this->accepted_doc_types ) ) {
-						$this->log_admin_notice('red', __sprintf( __( 'Document type %s is not supported.', 'aad-doc-manager' ), esc_attr( $doc_type ) ) );
-						// FIXME Handle error via redirect
-						return;
-					}
-					$post['post_mime_type'] = $doc_type;
-					
-					if ( ! isset($_FILES['document']['name'] ) )
-						wp_die( sprintf( __( 'Malformed request detected in %s', 'aad-doc-manager' ), __FILE__ ) );
-					$post['post_title'] = $_FILES['document']['name'];
-
-					/**
-					 * Confirm name provided and temp filename is a valid uploaded file
-					 */
-					$tmp_file = $_FILES['document']['tmp_name'];
-					if ( ! is_uploaded_file( $tmp_file ) )
-						wp_die( __( 'Something fishy is going on, file does not appear to have been uploaded', 'aad-doc-manager' ) );
-
-					$doc_content = $this->get_document_content($doc_type, $tmp_file);
-					if ( isset( $doc_content['error'] ) )
-						wp_die( $doc_content['error'] );
-				} else {
-					/**
-					 * New uploads require a file to be provided
-					 */
-					if ( 'new' == $action ) {
-						$this->log_admin_notice( 'red', __( "Missing Upload Document", 'aad-doc-manager' ) );
-						return;
-					}
-
-					$doc_name = ''; // If no file provided, setup blank name for later
+				$post['post_excerpt'] = '';
+				$post['post_type'] = self::post_type;
+				$post['post_status'] = 'publish';
+				$post['comment_status'] = 'closed';
+				$post['ping_status'] = 'closed';
+				
+				break;
+				
+			case 'update';
+				/**
+				 * Update existing post
+				 */
+				$doc_id = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
+				if ( ! $doc_id ) {
+					wp_die( __( 'Bad Request - No post id to update', 'aad-doc-manager' ) );
 				}
+				$post['ID'] = $doc_id;
+				
+				/**
+				 * Make sure we're updating proper post type
+				 */
+				$old_post = get_post( $doc_id );
+				if ( $old_post && $old_post->post_type != self::post_type ) {
+					wp_die( __( 'Sorry - Request to update invalid document id', 'aad-doc-manager' ) );
+				}
+				
+				break;
+			}
+		
+			/**
+			 * Setup post content for uploaded file
+			 */
+			if ( ! empty( $_FILES ) && isset( $_FILES['document'] ) && $_FILES['document']['error'] == UPLOAD_ERR_OK ) {
+				$have_upload = true;
+				$doc_type = $_FILES['document']['type'];
+				if ( ! in_array( $doc_type, $this->accepted_doc_types ) ) {
+					$this->log_admin_notice('red', __sprintf( __( 'Document type %s is not supported.', 'aad-doc-manager' ), esc_attr( $doc_type ) ) );
+					// FIXME Handle error via redirect?
+					return;
+				}
+				$post['post_mime_type'] = $doc_type;
+				
+				if ( ! isset($_FILES['document']['name'] ) )
+					wp_die( sprintf( __( 'Malformed request detected in %s', 'aad-doc-manager' ), __FILE__ ) );
+				$post['post_title'] = $_FILES['document']['name'];
 
 				/**
-				 * Document title from request if provided, otherwise use filename
+				 * Confirm there's a valid uploaded file
 				 */
-				$post['post_title'] =
-					sanitize_text_field( isset( $_REQUEST['doc_title'] ) && '' != $_REQUEST['doc_title'] ? 
-					$_REQUEST['doc_title'] : $post['post_title'] );
+				$tmp_file = $_FILES['document']['tmp_name'];
+				if ( ! is_uploaded_file( $tmp_file ) )
+					wp_die( __( 'Something fishy is going on, file does not appear to have been uploaded', 'aad-doc-manager' ) );
+
+				$doc_content = $this->get_document_content($doc_type, $tmp_file);
+				if ( isset( $doc_content['error'] ) )
+					wp_die( $doc_content['error'] );
 				
 				/**
 				 * Update post content if new document uploaded
-				 *   already confirmed that a file was supplied for new document creation
 				 */
-				if ( isset( $doc_content ) ) {
-					$post['post_content'] = $doc_content['post_content'];
-				}
-				
-				switch ( $action ) {
-				case 'new':
-					/**
-					 * Insert new post
-					 */
-					$post['post_excerpt'] = '';
-					$post['post_type'] = self::post_type;
-					$post['post_status'] = 'publish';
-					$post['comment_status'] = 'closed';
-					$post['ping_status'] = 'closed';
-					
-					$post_id = wp_insert_post( $post );
-
-					if ( ! $post_id )
-						wp_die( __( 'Error inserting post data', 'aad-doc-manager' ) );
-					break;
-					
-				case 'update':	
-					/**
-					 * Update existing post
-					 */
-					$post_id = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
-					if ( ! $post_id ) {
-						wp_die( __( 'Bad Request - No post id to update', 'aad-doc-manager' ) );
-					}
-					$post['ID'] = $post_id;
-					
-					/**
-					 * Make sure we're updating proper post type
-					 */
-					$old_post = get_post( $post_id );
-					if ( $old_post && $old_post->post_type != self::post_type ) {
-						wp_die( __( 'Sorry - Request to update invalid document id', 'aad-doc-manager' ) );
-					}
-					
-					/**
-					 * Update the post
-					 */
-					wp_update_post( $post );
-					break;
-				}
-
-				/**
-				 * Save meta data related to document content
-				 */
-				if ( isset( $doc_content ) ) {
-					// FIXME Remove old document meta data
-					foreach ( $doc_content['post_meta'] as $key => $value ) {
-						update_post_meta( $post_id, $key, $value );
-					}
-				}
+				$post['post_content'] = $doc_content['post_content'];
+			} else {
+				$have_upload = false;
 				
 				/**
-				 * Save uploaded file as media
+				 * New uploads require a file to be provided
 				 */
-				
-				// FIXME Revision control for updated files?
-				// FIXME Delete media files when documents removed - Hook into media removal also?
-				
-				$attachment_id = media_handle_upload( 'document', $post_id );
-				
-				if ( is_wp_error( $attachment_id ) ) {
-					// Error on upload
+				if ( 'new' == $action ) {
+					$this->log_admin_notice( 'red', __( "Missing Upload Document", 'aad-doc-manager' ) );
+					return;
 				}
-				
-				// RFE Add result reporting
-				wp_safe_redirect( menu_page_url( self::parent_slug, false ) );
-				exit;
 			}
+
+			/**
+			 * Document title from request if provided, otherwise use filename
+			 */
+			$post['post_title'] =
+				sanitize_text_field( isset( $_REQUEST['doc_title'] ) && '' != $_REQUEST['doc_title'] ? 
+				$_REQUEST['doc_title'] : $post['post_title'] );
+			
+			switch ( $action ) {
+			case 'new':
+				/**
+				 * Insert new post
+				 */
+				$doc_id = wp_insert_post( $post );
+
+				if ( ! $doc_id )
+					wp_die( __( 'Error inserting post data', 'aad-doc-manager' ) );
+				break;
+				
+			case 'update':	
+				/**
+				 * Update the post
+				 */
+				wp_update_post( $post );
+				break;
+			}
+			
+			
+			/**
+			 * Save uploaded file as media
+			 */
+			if ( $have_upload ) {
+				$attachment_id = media_handle_upload( 'document', $doc_id );
+
+				if ( is_wp_error( $attachment_id ) ) {
+					wp_die( __( 'Error during file upload.', 'aad-doc-manager' ) );
+				} else {
+					/**
+					 * Upload file saved successfully, preserve the new attachment ID
+					 */
+					$doc_content['post_meta']['document_media_id'] = $attachment_id;
+				
+					/**
+					 * On update, remove previously saved revision of the document
+					 */
+					if ( 'update' == $action ) {
+						$old_media_id = get_post_meta( $doc_id, 'document_media_id', true );
+						if ( $old_media_id ) {
+							if ( ! wp_delete_attachment( $old_media_id, true ) )
+								wp_die( __( 'Error in deleting.', 'aad-doc-manager' ) );
+						}
+					}
+				}
+				
+			}
+
+			/**
+			 * Save meta data related to document content
+			 */
+			if ( isset( $doc_content ) ) {
+				// FIXME Remove old document meta data
+				foreach ( $doc_content['post_meta'] as $key => $value ) {
+					update_post_meta( $doc_id, $key, $value );
+				}
+			}
+			
+			// RFE Add result reporting
+			wp_safe_redirect( menu_page_url( self::parent_slug, false ) );
+			exit;
 		}
 		
 		/**
@@ -615,6 +677,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					$row = fgetcsv( $handle, 1000, ',', '"' );
 					if ( $row === FALSE ) {
 						fclose( $handle );
+						// FIXME Handle this and other errors using WP Error class
 						return array( 'error' => __( 'Unable to parse CSV contents.', 'aad-doc-manager' ) );
 					}
 					
@@ -821,6 +884,30 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					echo '<div class="'. esc_attr( $notice_class[$notice[0]] ) . '">';
 					echo '<p>' . wp_kses($notice[1], array(), array()) . '</p>';
 					echo '</div>';			
+				}
+			}
+		}
+		
+		/**
+		 * When deleting a media attachment via WP interfaces, remove the associated document as well
+		 *
+		 * @param int $attachment_id, post_id for attachment being removed
+		 * @return void
+		 */
+		function action_delete_document($attachment_id)
+		{	
+			$attachment = get_post( $attachment_id );
+			if ( $attachment->post_parent ) {
+				/**
+				 * Attachment has a parent, is it a document type?
+				 */
+				$post = get_post( $attachment->post_parent );
+				if ( self::post_type == $post->post_type ) {
+					/**
+					 * Delete the associated document
+					 */
+					if (! wp_delete_post($post->ID, true) )
+						wp_die( __( 'Error in deleting.', 'aad-doc-manager' ) );
 				}
 			}
 		}
