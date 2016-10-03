@@ -63,3 +63,8 @@ if ( is_admin() ) {
 	$aad_doc_manager = new aadDocManager();	
 }
 $aad_doc_manager->plugin_init();
+
+            
+register_activation_hook( __FILE__, array( 'aadDocManager', 'plugin_activation') );
+register_deactivation_hook( __FILE__, array( 'aadDocManager', 'plugin_deactivation' ) );
+

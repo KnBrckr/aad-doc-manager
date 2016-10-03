@@ -9,7 +9,7 @@
  * This file is part of Document Manager, a plugin for Wordpress.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, version 2, as 
+ * it under the terms of the GNU General Public License, version 2, as
  * published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
@@ -39,29 +39,29 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * Plugin version
 		 */
-		const PLUGIN_VER = "0.3.1";
+		const PLUGIN_VER = "0.4";
 
 		/**
 		 * Custom Post Type id
 		 */
 		const post_type = 'aad-doc-manager';
-		
+
 		/**
 		 * CSV storage format version
 		 *
 		 * Undefined => post->content is serialized data
-		 * 1 => HTML rendered during upload, saved as post_content. 
+		 * 1 => HTML rendered during upload, saved as post_content.
 		 *      table array stored in post meta data field csv_table
-		 * 2 => Storage same as (1). 
+		 * 2 => Storage same as (1).
 		 *      HTML content modified to support highlighting plugin - requires regen of older HTML to support
 		 * 3 => Rendered data stored as meta data - post_content is empty
 		 *      Allows re-save of pre-rendered data without affecting post update date
 		 */
 		const CSV_STORAGE_FORMAT = 3;
-		
+
 		function __construct()
 		{
-			$this->labels = array (	
+			$this->labels = array (
 				'name'               => __( 'Documents', 'aad-doc-manager' ),
 				'singular_name'      => __( 'Document', 'aad-doc-manager' ),
 				'menu_name'          => __( 'Documents', 'aad-doc-manager' ),
@@ -77,7 +77,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'not_found_in_trash' => __( 'No Documents found in Trash', 'aad-doc-manager' )
 			);
 		} // End function __construct()
-		
+
 		/**
 		 * Do the initial hooking into WordPress
 		 *
@@ -89,23 +89,90 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			add_action( 'init', array( $this, 'action_plugin_setup' ) );
 		}
 
+        /**
+         * Plugin Activation actions
+         *
+         * @param void
+         * @return void
+         */
+        static function plugin_activation() {
+            self::create_endpoint();
+
+            /**
+             *  Reset permalinks after post type registration and endpoint creation
+             */
+            flush_rewrite_rules();
+        }
+
+        /**
+         * Plugin Deactivation actions
+         *
+         * @param void
+         * @return void
+         */
+        static function plugin_deactivation() {
+            /**
+             * Reset permalinks
+             */
+            flush_rewrite_rules();
+        }
+
 		/**
 		 * Hook into WordPress - Call from WP init action
 		 *  - Register custom post type
 		 *  - Setup up shortcodes
 		 *  - Register actions
+         *
 		 * @param void
 		 * @return void
 		 */
 		function action_plugin_setup()
 		{
-			register_post_type( self::post_type, array(
+            /**
+             * Register document post type
+             */
+            $this->register_document_post_type();
+
+            /**
+             * Add rewrite endpoint used for downloads
+             */
+            self::create_endpoint();
+
+            /**
+             * Add shortcodes
+             */
+			add_shortcode( 'csvview', array( $this, 'sc_docmgr_csv_table') ); // Deprecated, but leave in
+			add_shortcode( 'docmgr-csv-table', array( $this, 'sc_docmgr_csv_table') );
+			add_shortcode( 'docmgr-created', array( $this, 'sc_docmgr_created' ) );
+			add_shortcode( 'docmgr-modified', array( $this, 'sc_docmgr_modified' ) );
+
+            /**
+             * Setup needed actions
+             */
+			add_action( 'wp_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
+			add_action( 'wp_enqueue_scripts', array( $this, 'action_enqueue_styles' ) );
+			add_action( 'wp_footer', array( $this, 'action_init_datatables' ) );
+
+            /**
+             * Check for usage of endpoint in template_redirect
+             */
+            add_action( 'template_redirect', array( $this, 'action_try_endpoint' ) );
+		}
+
+        /**
+         * Register document post type
+         *
+         * @param void
+         * @return void
+         */
+        function register_document_post_type() {
+            register_post_type( self::post_type, array(
 				'label' => __( 'Documents', 'aad-doc-manager' ),
 				'labels' => $this->labels,
 				'description' => __( 'Upload Documents for display in posts/pages', 'aad-doc-manager' ),
-				'public' => false, //  Implies exclude_from_search: true, 
-								   //          publicly_queryable: false, 
-								   //          show_in_nav_menus: false, 
+				'public' => false, //  Implies exclude_from_search: true,
+								   //          publicly_queryable: false,
+								   //          show_in_nav_menus: false,
 								   //          show_ui: false
 				'menu_icon' => 'dashicons-media-spreadsheet',
 				'hierarchical' => false,
@@ -114,18 +181,114 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'rewrite' => false,
 				'query_var' => false
 			) );
-			
-			add_shortcode( 'csvview', array( $this, 'sc_docmgr_csv_table') ); // Deprecated, but leave in
-			add_shortcode( 'docmgr-csv-table', array( $this, 'sc_docmgr_csv_table') );
-			add_shortcode( 'docmgr-created', array( $this, 'sc_docmgr_created' ) );
-			add_shortcode( 'docmgr-modified', array( $this, 'sc_docmgr_modified' ) );
-			
-			add_action( 'wp_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
-			add_action( 'wp_enqueue_scripts', array( $this, 'action_enqueue_styles' ) );
-			
-			add_action( 'wp_footer', array( $this, 'action_init_datatables' ) );
-		} // End function action_init()
-		
+        }
+
+        /**
+         * Setup endpoint for document downloads
+         *
+         * @param void
+         * @return void
+         */
+        static function create_endpoint() {
+            /**
+             * Add endpoint for document downloads
+             */
+            // TODO Allow endpoint name to be configured via admin setup option
+            add_rewrite_endpoint( 'aad-document', EP_ROOT );
+        }
+
+        /**
+         * Redirect to document download
+         */
+        function action_try_endpoint() {
+            global $wp_query;
+
+            /**
+             * Does query match endpoint our endpoint?
+             */
+            $requested_doc = $wp_query->get( 'aad-document' );
+            if ( ! $requested_doc )
+                return;
+
+            /**
+             * Valid request?
+             *
+             * document type should match custom post type
+             * Post meta data should point to a media attachment
+             */
+            $doc_id = intval( $requested_doc );
+            $document = get_post( $doc_id );
+            if ( ! $document || self::post_type != $document->post_type ) {
+                $this->error_404();
+                // Not Reached
+            }
+
+            $attachment_id = get_post_meta( $doc_id, 'document_media_id', true );
+            $attachment = get_post( $attachment_id );
+            if ( ! $attachment_id || ! $attachment || 'attachment' != $attachment->post_type ) {
+                $this->error_404();
+                // Not Reached
+            }
+
+            /**
+             * Dump the file
+             */
+            $file = get_attached_file( $attachment_id );
+            
+            if (file_exists( $file ) ) {
+                /**
+                 * Log download of the file
+                 */
+                $this->log_download( $doc_id );
+
+                /**
+                 * Output headers and dump the file
+                 */
+                header( 'Content-Description: File Transfer' );
+                header( 'Content-Type: ' . esc_attr( $attachment->post_mime_type ) );
+                header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
+                header( 'Content-Length: ' . filesize( $file ) );
+                readfile( $file );
+                
+                die();
+            } else {
+                $this->error_404();
+                // Not Reached
+            }
+            // Not Reached
+        }
+        
+        /**
+         * Display a 404 error
+         * 
+         * @param void
+         * @return void
+         */
+        private function error_404() {
+            global $wp_query;
+            
+            $wp_query->set_404();
+            status_header(404);
+            get_template_part(404);
+            die();
+        }
+        
+        /**
+         * Log download of a file
+         * 
+         * @param int $doc_id, document ID that was downloaded
+         * @return void
+         */
+        private function log_download( $doc_id ) {
+            /**
+             * Atomic Increment download count
+             */
+            do {
+                $value = $old = get_post_meta( $doc_id, 'download_count', true );
+                $value++;
+            } while ( ! update_post_meta( $doc_id, 'download_count', $value, $old ) );
+        }
+
 		/**
 		 * WP Action 'wp_enqueue_scripts'
 		 *
@@ -147,7 +310,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'1.10.12', 										// DataTables version
 				true											// Enqueue in footer
 			);
-			
+
 			/**
 			 * Register jQuery Text Highlighter (retrieved from //bartaz.github.io/sandbox.js/jquery.highlight.js)
 			 */
@@ -158,7 +321,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'2010.10.1',									// Script version - Released Dec 1, 2010
 				true											// Enqueue in footer
 			);
-			
+
 			/**
 			 * Register DataTables Highlighting plugin (https://datatables.net/blog/2014-10-22)
 			 *
@@ -171,14 +334,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'1.10.12', 										// DataTables version
 				true											// Enqueue in footer
 			);
-			
+
 			/**
 			 * Enqueue the Datatables scripts - dependencies will get them all pulled in
 			 */
 			wp_enqueue_script( 'aad-doc-manager-datatable-highlight-js' );
-			
+
 		}
-		
+
 		/**
 		 * WP Action 'wp_enqueue_styles'
 		 *
@@ -212,7 +375,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'all'											// All media types
 			);
 			wp_enqueue_style('aad-doc-manager-datatable-css');
-			
+
 			/**
 			 * Enqueue DataTable Highlighter CSS
 			 *
@@ -227,16 +390,16 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			);
 			wp_enqueue_style('aad-doc-manager-datatable-highlight-css');
 		}
-		
+
 		/**
 		 * 'docmgr-csv-table' WP shortcode
 		 *
 		 * Usage: [docmgr-csv-table id=<post_id> {disp_date=0|1}]
 		 *  id is mandatory and must specify the post id of a custom post supported by this plugin
-		 *  date, boolean, 1 ==> Include last modified date in table caption 
+		 *  date, boolean, 1 ==> Include last modified date in table caption
 		 *  row-colors, string, comma separated list of row color for each n-rows.
 		 *  row-number, boolean, 1 ==> Include row numbers
-		 * 
+		 *
 		 * @param $_attrs, associative array of shortcode parameters
 		 * @param $content, not expecting any content
 		 * @return HTML string
@@ -247,37 +410,37 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'id'         => null,
 				'date'       => 1,		// Display modified date in caption by default
 				'row-colors' => null,	// Use default row colors
-				'row-number' => 1		// Display row numbers	
+				'row-number' => 1		// Display row numbers
 			);
-			
+
 			/**
 			 * Get shortcode parameters and sanitize
 			 */
 			$attrs = shortcode_atts( $default_attrs, $_attrs );
-			
+
 			$doc_id              = $attrs['id'] = intval( $attrs['id'] );
 			$caption_date        = $attrs['date'] = intval( $attrs['date'] );
 			$attrs['row-number'] = intval( $attrs['row-number'] );
 			$attrs['row-colors'] = $this->sanitize_row_colors( $attrs['row-colors'] );
-			
+
 			/**
 			 * Must re-render if any options change default rendering
 			 */
 			$render_defaults = $attrs['row-colors'] == null && $attrs['row-number'] == 1;
-			
+
 			if ( ! $doc_id ) return ""; // No id value received - nothing to do
-			
+
 			/**
 			 * Retrieve the post
 			 */
 			$document = get_post($doc_id);
 			if ( ! $document ) return "";
-			
+
 			/**
 			 * Make sure post type of the retrieved post is valid
 			 */
 			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) return "";
-			
+
 			/**
 			 * Start of content area
 			 *
@@ -287,7 +450,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			$result = '<div class="aad-doc-manager">';
 			$result .= '<table class="aad-doc-manager-csv searchHighlight responsive no-wrap" width="100%">';
-			
+
 			/**
 			 * Include caption if needed
 			 */
@@ -301,7 +464,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				$result .= "$text: " . esc_attr( $this->format_date( $document->post_modified ) );
 				$result .= '</caption>';
 			}
-			
+
 			/**
 			 * CSV Storage format 1:
 			 *   post_content has pre-rendered HTML, post_meta[csv_table] is table in array form
@@ -320,7 +483,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 				$result .= $this->re_render_csv( $doc_id, $attrs, $render_defaults );
 				break;
-				
+
 			case self::CSV_STORAGE_FORMAT:
 				/**
 				 * If non-default options or DEBUG mode specific, must re-render table
@@ -338,7 +501,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				 */
 				if (WP_DEBUG) {
 					$result .= '<tr><td>';
-					$result .= 'Nothing to display - Unknown CSV Storage format "' . esc_attr( $storage_format ) . 
+					$result .= 'Nothing to display - Unknown CSV Storage format "' . esc_attr( $storage_format ) .
 						'" found for post_id ' . esc_attr( $doc_id );
 					$result .= '<td></tr>';
 				}
@@ -347,7 +510,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 			return $result;
 		}
-		
+
 		/**
 		 * 'docmgr-created' WP shortcode
 		 *
@@ -358,12 +521,12 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		function sc_docmgr_created( $_attrs, $content = null )
 		{
 			$default_attrs = array( 'id' => null );
-			
+
 			$attrs = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
 			$doc_id = intval( $attrs['id'] );
-			
+
 			if ( ! $doc_id ) return ""; // No id value received
-			
+
 			/**
 			 * Retrieve the post
 			 */
@@ -377,7 +540,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 			return esc_attr( $this->format_date( $document->post_date ) );
 		}
-		
+
 		/**
 		 * 'docmgr-modified' WP shortcode
 		 *
@@ -388,12 +551,12 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		function sc_docmgr_modified( $_attrs, $content = null )
 		{
 			$default_attrs = array( 'id' => null );
-			
+
 			$attrs = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
 			$doc_id = intval( $attrs['id'] );
-			
+
 			if ( ! $doc_id ) return ""; // No id value received - nothing to do
-			
+
 			/**
 			 * Retrieve the post
 			 */
@@ -404,7 +567,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 * Make sure post type of the retrieved post is valid
 			 */
 			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) return;
-			
+
 			return esc_attr( $this->format_date( $document->post_modified ) );
 		}
 
@@ -427,7 +590,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			);
 
 			$html = $this->render_csv( $render_data );
-			
+
 			/**
 			 * Save the newly rendered data if requested
 			 *
@@ -441,7 +604,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 			return $html;
 		}
-		
+
 		/**
 		 * Generate HTML to display table header and body of CSV data
 		 *
@@ -455,7 +618,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		{
 			$row_num = array_key_exists( 'row-number', $render_data ) ? $render_data['row-number'] : 1;
 			$row_colors = array_key_exists( 'row-colors', $render_data ) ? $render_data['row-colors'] : null;
-			
+
 			/**
 			 * Build table header and body
 			 *
@@ -464,9 +627,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 *     *******************************************************************
 			 */
 			$result = '<thead><tr>';
-			
+
 			if ($row_num) $result .= '<th>#</th>'; // Include row number?
-			
+
 			$result .= implode( array_map( function ( $col_data ) {return "<th>" . sanitize_text_field( $col_data ) . "</th>"; }, $render_data['col-headers'] ) );
 			$result .= '</tr></thead>';
 			$result .= '<tbody>';
@@ -476,9 +639,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 					$cell_style = 'style="background-color: ' . $row_colors[$index % count( $row_colors )] . '"';
 				}
 				$result .= '<tr>';
-				
+
 				if ( $row_num ) $result .= '<td>' . intval( $index + 1 )  . '</td>'; // Include row number?
-				
+
 				$row = array_pad( $row, $render_data['columns'], '' ); // Pad the row to the overall column count
 				foreach ($row as $col_data) {
 					$result .= '<td ' . $cell_style . '>' . $this->nl2list( $col_data ) . '</td>';
@@ -486,10 +649,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				$result .= '</tr>';
 			}
 			$result .= '</tbody></table>';
-			
+
 			return $result;
 		}
-		
+
 		/**
 		 * Convert block of text with embedded new lines into a list
 		 *
@@ -507,12 +670,12 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				/**
 				 * Build list of multi-line item
 				 */
-				return '<ul class="aad-doc-manager-csv-list">' . 
+				return '<ul class="aad-doc-manager-csv-list">' .
 					implode( array_map (function( $li ){ return '<li>' . esc_attr( $li ); }, $list ) ) . '</ul>';
-			} else 
+			} else
 				return esc_attr( $text );
 		}
-		
+
 		/**
 		 * Emit HTML required to initialize DataTables Javascript plugin
 		 *
@@ -531,9 +694,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			    jQuery('.aad-doc-manager-csv').DataTable();
 			} );
 			</script>
-			<?php	
+			<?php
 		}
-		
+
 		/**
 		 * Format a date/time using WP General Settings format
 		 *
@@ -543,14 +706,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		private function format_date( $date )
 		{
 			static $format;
-			
+
 			if ( ! isset( $format ) ) {
 				$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 			}
-			
+
 			return esc_attr( mysql2date( $format, $date ) );
 		}
-		
+
 		/**
 		 * Sanitize text string of comma separated row colors and convert to array
 		 *
@@ -560,11 +723,11 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		private function sanitize_row_colors( $string )
 		{
 			if ( ! isset( $string ) ) return null;
-			
+
 			$row_colors = array_map( array( $this, 'sanitize_row_color' ), explode( ',', $string ) );
 			return $row_colors;
 		}
-		
+
 		/**
 		 * Sanitize a given row color text string
 		 *
@@ -574,19 +737,19 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		private function sanitize_row_color( $string )
 		{
 			$string = trim( $string );
-			
+
 			/**
 			 * 3 or 6 digit hex color?
 			 */
 			if ( preg_match( '/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $string, $matches ) ) {
 				return '#' . $matches[1];
 			}
-			
+
 			/**
 			 * Maybe a text color name - return it.
 			 */
 			return sanitize_key( $string );
 		}
 	} // End class aad_doc_manager
-	
+
 } // End if
