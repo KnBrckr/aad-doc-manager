@@ -60,6 +60,11 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 * @var array UUID Taxonomy labels
 		 */
 		static $term_uuid_labels = array();
+		
+		/**
+		 * @var string Download slug
+		 */
+		static $download_slug = 'aad-document';
 
 		/**
 		 * CSV storage format version
@@ -175,6 +180,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			add_shortcode( 'docmgr-csv-table', array( $this, 'sc_docmgr_csv_table') );
 			add_shortcode( 'docmgr-created', array( $this, 'sc_docmgr_created' ) );
 			add_shortcode( 'docmgr-modified', array( $this, 'sc_docmgr_modified' ) );
+			add_shortcode( 'docmgr-download-url', array( $this, 'sc_docmgr_download_url' ) );
 
             /**
              * Setup needed actions
@@ -225,7 +231,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'description' => __( 'Document UUID to internal ID mapping', 'aad-doc-manager' ),
 				'query_var' => 'aad-document',
 				'rewrite' => array(
-					'slug' => 'aad-document',
+					'slug' => self::$download_slug,
 					'with_front' => true,
 					'hierarchical' => false,
 					'ep_mask' => EP_ROOT
@@ -244,7 +250,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
             /**
              * Does query match taxonomy endpoint?
              */
-            $requested_doc = $wp_query->get( 'aad-document' );
+            $requested_doc = $wp_query->get( self::$download_slug );
             if ( ! $requested_doc )
                 return;
 
@@ -450,9 +456,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 *  row-colors, string, comma separated list of row color for each n-rows.
 		 *  row-number, boolean, 1 ==> Include row numbers
 		 *
-		 * @param $_attrs, associative array of shortcode parameters
-		 * @param $content, not expecting any content
-		 * @return HTML string
+		 * @param array _attrs associative array of shortcode parameters
+		 * @param string $content Expected to be empty
+		 * @return string HTML content
 		 */
 		function sc_docmgr_csv_table( $_attrs, $content = null )
 		{
@@ -563,10 +569,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 		/**
 		 * 'docmgr-created' WP shortcode
+		 * 
+		 * Displays document creation date
+		 * 
+		 * Usage: [docmgr-created id=<doc_id>]
 		 *
-		 * @param _attrs, associative array of shortcode parameters
-		 * @param content, not expecting any content
-		 * @return HTML string
+		 * @param array _attrs associative array of shortcode parameters
+		 * @param string $content Expected to be empty
+		 * @return string HTML content
 		 */
 		function sc_docmgr_created( $_attrs, $content = null )
 		{
@@ -593,10 +603,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 		/**
 		 * 'docmgr-modified' WP shortcode
+		 * 
+		 * Displays document modified date
+		 * 
+		 * Usage: [docmgr-modified id=<doc_id>]
 		 *
-		 * @param _attrs, associative array of shortcode parameters
-		 * @param content, not expecting any content
-		 * @return HTML string
+		 * @param array _attrs associative array of shortcode parameters
+		 * @param string $content Expected to be empty
+		 * @return string HTML content
 		 */
 		function sc_docmgr_modified( $_attrs, $content = null )
 		{
@@ -619,6 +633,46 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) return;
 
 			return esc_attr( $this->format_date( $document->post_modified ) );
+		}
+		
+		/**
+		 * 'sc_docmgr-download-url' WP shortcode
+		 * 
+		 * Usage: [docmgr-download-url id=<doc_id]text[/docmgr-download-url]
+		 * 
+		 * @param array _attrs associative array of shortcode parameters
+		 * @param string $content
+		 * @return string HTML content
+		 */
+		function sc_docmgr_download_url( $_attrs, $content = null ) {
+			$default_attrs = array( 'id' => null );
+
+			$attrs = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
+			$doc_id = intval( $attrs['id'] );
+
+			if ( ! $doc_id ) return $content; // No id value received - nothing to do
+			
+			/**
+			 * Retrieve the post
+			 */
+			$document = get_post( $doc_id );
+			if ( ! $document ) return $content;
+
+			/**
+			 * Make sure post type of the retrieved post is valid
+			 */
+			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) 
+				return $content;
+			
+			$terms = wp_get_object_terms( $doc_id, 'aad-doc-uuid', array( 'fields' => 'names' ) );
+
+			$text = $content;
+			if ( count( $terms ) > 0 ) {
+				$url = esc_url( '/' . self::$download_slug . '/' . $terms[0] );
+				$text = '<a href="' . $url . '">' . $content . '</a>';
+			}
+			
+			return $text;
 		}
 
 		/**

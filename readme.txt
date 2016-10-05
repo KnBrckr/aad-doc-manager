@@ -27,6 +27,9 @@ Custom post type to manage and display uploaded documents. A Shortcode is availa
 [docmgr-modified id=<post_id>]
 	Displays modified date for document
 
+[docmgr-download-url id=<post_id>]
+    Displays a download link for the document
+
 == Installation ==
 
 1. Upload `aad-doc-manager` to the `/wp-content/plugins/` directory
@@ -50,6 +53,7 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 = 0.4 =
 * Support PDF uploads
+* Add shortcode [docmgr-download-url] to provide a URL for downloading documents based on a unique UUID
 
 = 0.3.1 =
 * Store pre-rendered CSV table as post meta data
@@ -69,3 +73,5 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 == Future ==
 
 * Allow multiple document types to be managed
+* Allow classes of users to download a file
+* Organize documents in folders
