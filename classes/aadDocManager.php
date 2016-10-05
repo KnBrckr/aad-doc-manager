@@ -37,14 +37,29 @@ if ( ! class_exists( "aadDocManager" ) ) {
 	class aadDocManager
 	{
 		/**
-		 * Plugin version
+		 * @var string Plugin version
 		 */
 		const PLUGIN_VER = "0.4";
 
 		/**
-		 * Custom Post Type id
+		 * @var string Post Type Name
 		 */
 		const post_type = 'aad-doc-manager';
+		
+		/**
+		 * @var array Post Labels
+		 */
+		static $post_type_labels = array();
+		
+		/**
+		 * @var string UUID Taxonomy name
+		 */
+		const term_uuid = 'aad-doc-uuid';
+		
+		/**
+		 * @var array UUID Taxonomy labels
+		 */
+		static $term_uuid_labels = array();
 
 		/**
 		 * CSV storage format version
@@ -58,10 +73,20 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 *      Allows re-save of pre-rendered data without affecting post update date
 		 */
 		const CSV_STORAGE_FORMAT = 3;
+		
+		function __construct () {
+			;
+		}
 
-		function __construct()
+		/**
+		 * Do the initial hooking into WordPress
+		 *
+		 * @param void
+		 * @return void
+		 */
+		function setup()
 		{
-			$this->labels = array (
+			self::$post_type_labels = array (
 				'name'               => __( 'Documents', 'aad-doc-manager' ),
 				'singular_name'      => __( 'Document', 'aad-doc-manager' ),
 				'menu_name'          => __( 'Documents', 'aad-doc-manager' ),
@@ -76,16 +101,23 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'not_found'          => __( 'No Documents found', 'aad-doc-manager' ),
 				'not_found_in_trash' => __( 'No Documents found in Trash', 'aad-doc-manager' )
 			);
-		} // End function __construct()
+			
+			self::$term_uuid_labels = array (
+				'name'						 => __( 'Document UUIDs', 'aad-doc-manager' ),
+				'singular_name'				 => __( 'Document UUID', 'aad-doc-manager' ),
+				'menu_name'					 => __( 'Document UUIDs', 'aad-doc-manager' ),
+				'all_items'					 => __( 'All Document UUIDs', 'aad-doc-manager' ),
+				'edit_item'					 => __( 'Edit Document UUID', 'aad-doc-manager' ),
+				'view_item'					 => __( 'View Document UUID', 'aad-doc-manager' ),
+				'update_item'				 => __( 'Update Document UUID', 'aad-doc-manager' ),
+				'add_new_item'				 => __( 'Add new Document UUID', 'aad-doc-manager' ),
+				'new_item_name'				 => __( 'New Document UUID', 'aad-doc-manager' ),
+				'search_items'				 => __( 'Search Document UUIDs', 'aad-doc-manager' ),
+				'separate_items_with_commas' => __( 'Separate UUIDs with commands', 'aad-doc-manager' ),
+				'add_or_remove_items'		 => __( 'Add or Remove UUIDs', 'aad-doc-manager' ),
+				'not_found'					 => __( 'No Document UUIDs found', 'aad-doc-manager' )
+			);
 
-		/**
-		 * Do the initial hooking into WordPress
-		 *
-		 * @param void
-		 * @return void
-		 */
-		function plugin_init()
-		{
 			add_action( 'init', array( $this, 'action_plugin_setup' ) );
 		}
 
@@ -96,7 +128,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
          * @return void
          */
         static function plugin_activation() {
-            self::create_endpoint();
+            /**
+             * Register document post type
+             */
+            self::register_document_post_type();
 
             /**
              *  Reset permalinks after post type registration and endpoint creation
@@ -131,12 +166,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
             /**
              * Register document post type
              */
-            $this->register_document_post_type();
-
-            /**
-             * Add rewrite endpoint used for downloads
-             */
-            self::create_endpoint();
+            self::register_document_post_type();
 
             /**
              * Add shortcodes
@@ -160,43 +190,51 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		}
 
         /**
-         * Register document post type
+         * Register document post type and associated taxonomy
          *
          * @param void
          * @return void
          */
-        function register_document_post_type() {
+        private static function register_document_post_type() {
             register_post_type( self::post_type, array(
-				'label' => __( 'Documents', 'aad-doc-manager' ),
-				'labels' => $this->labels,
-				'description' => __( 'Upload Documents for display in posts/pages', 'aad-doc-manager' ),
-				'public' => false, //  Implies exclude_from_search: true,
-								   //          publicly_queryable: false,
-								   //          show_in_nav_menus: false,
-								   //          show_ui: false
-				'menu_icon' => 'dashicons-media-spreadsheet',
-				'hierarchical' => false,
-				'supports' => array( 'title' ),
-				'has_archive' => false,
-				'rewrite' => false,
-				'query_var' => false
+				'labels'		 => self::$post_type_labels,
+				'description'	 => __( 'Upload Documents for display in posts/pages', 'aad-doc-manager' ),
+				'public'		 => false,	//  Implies exclude_from_search: true,
+											//          publicly_queryable: false,
+											//          show_in_nav_menus: false,
+											//          show_ui: false
+				'menu_icon'		 => 'dashicons-media-spreadsheet',
+				'hierarchical'	 => false,
+				'supports'		 => array( 'title' ),
+				'has_archive'	 => false,
+				'rewrite'		 => false,
+				'query_var'		 => false,
+				'taxonomies'     => array( self::term_uuid )
 			) );
+			
+			register_taxonomy( self::term_uuid, self::post_type, array(
+				'labels' => self::$term_uuid_labels,
+				'public'		 => true,
+				'show_ui'		 => false,
+				'show_in_nav_menus' => false,
+				'show_tag_cloud' => false,
+				'show_in_quick_edit' => false,
+				'show_admin_column' => false,
+				'show_in_menu' => false,
+				'show_in_ui' => false,
+				'description' => __( 'Document UUID to internal ID mapping', 'aad-doc-manager' ),
+				'query_var' => 'aad-document',
+				'rewrite' => array(
+					'slug' => 'aad-document',
+					'with_front' => true,
+					'hierarchical' => false,
+					'ep_mask' => EP_ROOT
+				)
+			) );
+			
+			register_taxonomy_for_object_type( self::term_uuid, self::post_type );
         }
-
-        /**
-         * Setup endpoint for document downloads
-         *
-         * @param void
-         * @return void
-         */
-        static function create_endpoint() {
-            /**
-             * Add endpoint for document downloads
-             */
-            // TODO Allow endpoint name to be configured via admin setup option
-            add_rewrite_endpoint( 'aad-document', EP_ROOT );
-        }
-
+		
         /**
          * Redirect to document download
          */
@@ -204,24 +242,36 @@ if ( ! class_exists( "aadDocManager" ) ) {
             global $wp_query;
 
             /**
-             * Does query match endpoint our endpoint?
+             * Does query match taxonomy endpoint?
              */
             $requested_doc = $wp_query->get( 'aad-document' );
             if ( ! $requested_doc )
                 return;
 
             /**
-             * Valid request?
+             * Find document based on provided UUID
              *
              * document type should match custom post type
              * Post meta data should point to a media attachment
              */
-            $doc_id = intval( $requested_doc );
-            $document = get_post( $doc_id );
+			$args	 = array(
+				'post_type' => self::post_type,
+				'tax_query' => array(
+					array(
+						'taxonomy'	 => self::term_uuid,
+						'field'		 => 'name',
+						'terms'		 => $requested_doc
+					)
+				)
+			);
+			$query	 = new WP_Query( $args );
+			
+            $document = $query->post;
             if ( ! $document || self::post_type != $document->post_type ) {
                 $this->error_404();
                 // Not Reached
             }
+			$doc_id = $document->ID;
 
             $attachment_id = get_post_meta( $doc_id, 'document_media_id', true );
             $attachment = get_post( $attachment_id );

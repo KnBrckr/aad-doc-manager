@@ -177,7 +177,11 @@ if ( ! class_exists( "aadDocManagerTable" ) ) {
 			 * Add internal fields for debug
 			 */
 			if ( WP_DEBUG ) {
-				$columns = array_merge( $columns, array( 'csv_storage_format' => 'CSV Storage Fmt') );
+				$columns = array_merge( $columns, array( 
+					'csv_storage_format' => __( 'CSV Storage Fmt', 'aad-doc-manger' ),
+					'doc_uuid'		=> __( 'Document UUID', 'aad-doc-manager' )
+					)
+				);
 			}
 		
 	 		return $columns;
@@ -430,6 +434,18 @@ if ( ! class_exists( "aadDocManagerTable" ) ) {
 		function column_doc_id( $post )
 		{
 			return esc_attr( $post->ID );
+		}
+		
+		/**
+		 * Provide formatted document UUID
+		 * 
+		 * @param WP_post $post WP post object
+		 * @return string Text or HTML to be placed in table cell
+		 */
+		function column_doc_uuid( $post ) {
+			$terms = wp_get_object_terms( $post->ID, 'aad-doc-uuid', array('fields' => 'names') );
+			
+			return esc_attr( implode( ",", $terms ) );
 		}
 		
 		/**

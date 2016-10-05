@@ -83,9 +83,9 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		 *
 		 * @return void
 		 */
-		function plugin_init()
+		function setup()
 		{
-			parent::plugin_init();
+			parent::setup();
 			
 			/**
 			 * Setup admin page for managing Documents
@@ -127,8 +127,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			 * Create a new Admin Menu page
 			 */
 			$hook_suffix = add_menu_page(
-				$this->labels['name'], // Page Title
-				$this->labels['menu_name'], // Menu Title,
+				self::$post_type_labels['name'], // Page Title
+				self::$post_type_labels['menu_name'], // Menu Title,
 				'edit_posts', // User must be able to edit posts for menu to display
 				self::parent_slug, // Menu slug
 				array( $this, 'render_table_page' ), // Function to render the menu content
@@ -156,8 +156,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 */
 				add_submenu_page(
 					'aad-doc-manager-table', // Submenu of parent
-					$this->labels['name'], // Page Title
-					$this->labels['all_items'], // Menu Title
+					self::$post_type_labels['name'], // Page Title
+					self::$post_type_labels['all_items'], // Menu Title
 					'edit_posts', // Capability
 					self::parent_slug, // Menu slug - match the parent
 					array( $this, 'render_table_page' )
@@ -168,8 +168,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 */
 				$hook_suffix = add_submenu_page(
 					self::parent_slug, // Slug of Parent Menu
-					$this->labels['add_new_item'], // Page Title 
-					$this->labels['add_new'], // Menu Title
+					self::$post_type_labels['add_new_item'], // Page Title 
+					self::$post_type_labels['add_new'], // Menu Title
 					'edit_posts', // User must be able to edit posts for menu to display
 					self::upload_slug, // Slug for this Menu Page
 					array( $this, 'render_upload_page' )
@@ -238,13 +238,13 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
             if ( ! include_once( 'aadDocManagerTable.php' ) ) { return; }
 			
 			$this->doc_table = new aadDocManagerTable( array(
-				'singular' => $this->labels['singular_name'], // Singular Label
-				'plural' => $this->labels['name'], // Plural label
+				'singular' => self::$post_type_labels['singular_name'], // Singular Label
+				'plural' => self::$post_type_labels['name'], // Plural label
 				'ajax' => false, // Will not support AJAX on this table
 				'post_type' => self::post_type,
 				'upload_url' => menu_page_url( self::upload_slug, false ),
 				'table_url' => menu_page_url( self::parent_slug, false ),
-				'labels' => $this->labels
+				'labels' => self::$post_type_labels
 			));
 			
 			$pagenum = $this->doc_table->get_pagenum();
@@ -259,7 +259,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				/**
 				 * Verify nonce - Setup by WP_List_Table base class based on the plural label
 				 */
-				check_admin_referer( 'bulk-' . sanitize_key( $this->labels['name'] ) );
+				check_admin_referer( 'bulk-' . sanitize_key( self::$post_type_labels['name'] ) );
 
 				/**
 				 * Prepare redirect URL
@@ -421,7 +421,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			?>
 		
 			<div class="wrap">
-				<h2><?php echo $this->labels['name']; ?> <a href="<?php menu_page_url( self::upload_slug, true ); ?>" class="add-new-h2"><?php echo $this->labels['add_new_item']?></a></h2>
+				<h2><?php echo self::$post_type_labels['name']; ?> <a href="<?php menu_page_url( self::upload_slug, true ); ?>" class="add-new-h2"><?php echo self::$post_type_labels['add_new_item']?></a></h2>
 				<?php $this->doc_table->views(); // Display the views available on the table ?>
 				<form action method="post" accept-charset="utf-8">
 					<input type="hidden" name="page" value="<?php echo self::parent_slug ?>">
@@ -484,7 +484,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				$post['post_status'] = 'publish';
 				$post['comment_status'] = 'closed';
 				$post['ping_status'] = 'closed';
-				
+
 				break;
 				
 			case 'update';
@@ -568,6 +568,13 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 
 				if ( ! $doc_id )
 					wp_die( __( 'Error inserting post data', 'aad-doc-manager' ) );
+								
+				/**
+				 * Generate a UUID for this document
+				 */
+				$uuid = $this->generate_uuid();
+				wp_set_object_terms( $doc_id, $uuid, self::term_uuid );
+				
 				break;
 				
 			case 'update':	
@@ -604,7 +611,6 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						}
 					}
 				}
-				
 			}
 
 			/**
@@ -631,9 +637,9 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		{
 			if ( empty( $_REQUEST ) || ! isset( $_REQUEST['submit'] ) )
 				return NULL;
-			elseif ( $_REQUEST['submit'] == $this->labels['new_item'] )
+			elseif ( $_REQUEST['submit'] == self::$post_type_labels['new_item'] )
 				return 'new';
-			elseif ( $_REQUEST['submit'] == $this->labels['edit_item'] )
+			elseif ( $_REQUEST['submit'] == self::$post_type_labels['edit_item'] )
 				return 'update';
 			else
 				return NULL;
@@ -782,7 +788,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				$file_required = '';
 			}
 			
-			$action = $post ? $this->labels['edit_item'] : $this->labels['new_item'];
+			$action = $post ? self::$post_type_labels['edit_item'] : self::$post_type_labels['new_item'];
 
 			?>
 			<div class="wrap">
@@ -911,5 +917,31 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				}
 			}
 		}
+		
+		/**
+		 * Generate a random V4 UUID
+		 * 
+		 * @param none
+		 * @return string UUID
+		 */
+		private function generate_uuid() {
+			return self::guidv4( openssl_random_pseudo_bytes( 16 ) );
+		}
+		
+		/**
+		 * Turn 128 bit blob into a UUD string
+		 * 
+		 * @param 16 bytes binary data $data
+		 * @return string
+		 */
+		function guidv4( $data ) {
+			assert( strlen( $data ) == 16 );
+
+			$data[ 6 ] = chr( ord( $data[ 6 ] ) & 0x0f | 0x40 ); // set version to 0100
+			$data[ 8 ] = chr( ord( $data[ 8 ] ) & 0x3f | 0x80 ); // set bits 6-7 to 10
+
+			return vsprintf( '%s%s-%s-%s-%s-%s%s%s', str_split( bin2hex( $data ), 4 ) );
+		}
+
 	}
 }
