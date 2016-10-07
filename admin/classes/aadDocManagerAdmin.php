@@ -154,6 +154,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				/**
 				 * Create first sub-page as a duplicate of the main page
 				 */
+				// FIXME Change privelege to upload_files vs. edit_posts
 				add_submenu_page(
 					'aad-doc-manager-table', // Submenu of parent
 					self::$post_type_labels['name'], // Page Title
@@ -493,7 +494,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 */
 				$doc_id = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
 				if ( ! $doc_id ) {
-					wp_die( __( 'Bad Request - No post id to update', 'aad-doc-manager' ) );
+					$this->log_admin_notice( 'red', __( 'Bad Request - No post id to update; plugin error?', 'aad-doc-manager' ) );
+					return;
 				}
 				$post['ID'] = $doc_id;
 				
@@ -502,7 +504,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 */
 				$old_post = get_post( $doc_id );
 				if ( $old_post && $old_post->post_type != self::post_type ) {
-					wp_die( __( 'Sorry - Request to update invalid document id', 'aad-doc-manager' ) );
+					$this->log_admin_notice( 'red', __( 'Sorry - Request to update invalid document id; plugin error?', 'aad-doc-manager' ) );
+					return;
 				}
 				
 				break;
@@ -515,26 +518,34 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				$have_upload = true;
 				$doc_type = $_FILES['document']['type'];
 				if ( ! in_array( $doc_type, $this->accepted_doc_types ) ) {
-					$this->log_admin_notice('red', __sprintf( __( 'Document type %s is not supported.', 'aad-doc-manager' ), esc_attr( $doc_type ) ) );
-					// FIXME Handle error via redirect?
+					$this->log_admin_notice('red', sprintf( __( 'Document type %s is not supported; plugin error?', 'aad-doc-manager' ), esc_attr( $doc_type ) ) );
 					return;
 				}
 				$post['post_mime_type'] = $doc_type;
 				
-				if ( ! isset($_FILES['document']['name'] ) )
-					wp_die( sprintf( __( 'Malformed request detected in %s', 'aad-doc-manager' ), __FILE__ ) );
+				if ( ! isset($_FILES['document']['name'] ) ) {
+					$this->log_admin_notice( 'red', __( '$_FILES not sane; plugin error?', 'aad-doc-manager' ) );
+					return;
+				}
 				$post['post_title'] = $_FILES['document']['name'];
 
 				/**
 				 * Confirm there's a valid uploaded file
 				 */
 				$tmp_file = $_FILES['document']['tmp_name'];
-				if ( ! is_uploaded_file( $tmp_file ) )
-					wp_die( __( 'Something fishy is going on, file does not appear to have been uploaded', 'aad-doc-manager' ) );
+				if ( ! is_uploaded_file( $tmp_file ) ) {
+					$this->log_admin_notice( 'red', __( 'Something fishy is going on, file does not appear to have been uploaded properly', 'aad-doc-manager' ) );
+					return;
+				}
 
+				/**
+				 * Process document content (if appropriate for the content type)
+				 */
 				$doc_content = $this->get_document_content($doc_type, $tmp_file);
-				if ( isset( $doc_content['error'] ) )
-					wp_die( $doc_content['error'] );
+				if ( isset( $doc_content['error'] ) ) {
+					$this->log_admin_notice( 'red', sprintf( __( 'Failed processing document content: %s', 'aad-doc-manager' ),  $doc_content['error'] ) );
+					return;
+				}
 				
 				/**
 				 * Update post content if new document uploaded
@@ -547,7 +558,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 * New uploads require a file to be provided
 				 */
 				if ( 'new' == $action ) {
-					$this->log_admin_notice( 'red', __( "Missing Upload Document", 'aad-doc-manager' ) );
+					$this->log_admin_notice( 'red', __( "New uploads require a document; plugin error?", 'aad-doc-manager' ) );
 					return;
 				}
 			}
@@ -566,8 +577,10 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 */
 				$doc_id = wp_insert_post( $post );
 
-				if ( ! $doc_id )
-					wp_die( __( 'Error inserting post data', 'aad-doc-manager' ) );
+				if ( ! $doc_id ) {
+					$this->log_admin_notice( 'red', __( 'Error inserting post data! WP Config issue?', 'aad-doc-manager' ) );
+					return;
+				}
 								
 				/**
 				 * Generate a UUID for this document
@@ -593,7 +606,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				$attachment_id = media_handle_upload( 'document', $doc_id );
 
 				if ( is_wp_error( $attachment_id ) ) {
-					wp_die( __( 'Error during file upload.', 'aad-doc-manager' ) );
+					$this->log_admin_notice('red', sprintf( __( 'Unable to handle upload: %s' , 'aad-doc-manager' ), $attachment_id->get_error_message() ) );
+					return;
 				} else {
 					/**
 					 * Upload file saved successfully, preserve the new attachment ID
@@ -607,7 +621,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						$old_media_id = get_post_meta( $doc_id, 'document_media_id', true );
 						if ( $old_media_id ) {
 							if ( ! wp_delete_attachment( $old_media_id, true ) )
-								wp_die( __( 'Error in deleting.', 'aad-doc-manager' ) );
+								$this->log_admin_notice( sprintf( __('Unable to remove old attachment; ID=%d', 'aad-doc-manager' ), $old_media_id ) );
 						}
 					}
 				}

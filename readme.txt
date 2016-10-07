@@ -51,6 +51,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= 0.4.1 =
+* FIX: Failing to handle uploaded media correctly
+
 = 0.4 =
 * Support PDF uploads
 * Add shortcode [docmgr-download-url] to provide a URL for downloading documents based on a unique UUID
