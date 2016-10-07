@@ -447,6 +447,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		 */
 		function action_process_upload_form()
 		{
+			// FIXME If upload fails, don't update post! Need to refactor order of operations?
 			/**
 			 * User must be able to edit posts
 			 */
