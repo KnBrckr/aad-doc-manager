@@ -39,7 +39,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * @var string Plugin version
 		 */
-		const PLUGIN_VER = "0.4.1";
+		const PLUGIN_VER = "0.4.2";
 
 		/**
 		 * @var string Post Type Name
@@ -455,6 +455,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 *  date, boolean, 1 ==> Include last modified date in table caption
 		 *  row-colors, string, comma separated list of row color for each n-rows.
 		 *  row-number, boolean, 1 ==> Include row numbers
+		 *  page-length, integer, number of rows to display by default in table
 		 *
 		 * @param array _attrs associative array of shortcode parameters
 		 * @param string $content Expected to be empty
@@ -466,7 +467,8 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'id'         => null,
 				'date'       => 1,		// Display modified date in caption by default
 				'row-colors' => null,	// Use default row colors
-				'row-number' => 1		// Display row numbers
+				'row-number' => 1,		// Display row numbers
+				'page-length' => 10     // Default # rows to display per page
 			);
 
 			/**
@@ -474,10 +476,11 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			$attrs = shortcode_atts( $default_attrs, $_attrs );
 
-			$doc_id              = $attrs['id'] = intval( $attrs['id'] );
-			$caption_date        = $attrs['date'] = intval( $attrs['date'] );
-			$attrs['row-number'] = intval( $attrs['row-number'] );
-			$attrs['row-colors'] = $this->sanitize_row_colors( $attrs['row-colors'] );
+			$doc_id	= $attrs[ 'id' ]         = intval( $attrs[ 'id' ] );
+			$caption_date = $attrs[ 'date' ] = intval( $attrs[ 'date' ] );
+			$attrs[ 'row-number' ]           = intval( $attrs[ 'row-number' ] );
+			$attrs[ 'row-colors' ]           = $this->sanitize_row_colors( $attrs[ 'row-colors' ] );
+			$page_length                     = intval( $attrs['page-length'] );
 
 			/**
 			 * Must re-render if any options change default rendering
@@ -505,7 +508,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 *     *******************************************************************
 			 */
 			$result = '<div class="aad-doc-manager">';
-			$result .= '<table class="aad-doc-manager-csv searchHighlight responsive no-wrap" width="100%">';
+			$result .= '<table class="aad-doc-manager-csv searchHighlight responsive no-wrap" width="100%" data-page-length="' . $page_length . '">';
 
 			/**
 			 * Include caption if needed
@@ -760,9 +763,8 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * Convert block of text with embedded new lines into a list
 		 *
-		 * @param $text, string with embedded new-line characters
-		 * @return string, HTML
-		 * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
+		 * @param string $text with embedded new-line characters
+		 * @return string HTML
 		 */
 		private function nl2list( $text )
 		{
@@ -804,7 +806,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * Format a date/time using WP General Settings format
 		 *
-		 * @param $date, string - Date+Time YYYY-MM-DD HH:MM:SS
+		 * @param string $date Date+Time YYYY-MM-DD HH:MM:SS
 		 * @return string, formatted date + time
 		 */
 		private function format_date( $date )

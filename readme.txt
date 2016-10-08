@@ -15,11 +15,12 @@ Custom post type to manage and display uploaded documents.
 Custom post type to manage and display uploaded documents. A Shortcode is available to display CSV format documents as inline tables. The plugin allows documents to be updated with an invariant post_id so each new upload does not require referring locations to be changed.
 
 =Usage=
-[docmgr-csv-table id=<post_id> {date=0|1} {row-number=0|1} {row-colors="color, ..."}]
+[docmgr-csv-table id=<post_id> {date=0|1} {row-number=0|1} {row-colors="color, ..."} {page-length=#}]
 	id => document id
 	date => boolean, 1 ==> display document create/update date, whichever is newer in table caption
 	row-number => boolean, 1 ==> Include row numbers
 	row-colors => string, comma separated list of row color for each n-rows.
+    page-length => integer, number of rows to display in table by default
 
 [docmgr-created id=<post_id>]
 	Displays created date for document
@@ -50,6 +51,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 2. This is the second screen shot
 
 == Changelog ==
+
+= 0.4.2 =
+* Add page-length option to docmgr-csv-table shortcode
 
 = 0.4.1 =
 * FIX: Failing to handle uploaded media correctly
