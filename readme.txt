@@ -22,6 +22,8 @@ Custom post type to manage and display uploaded documents. A Shortcode is availa
 	row-colors => string, comma separated list of row color for each n-rows.
     page-length => integer, number of rows to display in table by default
 
+TODO Add method to disable sorting
+
 [docmgr-created id=<post_id>]
 	Displays created date for document
 	
