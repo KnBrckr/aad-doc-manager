@@ -54,6 +54,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= 0.4.3 =
+* FIX: PDF files downloading as text/html mime type
+
 = 0.4.2 =
 * Add page-length option to docmgr-csv-table shortcode
 

@@ -4,7 +4,7 @@
  *
  * @package Document Manager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
- * @copyright 2016 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
+ * @copyright 2017 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
  *
  * This file is part of Document Manager, a plugin for Wordpress.
  *
@@ -39,7 +39,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * @var string Plugin version
 		 */
-		const PLUGIN_VER = "0.4.2";
+		const PLUGIN_VER = "0.4.3";
 
 		/**
 		 * @var string Post Type Name
@@ -292,6 +292,8 @@ if ( ! class_exists( "aadDocManager" ) ) {
             $file = get_attached_file( $attachment_id );
             
             if (file_exists( $file ) ) {
+				/**	FIXME Validate that file is in the uploads directory - Just in case DB is hacked **/
+				
                 /**
                  * Log download of the file
                  */
@@ -304,7 +306,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
                 header( 'Content-Type: ' . esc_attr( $attachment->post_mime_type ) );
                 header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
                 header( 'Content-Length: ' . filesize( $file ) );
-                readfile( $file );
+				nocache_headers();
+				
+				/**
+				 * Flush headers to avoid over-write of the Content Type by PHP or Server
+				 */
+				flush();
+				
+				readfile( $file );
                 
                 die();
             } else {
