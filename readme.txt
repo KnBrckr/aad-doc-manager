@@ -56,6 +56,7 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 = 0.4.4 =
 * FIX: Unclear error when uploading files that exceed configured maximum
+* Security: Only allow download of a file if it's inside the upload area of WP.
 
 = 0.4.3 =
 * FIX: PDF files downloading as text/html mime type

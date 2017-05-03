@@ -290,6 +290,15 @@ if ( ! class_exists( "aadDocManager" ) ) {
              * Dump the file
              */
             $file = get_attached_file( $attachment_id );
+			
+			/**
+			 *	Just in case DB is hacked, only allow a path that is in the uploads directory.
+			 */
+			$upload_dir = wp_upload_dir( $create_dir = false );
+			if (strncmp($file, $upload_dir['basedir'], strlen($upload_dir['basedir'])) !== 0) {
+				$this->error_404();
+				// Not Reached
+			}
             
             if (file_exists( $file ) ) {
 				/**	FIXME Validate that file is in the uploads directory - Just in case DB is hacked **/
@@ -322,7 +331,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
             }
             // Not Reached
         }
-        
+		        
         /**
          * Display a 404 error
          * 
@@ -334,6 +343,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
             
             $wp_query->set_404();
             status_header(404);
+			//	TODO Deal with situation when theme does not provide a 404 template.
             get_template_part(404);
             die();
         }
