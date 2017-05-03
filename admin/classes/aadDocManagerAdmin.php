@@ -515,55 +515,103 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			/**
 			 * Setup post content for uploaded file
 			 */
-			if ( ! empty( $_FILES ) && isset( $_FILES['document'] ) && $_FILES['document']['error'] == UPLOAD_ERR_OK ) {
-				$have_upload = true;
-				$doc_type = $_FILES['document']['type'];
-				if ( ! in_array( $doc_type, $this->accepted_doc_types ) ) {
-					$this->log_admin_notice('red', sprintf( __( 'Document type %s is not supported; plugin error?', 'aad-doc-manager' ), esc_attr( $doc_type ) ) );
-					return;
-				}
-				$post['post_mime_type'] = $doc_type;
-				
-				if ( ! isset($_FILES['document']['name'] ) ) {
-					$this->log_admin_notice( 'red', __( '$_FILES not sane; plugin error?', 'aad-doc-manager' ) );
-					return;
-				}
-				$post['post_title'] = $_FILES['document']['name'];
+			if ( ! empty( $_FILES ) && isset( $_FILES['document'] ) ) {
+				switch( $_FILES['document']['error'] ) {
+					case UPLOAD_ERR_OK:
+						/**
+						 * File Uploaded OK
+						 */
+						$have_upload = true;
+						
+						$doc_type = $_FILES['document']['type'];
+						if ( ! in_array( $doc_type, $this->accepted_doc_types ) ) {
+							$this->log_admin_notice('red', sprintf( __( 'Document type %s is not supported; plugin error?', 'aad-doc-manager' ), esc_attr( $doc_type ) ) );
+							return;
+						}
+						$post['post_mime_type'] = $doc_type;
 
-				/**
-				 * Confirm there's a valid uploaded file
-				 */
-				$tmp_file = $_FILES['document']['tmp_name'];
-				if ( ! is_uploaded_file( $tmp_file ) ) {
-					$this->log_admin_notice( 'red', __( 'Something fishy is going on, file does not appear to have been uploaded properly', 'aad-doc-manager' ) );
-					return;
-				}
+						if ( ! isset($_FILES['document']['name'] ) ) {
+							$this->log_admin_notice( 'red', __( '$_FILES not sane; plugin error?', 'aad-doc-manager' ) );
+							return;
+						}
+						$post['post_title'] = $_FILES['document']['name'];
 
-				/**
-				 * Process document content (if appropriate for the content type)
-				 */
-				$doc_content = $this->get_document_content($doc_type, $tmp_file);
-				if ( isset( $doc_content['error'] ) ) {
-					$this->log_admin_notice( 'red', sprintf( __( 'Failed processing document content: %s', 'aad-doc-manager' ),  $doc_content['error'] ) );
-					return;
+						/**
+						 * Confirm there's a valid uploaded file
+						 */
+						$tmp_file = $_FILES['document']['tmp_name'];
+						if ( ! is_uploaded_file( $tmp_file ) ) {
+							$this->log_admin_notice( 'red', __( 'Something fishy is going on, file does not appear to have been uploaded properly', 'aad-doc-manager' ) );
+							return;
+						}
+
+						/**
+						 * Process document content (if appropriate for the content type)
+						 */
+						$doc_content = $this->get_document_content($doc_type, $tmp_file);
+						if ( isset( $doc_content['error'] ) ) {
+							$this->log_admin_notice( 'red', sprintf( __( 'Failed processing document content: %s', 'aad-doc-manager' ),  $doc_content['error'] ) );
+							return;
+						}
+
+						/**
+						 * Update post content if new document uploaded
+						 */
+						$post['post_content'] = $doc_content['post_content'];
+						break;
+					
+					case UPLOAD_ERR_INI_SIZE:
+					case UPLOAD_ERR_FORM_SIZE:
+						/**
+						 * Uploaded file is too large
+						 */
+						$this->log_admin_notice( 'red', __( "Uploaded file is too large.", 'aad-doc-manager' ) );
+						return;
+					
+					case UPLOAD_ERR_PARTIAL:
+						/**
+						 * Partial upload - Retry
+						 */
+						$this->log_admin_notice( 'red', __( "Partial upload received, please retry.", 'aad-doc-manager' ) );
+						return;
+					
+					case UPLOAD_ERR_NO_FILE:
+						$have_upload = false;
+						break;
+					
+					case UPLOAD_ERR_NO_TMP_DIR:
+						/**
+						 * Configuration problem - No temp directory available
+						 */
+						$this->log_admin_notice( 'red', __( "Server error: No temp directory available", 'aad-doc-manager' ) );
+						return;						
+					
+					case UPLOAD_ERR_CANT_WRITE:
+						/**
+						 * Configuration problem - Can't write to temp directory
+						 */
+						$this->log_admin_notice( 'red', __( "Server error: Can’t write to temp directory", 'aad-doc-manager' ) );
+						return;						
+					
+					case UPLOAD_ERR_EXTENSION:
+						/**
+						 * Upload blocked by a php plugin
+						 */
+						$this->log_admin_notice( 'red', __( "PHP Plugin blocked upload; server logs may have details.", 'aad-doc-manager' ) );
+						return;
+					
+					default:
+						/**
+						 * Unknown error
+						 */
+						$this->log_admin_notice( 'red', __( sprintf( "Unknown file upload error: %d", $_FILES['document']['error']), 'aad-doc-manager' ) );
+						return;
 				}
 				
-				/**
-				 * Update post content if new document uploaded
-				 */
-				$post['post_content'] = $doc_content['post_content'];
 			} else {
 				$have_upload = false;
-				
-				/**
-				 * New uploads require a file to be provided
-				 */
-				if ( 'new' == $action ) {
-					$this->log_admin_notice( 'red', __( "New uploads require a document; plugin error?", 'aad-doc-manager' ) );
-					return;
-				}
 			}
-
+			
 			/**
 			 * Document title from request if provided, otherwise use filename
 			 */
@@ -573,6 +621,14 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			
 			switch ( $action ) {
 			case 'new':
+				/**
+				 * New uploads require a file to be provided
+				 */
+				if ( ! $have_upload ) {
+					$this->log_admin_notice( 'red', __( "No document uploaded.", 'aad-doc-manager' ) );
+					return;
+				}
+
 				/**
 				 * Insert new post
 				 */

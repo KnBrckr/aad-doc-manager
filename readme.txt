@@ -3,7 +3,7 @@ Contributors: draca
 Donate link: http://action-a-day.com/aad-document-manager
 Tags: csv, viewer, document, manager
 Requires at least: 4.2
-Tested up to: 4.5.3
+Tested up to: 4.7.3
 Stable tag: trunk
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -53,6 +53,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 2. This is the second screen shot
 
 == Changelog ==
+
+= 0.4.4 =
+* FIX: Unclear error when uploading files that exceed configured maximum
 
 = 0.4.3 =
 * FIX: PDF files downloading as text/html mime type
