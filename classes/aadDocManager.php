@@ -39,8 +39,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * @var string Plugin version
 		 */
-		const PLUGIN_VER = "0.4.4";
-
+		const PLUGIN_VER = "0.5";
 		/**
 		 * @var string Post Type Name
 		 */
@@ -380,40 +379,37 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			wp_register_script(
 				'aad-doc-manager-datatable-js',
-				'//cdn.datatables.net/v/dt/dt-1.10.12/r-2.1.0/datatables.min.js',
+				'https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js',
 				array( 'jquery' ), 								// Dependencies
-				'1.10.12', 										// DataTables version
+				'1.10.15', 										// DataTables version
 				true											// Enqueue in footer
 			);
-
+			
 			/**
-			 * Register jQuery Text Highlighter (retrieved from //bartaz.github.io/sandbox.js/jquery.highlight.js)
+			 * Register mark.js highlighting plugin used by Datatables for highlighting
+			 * Ref: https://datatables.net/blog/2017-01-19
 			 */
 			wp_register_script(
-				'aad-doc-manager-jquery-highlight-js',
-				plugins_url( 'pkgs/jquery.highlight/jquery.highlight.js', dirname( __FILE__ ) ),
-				array( 'jquery' ), 								// Dependencies
-				'2010.10.1',									// Script version - Released Dec 1, 2010
+				'aad-doc-manager-mark-js',
+				'https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)',
+				array(),										// Dependencies
+				'8.9.0',										// Version
 				true											// Enqueue in footer
 			);
-
+			wp_enqueue_script( 'aad-doc-manager-mark-js' );
+			
 			/**
-			 * Register DataTables Highlighting plugin (https://datatables.net/blog/2014-10-22)
-			 *
-			 * Depends on jQuery Text Highlighter
+			 * Register DataTables highlighting plugin based on mark.js
+			 * Ref: https://datatables.net/blog/2017-01-19
 			 */
 			wp_register_script(
-				'aad-doc-manager-datatable-highlight-js',
-				'//cdn.datatables.net/plug-ins/1.10.12/features/searchHighlight/dataTables.searchHighlight.min.js',
-				array( 'jquery', 'aad-doc-manager-datatable-js', 'aad-doc-manager-jquery-highlight-js' ), // Dependencies
-				'1.10.12', 										// DataTables version
+				'aad-doc-manager-datatable-mark-js',
+				'https://cdn.datatables.net/plug-ins/1.10.15/features/mark.js/datatables.mark.js',
+				array ( 'aad-doc-manager-datatable-js', 'aad-doc-manager-mark-js' ), // Dependencies
+				'1.10.15',										// Version
 				true											// Enqueue in footer
 			);
-
-			/**
-			 * Enqueue the Datatables scripts - dependencies will get them all pulled in
-			 */
-			wp_enqueue_script( 'aad-doc-manager-datatable-highlight-js' );
+			wp_enqueue_script( 'aad-doc-manager-datatable-mark-js' );
 
 		}
 
@@ -444,26 +440,12 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			wp_register_style(
 				'aad-doc-manager-datatable-css',
-				'//cdn.datatables.net/v/dt/dt-1.10.12/r-2.1.0/datatables.min.css',
+				'https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.css',
 				false,			 								// No dependencies
-				'1.10.12', 										// DataTables version
+				'1.10.15', 										// DataTables version
 				'all'											// All media types
 			);
-			wp_enqueue_style('aad-doc-manager-datatable-css');
-
-			/**
-			 * Enqueue DataTable Highlighter CSS
-			 *
-			 * See action_enqueue_scripts for notes on source URL for DataTables
-			 */
-			wp_register_style(
-				'aad-doc-manager-datatable-highlight-css',
-				'//cdn.datatables.net/plug-ins/1.10.12/features/searchHighlight/dataTables.searchHighlight.css',
-				false,			 								// No dependencies
-				'1.10.12', 										// DataTables version
-				'all'											// All media types
-			);
-			wp_enqueue_style('aad-doc-manager-datatable-highlight-css');
+			wp_enqueue_style('aad-doc-manager-datatable-css');			
 		}
 
 		/**
@@ -527,7 +509,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 *     *******************************************************************
 			 */
 			$result = '<div class="aad-doc-manager">';
-			$result .= '<table class="aad-doc-manager-csv searchHighlight responsive no-wrap" width="100%" data-page-length="' . $page_length . '">';
+			$result .= '<table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="' . $page_length . '">';
 
 			/**
 			 * Include caption if needed
@@ -816,7 +798,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function() {
-			    jQuery('.aad-doc-manager-csv').DataTable();
+			    jQuery('.aad-doc-manager-csv').DataTable({
+					mark:true
+				});
 			} );
 			</script>
 			<?php

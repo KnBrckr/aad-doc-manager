@@ -1,1 +1,0 @@
-jquery.highlight.js retrieved from https://github.com/bartaz/sandbox.js
