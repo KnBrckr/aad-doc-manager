@@ -54,6 +54,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= 0.5 =
+* FIX: Highlight when searching a table is not reliably displaying
+
 = 0.4.4 =
 * FIX: Unclear error when uploading files that exceed configured maximum
 * Security: Only allow download of a file if it's inside the upload area of WP.
