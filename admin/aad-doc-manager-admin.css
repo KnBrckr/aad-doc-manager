@@ -25,7 +25,10 @@
 	width: 3%;
 }
 
-.fixed .column-rows, .fixed .column-columns, .fixed .column-csv_storage_format {
+.fixed .column-rows,
+.fixed .column-columns,
+.fixed .column-csv_storage_format,
+.fixed .column-download_cnt {
 	width: 5%;
 }
 
