@@ -645,7 +645,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 * 
 		 * Usage: [docmgr-download-url id=<doc_id]text[/docmgr-download-url]
 		 * 
-		 * @param array _attrs associative array of shortcode parameters
+		 * @param array $_attrs associative array of shortcode parameters
 		 * @param string $content
 		 * @return string HTML content
 		 */
@@ -669,24 +669,38 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) 
 				return $content;
 			
-			$terms = wp_get_object_terms( $doc_id, 'aad-doc-uuid', array( 'fields' => 'names' ) );
-
-			$text = $content;
-			if ( count( $terms ) > 0 ) {
-				$url = esc_url( '/' . self::$download_slug . '/' . $terms[0] );
+			$url = $this->get_download_url_e( $doc_id );
+			if ( '' != $url ) {
 				$text = '<a href="' . $url . '">' . $content . '</a>';
+			} else {
+				$text = $content;
 			}
 			
 			return $text;
+		}
+		
+		/**
+		 * Get escaped download URL for a given document id
+		 * 
+		 * @param string $doc_id Document ID
+		 * @return string escaped URL or '' if unable to create URL
+		 */
+		function get_download_url_e ($doc_id ) {
+			$terms = wp_get_object_terms( $doc_id, 'aad-doc-uuid', array( 'fields' => 'names' ) );
+			if ( count( $terms ) > 0 ) {
+				return esc_url( '/' . self::$download_slug . '/' . $terms[0] );
+			} else {
+				return '';
+			}
 		}
 
 		/**
 		 * Re-render previously saved HTML and update DB
 		 *
-		 * @param $doc_id, post ID for target document
-		 * @param $attrs, shortcode attributes
-		 * @param $save, boolean true=>Save re-render to DB
-		 * @return string, document rendered as HTML
+		 * @param string $doc_id post ID for target document
+		 * @param array $attrs shortcode attributes
+		 * @param boolean $save true=>Save re-render to DB
+		 * @return string document rendered as HTML
 		 */
 		protected function re_render_csv( $doc_id, $attrs, $save )
 		{

@@ -69,6 +69,13 @@ if ( !class_exists( "aadDocManagerTable" ) ) {
 		 * @var boolean
 		 */
 		private $is_trash;
+		
+		/**
+		 * Callback to build URL to a downloadable document
+		 * 
+		 * @var string | array to use as argument to call_user_func()
+		 */
+		private $download_url_callback;
 
 		/**
 		 * Constructor, we override the parent to pass our own arguments
@@ -77,10 +84,11 @@ if ( !class_exists( "aadDocManagerTable" ) ) {
 		function __construct( $args ) {
 			parent::__construct( $args );
 
-			$this->post_type	 = $args[ 'post_type' ];
-			$this->upload_url	 = $args[ 'upload_url' ];
-			$this->table_url	 = $args[ 'table_url' ];
-			$this->labels		 = $args[ 'labels' ];
+			$this->post_type			 = $args[ 'post_type' ];
+			$this->upload_url			 = $args[ 'upload_url' ];
+			$this->table_url			 = $args[ 'table_url' ];
+			$this->labels				 = $args[ 'labels' ];
+			$this->download_url_callback = $args[ 'download_url_callback' ];
 		}
 
 		/**
@@ -166,9 +174,10 @@ if ( !class_exists( "aadDocManagerTable" ) ) {
 				'cb'				 => '<input type="checkbox" />', //Render a checkbox instead of text
 				'doc_id'			 => __( 'ID' ),
 				'title'				 => __( 'Title' ),
-				'download_cnt'		 => __( 'Download Count', 'aad-doc-manager' ),
+				'download_cnt'		 => '<span class="dashicons dashicons-download"></span>' . __( ' Count', 'aad-doc-manager' ),
 				'shortcode'			 => __( 'Table Shortcode', 'aad-doc-manager' ),
 				'download_shortcode' => __( 'Download Shortcode', 'aad-doc-manager' ),
+				'download_url'		 => __( 'Download URL', 'aad-doc-manager'),
 				'date_modified'		 => __( 'Date Modified', 'aad-doc-manager' ),
 				'type'				 => __( 'Document Type', 'aad-doc-manager' ),
 				'rows'				 => __( 'Rows', 'aad-doc-manager' ),
@@ -401,6 +410,7 @@ if ( !class_exists( "aadDocManagerTable" ) ) {
 		}
 
 		/**
+		 * Provide download shortcode to use in other pages
 		 * 
 		 * @param WP_post $post A post object for display
 		 * @return string Text or HTML to be placed in table cell
@@ -413,6 +423,16 @@ if ( !class_exists( "aadDocManagerTable" ) ) {
 			} else {
 				return '';
 			}
+		}
+		
+		/**
+		 * Provide download URL for copy/paste
+		 * 
+		 * @param WP_post $post A post object for display
+		 * @return string Text or HTML to be placed in table cell
+		 */
+		function column_download_url( $post ) {
+			return call_user_func( $this->download_url_callback, $post->ID );
 		}
 
 		/**

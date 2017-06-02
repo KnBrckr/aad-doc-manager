@@ -245,7 +245,8 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				'post_type' => self::post_type,
 				'upload_url' => menu_page_url( self::upload_slug, false ),
 				'table_url' => menu_page_url( self::parent_slug, false ),
-				'labels' => self::$post_type_labels
+				'labels' => self::$post_type_labels,
+				'download_url_callback' => array( $this, 'get_download_url_e' )
 			));
 			
 			$pagenum = $this->doc_table->get_pagenum();

@@ -56,6 +56,7 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 = 0.5.1=
 * FIX: Download count column in admin screen is too wide
+* Add download URL to Admin screen Document list
 
 = 0.5 =
 * FIX: Highlight when searching a table is not reliably displaying
