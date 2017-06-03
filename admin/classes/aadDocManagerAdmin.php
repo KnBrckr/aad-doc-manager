@@ -9,7 +9,7 @@
  * This file is part of Document Manager, a plugin for Wordpress.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, version 2, as 
+ * it under the terms of the GNU General Public License, version 2, as
  * published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
@@ -41,43 +41,43 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		 */
 		const parent_slug = 'aad-doc-manager-table';	// Parent Menu page -- Table of all Document files
 		const upload_slug = 'aad-doc-manager-upload';	// Upload Document Page
-		
+
 		/**
 		 * Nonce name to use for form validation
 		 */
 		const nonce = 'aad-doc-manager-nonce';
-		
+
 		/**
 		 * Accepted document types
 		 *
 		 * @var array of strings
 		 */
 		protected $accepted_doc_types;
-		
+
 		/**
 		 * Errors and warnings to display on admin screens
 		 *
-		 * @var array 
+		 * @var array
 		 **/
 		protected $admin_notices;
-						
+
 		function __construct()
 		{
 			parent::__construct();
-			
+
 			/**
 			 * List of accepted document types
 			 */
 			// RFE Add settings screen to control available document types
 			$this->accepted_doc_types = array( 'text/csv', 'application/pdf' );
-			
+
 			/**
 			 * Empty list of admin notices
 			 */
 			$this->admin_notices = array();
 
 		}
-		
+
 		/**
 		 * Do the initial hooking into WordPress
 		 *
@@ -86,7 +86,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		function setup()
 		{
 			parent::setup();
-			
+
 			/**
 			 * Setup admin page for managing Documents
 			 */
@@ -97,7 +97,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			 */
 			add_action( 'admin_init', array( $this, 'action_plugin_admin_setup' ) );
 		}
-				
+
 		/**
 		 * Perform WordPress Setup
 		 *
@@ -109,13 +109,13 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			 * Add section for reporting configuration errors and notices
 			 */
 			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
-			
+
 			/**
 			 * Catch media deletes via wp-admin/upload.php to remove the associated document
 			 */
 			add_action( 'delete_attachment', array($this, 'action_delete_document'), 10, 1 );
 		}
-		
+
 		/**
 		 * Create admin menu section for managing Documents
 		 *
@@ -135,7 +135,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				'dashicons-media-spreadsheet', // Icon for  menu
 				21.215 // Position - After Pages(20), try for a unique number
 			);
-			
+
 			/**
 			 * add_menu_page() will return false if user does not have the needed capability
 			 * No need to add actions or create sub-pages if that's the case
@@ -145,7 +145,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				 * Pre-render processing for the table screen
 				 */
 				add_action( 'load-' . $hook_suffix, array( $this, 'action_prerender_table_page' ) );
-				
+
 				/**
 				 * Add plugin styles for table screen
 				 */
@@ -163,19 +163,19 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					self::parent_slug, // Menu slug - match the parent
 					array( $this, 'render_table_page' )
 				);
-			
+
 				/**
 				 * Create menu item to upload a new Document
 				 */
 				$hook_suffix = add_submenu_page(
 					self::parent_slug, // Slug of Parent Menu
-					self::$post_type_labels['add_new_item'], // Page Title 
+					self::$post_type_labels['add_new_item'], // Page Title
 					self::$post_type_labels['add_new'], // Menu Title
 					'edit_posts', // User must be able to edit posts for menu to display
 					self::upload_slug, // Slug for this Menu Page
 					array( $this, 'render_upload_page' )
 				);
-			 
+
 				/**
 				 * Setup form handler to receive new/updated documents
 				 */
@@ -187,7 +187,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				add_action( 'admin_print_styles-' . $hook_suffix, array( $this, 'action_enqueue_admin_styles' ) );
 			}
 		}
-		
+
 		/**
 		 * Enqueue style sheet needed on admin page
 		 *
@@ -206,10 +206,10 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				self::PLUGIN_VER,								// CSS Version
 				'all'											// Use for all media types
 			);
-			
+
 			wp_enqueue_style( 'aad-doc-manager-admin-css' );
 		}
-		
+
 		/**
 		 * Perform pre-render actions associated with the Document management page
 		 *
@@ -220,24 +220,24 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		function action_prerender_table_page()
 		{
 			global $wpdb;
-			
+
 			/**
 			 * User must be able to edit posts
 			 */
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_die( 'Do you belong here?' );
             }
-            
+
    			/**
 			 * To avoid a processing loop, remove action to catch media deletion via wp-admin/upload.php
 			 */
 			remove_action( 'delete_attachment', array($this, 'action_delete_document') );
-			
+
 			/**
 			 * Load class used to manage table of Documents
 			 */
             if ( ! include_once( 'aadDocManagerTable.php' ) ) { return; }
-			
+
 			$this->doc_table = new aadDocManagerTable( array(
 				'singular' => self::$post_type_labels['singular_name'], // Singular Label
 				'plural' => self::$post_type_labels['name'], // Plural label
@@ -248,11 +248,11 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				'labels' => self::$post_type_labels,
 				'download_url_callback' => array( $this, 'get_download_url_e' )
 			));
-			
+
 			$pagenum = $this->doc_table->get_pagenum();
-            
+
             // FIXME Deletes processed through post.php need to remove the media files
-			
+
 			/**
 			 * Handle bulk actions
 			 */
@@ -285,7 +285,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					exit;
 					// NOT REACHED
 				}
-				
+
 				/**
 				 * Perform requested action
 				 */
@@ -295,59 +295,59 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 * Move posts to Trash
 						 */
 						$trashed = $locked = 0;
-						
+
 						foreach ( ( array ) $doc_ids as $doc_id ) {
 							if ( ! current_user_can( 'delete_post', $doc_id ) )
 								wp_die( __( 'You are not allowed to move this item to the Trash.', 'aad-doc-manager' ) );
-							
+
 							if ( wp_check_post_lock( $doc_id ) ) { // TODO - How to lock a post?
 								$locked++;
 								continue;
 							}
-							
+
 							if ( ! wp_trash_post( $doc_id ) )
 								wp_die( __( 'Error moving post to Trash.', 'aad-doc-manager' ) );
-							
+
 							$trashed++;
 						}
-						
+
 						/**
 						 * Send operation results back
 						 */
 						$sendback = add_query_arg(
-							array( 'trashed' => $trashed, 'ids' => join( ',', $doc_ids ), 'locked' => $locked ), 
+							array( 'trashed' => $trashed, 'ids' => join( ',', $doc_ids ), 'locked' => $locked ),
 							$sendback );
 						break;
-					
+
 					case 'untrash':
 						/**
 						 * Restore Posts from Trash
 						 */
 						$untrashed = 0;
-						
+
 						foreach ( ( array ) $doc_ids as $doc_id ) {
 							if ( ! current_user_can( 'delete_post', $doc_id ) )
 								wp_die( __( 'You are not allowed to restore this item from the Trash.', 'aad-doc-manager' ) );
-							
+
 							if ( ! wp_untrash_post( $doc_id ) )
 								wp_die( __( 'Error in restoring from Trash.', 'aad-doc-manager' ) );
-							
+
 							$untrashed++;
 						}
-						
+
 						$sendback = add_query_arg( 'untrashed', $untrashed, $sendback );
 						break;
-						
+
 					case 'delete':
 						/**
 						 * Permanently delete posts from Trash
 						 */
 						$deleted = 0;
-						
+
 						foreach ( ( array ) $doc_ids as $doc_id ) {
 							if (! current_user_can( 'delete_post', $doc_id ) )
 								wp_die( __( 'You are not allowed to delete this item.', 'aad-doc-manager' ) );
-							
+
 							/**
 							 * Delete related media attachment
 							 */
@@ -356,17 +356,17 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 								if ( ! wp_delete_attachment( $media_id, true ) )
 									wp_die( __( 'Error deleting attached document.', 'aad-doc-manager' ) );
 							}
-														
+
 							/**
 							 * Delete the document post
 							 */
 							if (! wp_delete_post($doc_id)) {
 								wp_die( __( 'Error in deleting document post.', 'aad-doc-manager' ) );
                             }
-							
+
 							$deleted++;
 						}
-						
+
 						$sendback = add_query_arg( 'deleted', $deleted, $sendback );
 						break;
 				}
@@ -380,7 +380,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				wp_safe_redirect( remove_query_arg( array( '_wp_http_referer', '_wpnonce' ), wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
 				exit;
 			}
-			
+
 			/**
 			 * Report on earlier bulk action
 			 */
@@ -388,21 +388,21 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			$trashed   = isset( $_REQUEST['trashed'] )   ? intval( $_REQUEST['trashed'] ) : NULL;
 			$deleted   = isset( $_REQUEST['deleted'] )   ? intval( $_REQUEST['deleted'] ) : NULL;
 			$untrashed = isset( $_REQUEST['untrashed'] ) ? intval( $_REQUEST['untrashed'] ) : NULL;
-			
-			if ( $locked ) 
+
+			if ( $locked )
 				$this->log_admin_notice( 'yellow', sprintf( __( 'Skipped %d locked documents.', 'aad-doc-manager' ), $locked ) );
-			if ( $trashed ) 
+			if ( $trashed )
 				$this->log_admin_notice( 'green', sprintf( __( 'Moved %d documents to the trash.', 'aad-doc-manager' ), $trashed ) );
-			if ( $deleted ) 
+			if ( $deleted )
 				$this->log_admin_notice( 'green', sprintf( __( 'Permanently deleted %d documents from trash.', 'aad-doc-manager' ), $deleted ) );
-			if ( $untrashed ) 
+			if ( $untrashed )
 				$this->log_admin_notice( 'green', sprintf( __( "Restored %d documents from trash.", 'aad-doc-manager' ), $untrashed ) );
 		}
-		
+
 		/**
 		 * Render page to manage Documents
 		 *
-		 * 
+		 *
 		 * @uses self::parent_slug, slug for this page
 		 * @uses self::upload_slug, slug for upload page
 		 * @return void
@@ -415,13 +415,13 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
 			}
-			
+
 			/**
 			 * Perform table query
 			 */
 			$this->doc_table->prepare_items();
 			?>
-		
+
 			<div class="wrap">
 				<h2><?php echo self::$post_type_labels['name']; ?> <a href="<?php menu_page_url( self::upload_slug, true ); ?>" class="add-new-h2"><?php echo self::$post_type_labels['add_new_item']?></a></h2>
 				<?php $this->doc_table->views(); // Display the views available on the table ?>
@@ -435,7 +435,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			</div>
 			<?php
 		}
-		
+
 		/**
 		 * Process upload form content
 		 *
@@ -449,10 +449,11 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		function action_process_upload_form()
 		{
 			// FIXME If upload fails, don't update post! Need to refactor order of operations?
+			// FIXME CSV file upload does not create attachment/guid for download operation. Maybe only an issue on updating files?
 			/**
 			 * User must be able to edit posts
 			 */
-			if ( ! current_user_can( 'edit_posts' ) ) 
+			if ( ! current_user_can( 'edit_posts' ) )
 				wp_die( __( 'Do you belong here?', 'aad-doc-manager' ) );
 
 			/**
@@ -460,23 +461,23 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			 */
 			$action = $this->upload_action();
 			if ( ! $action ) return;
-			
+
 			/**
 			 * Is nonce valid? check_admin_referrer will die if invalid.
 			 */
 			check_admin_referer( self::upload_slug, self::nonce );
-			
+
 			/**
 			 * To avoid a processing loop, remove action to catch media deletion via wp-admin/upload.php
 			 */
 			remove_action( 'delete_attachment', array($this, 'action_delete_document') );
-			
+
 			/**
 			 * Initialize new/updated post content
 			 */
 			$post = array();
 			$post['post_title'] = '';
-			
+
 			switch( $action ) {
 			case 'new':
 				/**
@@ -489,7 +490,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				$post['ping_status'] = 'closed';
 
 				break;
-				
+
 			case 'update';
 				/**
 				 * Update existing post
@@ -500,7 +501,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					return;
 				}
 				$post['ID'] = $doc_id;
-				
+
 				/**
 				 * Make sure we're updating proper post type
 				 */
@@ -509,10 +510,10 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					$this->log_admin_notice( 'red', __( 'Sorry - Request to update invalid document id; plugin error?', 'aad-doc-manager' ) );
 					return;
 				}
-				
+
 				break;
 			}
-		
+
 			/**
 			 * Setup post content for uploaded file
 			 */
@@ -523,7 +524,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 * File Uploaded OK
 						 */
 						$have_upload = true;
-						
+
 						$doc_type = $_FILES['document']['type'];
 						if ( ! in_array( $doc_type, $this->accepted_doc_types ) ) {
 							$this->log_admin_notice('red', sprintf( __( 'Document type %s is not supported; plugin error?', 'aad-doc-manager' ), esc_attr( $doc_type ) ) );
@@ -560,7 +561,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 */
 						$post['post_content'] = $doc_content['post_content'];
 						break;
-					
+
 					case UPLOAD_ERR_INI_SIZE:
 					case UPLOAD_ERR_FORM_SIZE:
 						/**
@@ -568,39 +569,39 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						 */
 						$this->log_admin_notice( 'red', __( "Uploaded file is too large.", 'aad-doc-manager' ) );
 						return;
-					
+
 					case UPLOAD_ERR_PARTIAL:
 						/**
 						 * Partial upload - Retry
 						 */
 						$this->log_admin_notice( 'red', __( "Partial upload received, please retry.", 'aad-doc-manager' ) );
 						return;
-					
+
 					case UPLOAD_ERR_NO_FILE:
 						$have_upload = false;
 						break;
-					
+
 					case UPLOAD_ERR_NO_TMP_DIR:
 						/**
 						 * Configuration problem - No temp directory available
 						 */
 						$this->log_admin_notice( 'red', __( "Server error: No temp directory available", 'aad-doc-manager' ) );
-						return;						
-					
+						return;
+
 					case UPLOAD_ERR_CANT_WRITE:
 						/**
 						 * Configuration problem - Can't write to temp directory
 						 */
 						$this->log_admin_notice( 'red', __( "Server error: Can’t write to temp directory", 'aad-doc-manager' ) );
-						return;						
-					
+						return;
+
 					case UPLOAD_ERR_EXTENSION:
 						/**
 						 * Upload blocked by a php plugin
 						 */
 						$this->log_admin_notice( 'red', __( "PHP Plugin blocked upload; server logs may have details.", 'aad-doc-manager' ) );
 						return;
-					
+
 					default:
 						/**
 						 * Unknown error
@@ -608,18 +609,18 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						$this->log_admin_notice( 'red', __( sprintf( "Unknown file upload error: %d", $_FILES['document']['error']), 'aad-doc-manager' ) );
 						return;
 				}
-				
+
 			} else {
 				$have_upload = false;
 			}
-			
+
 			/**
 			 * Document title from request if provided, otherwise use filename
 			 */
 			$post['post_title'] =
-				sanitize_text_field( isset( $_REQUEST['doc_title'] ) && '' != $_REQUEST['doc_title'] ? 
+				sanitize_text_field( isset( $_REQUEST['doc_title'] ) && '' != $_REQUEST['doc_title'] ?
 				$_REQUEST['doc_title'] : $post['post_title'] );
-			
+
 			switch ( $action ) {
 			case 'new':
 				/**
@@ -639,24 +640,24 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					$this->log_admin_notice( 'red', __( 'Error inserting post data! WP Config issue?', 'aad-doc-manager' ) );
 					return;
 				}
-								
+
 				/**
-				 * Generate a UUID for this document
+				 * Generate a GUID for this document
 				 */
-				$uuid = $this->generate_uuid();
-				wp_set_object_terms( $doc_id, $uuid, self::term_uuid );
-				
+				$guid = $this->generate_guid();
+				wp_set_object_terms( $doc_id, $guid, self::term_guid );
+
 				break;
-				
-			case 'update':	
+
+			case 'update':
 				/**
 				 * Update the post
 				 */
 				wp_update_post( $post );
 				break;
 			}
-			
-			
+
+
 			/**
 			 * Save uploaded file as media
 			 */
@@ -671,7 +672,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					 * Upload file saved successfully, preserve the new attachment ID
 					 */
 					$doc_content['post_meta']['document_media_id'] = $attachment_id;
-				
+
 					/**
 					 * On update, remove previously saved revision of the document
 					 */
@@ -694,12 +695,12 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					update_post_meta( $doc_id, $key, $value );
 				}
 			}
-			
+
 			// RFE Add result reporting
 			wp_safe_redirect( menu_page_url( self::parent_slug, false ) );
 			exit;
 		}
-		
+
 		/**
 		 * Determine which action is being taken during file upload
 		 *
@@ -716,7 +717,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			else
 				return NULL;
 		}
-		
+
 		/**
 		 * Creates "post_content" based on input type
 		 *   - CSV Files will be pre-processed into html table, data will also be stored as serialized post meta data
@@ -738,12 +739,12 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					'post_meta' => array()
 				);
 			}
-			
+
 			/**
 			 * Does CSV file include column headers in the first row?
 			 */
 			$csv_has_col_headers = isset( $_REQUEST['csv-has-col-headers'] ) && "yes" == $_REQUEST['csv-has-col-headers'];
-			
+
 			/**
 			 * Process received CSV file
 			 */
@@ -758,7 +759,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 						// FIXME Handle this and other errors using WP Error class
 						return array( 'error' => __( 'Unable to parse CSV contents.', 'aad-doc-manager' ) );
 					}
-					
+
 					// Replace line breaks with html
 					$header_names = $row;
 					$max_cols = count( $row );
@@ -778,20 +779,20 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 					$table[] = $row;
 			    }
 			    fclose( $handle );
-				
+
 				/**
 				 * Generate headers if not provided
 				 */
 				if ( empty( $header_names ) ) {
 					$header_names = array();
-					for ( $col=0; $col < $max_cols; $col++ ) { 
+					for ( $col=0; $col < $max_cols; $col++ ) {
 						$header_names[$col] = sprintf( __( 'Column %d', 'aad-doc-manager' ), $col+1 );
 					}
 				}
 			} else {
 				return array( 'error' => __( 'Could not open uploaded file.', 'aad-doc-manager' ) );
 			}
-			
+
 			/**
 			 * Setup return data
 			 * Table will be stored as Post Meta data in serialized and rendered form
@@ -814,7 +815,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			);
 			return $retarray;
 		}
-		
+
 		/**
 		 * Render page to upload new Documents
 		 *
@@ -830,18 +831,18 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				wp_die( __( 'You do not have sufficient permissions to access this page.', 'aad-doc-manager' ) );
 				return;
 			}
-			
+
 			/**
 			 * Document types accepted for upload
 			 */
 			$accepted_doc_types = implode( $this->accepted_doc_types, ',' );
-			
+
 			/**
 			 * Updating an existing document?
 			 */
 			$doc_id = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
 			$post = $doc_id ? get_post( $doc_id ) : NULL;
-			
+
 			/**
 			 * Setup default values for new vs. updating existing document
 			 */
@@ -859,7 +860,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				$checked = get_post_meta( $doc_id, 'csv_has_col_headers', true ) ? 'checked' : '';
 				$file_required = '';
 			}
-			
+
 			$action = $post ? self::$post_type_labels['edit_item'] : self::$post_type_labels['new_item'];
 
 			?>
@@ -905,16 +906,16 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 								<label for="document"><?php _e( 'Select document to upload', 'aad-doc-manager' ); ?></label><br>
 								<input type="file" id="document" name="document" value="" size="40" accept="<?php echo esc_attr( $accepted_doc_types ); ?>" <?php echo esc_attr( $file_required ); ?>/>
 								<div>
-									<?php 
+									<?php
 									_e( 'Supported file types: ', 'aad-doc-manager' );
-									esc_html_e( implode( $this->accepted_doc_types, ', ' ) ); 
+									esc_html_e( implode( $this->accepted_doc_types, ', ' ) );
 									?>
 								</div>
 							</div>
 							<div class="upload_option">
 								<?php _e( 'For CSV File Upload (ignored for other document types):', 'aad-doc-manager' ); ?><br />
 								<input type="checkbox" <?php echo esc_attr( $checked ); ?> id="csv-has-col-headers" name="csv-has-col-headers" value="yes">
-								<label for="csv-has-col-headers"><?php _e( 'First Row contains column names', 'aad-doc-manager' ); ?></label>							
+								<label for="csv-has-col-headers"><?php _e( 'First Row contains column names', 'aad-doc-manager' ); ?></label>
 							</div>
 						</div>
 					</div>
@@ -923,10 +924,10 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			</div>
 			<?php
 		}
-				
+
 		/**
 		 * Add a message to notice messages
-		 * 
+		 *
 		 * @param $class, string "red", "yellow", "green".  Selects log message type
 		 * @param $msg, string or HTML content to display.  User input should be scrubbed by caller
 		 * @return void
@@ -935,7 +936,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		{
 			$this->admin_notices[] = array( $class, $msg );
 		}
-		
+
 		/**
 		 * Display Notice messages at head of admin screen
 		 *
@@ -955,17 +956,17 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				'yellow' => 'update-nag',
 				'green' => 'updated'
 			);
-		
+
 			if ( count( $this->admin_notices ) ) {
 				foreach ( $this->admin_notices as $notice ) {
 					// TODO Handle undefined notice class
 					echo '<div class="'. esc_attr( $notice_class[$notice[0]] ) . '">';
 					echo '<p>' . wp_kses($notice[1], array(), array()) . '</p>';
-					echo '</div>';			
+					echo '</div>';
 				}
 			}
 		}
-		
+
 		/**
 		 * When deleting a media attachment via WP interfaces, remove the associated document as well
 		 *
@@ -973,7 +974,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		 * @return void
 		 */
 		function action_delete_document($attachment_id)
-		{	
+		{
 			$attachment = get_post( $attachment_id );
 			if ( $attachment->post_parent ) {
 				/**
@@ -989,20 +990,20 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				}
 			}
 		}
-		
+
 		/**
-		 * Generate a random V4 UUID
-		 * 
+		 * Generate a random V4 GUID
+		 *
 		 * @param none
-		 * @return string UUID
+		 * @return string GUID
 		 */
-		private function generate_uuid() {
+		private function generate_guid() {
 			return self::guidv4( openssl_random_pseudo_bytes( 16 ) );
 		}
-		
+
 		/**
 		 * Turn 128 bit blob into a UUD string
-		 * 
+		 *
 		 * @param 16 bytes binary data $data
 		 * @return string
 		 */
@@ -1014,6 +1015,5 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 
 			return vsprintf( '%s%s-%s-%s-%s-%s%s%s', str_split( bin2hex( $data ), 4 ) );
 		}
-
 	}
 }

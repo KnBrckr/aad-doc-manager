@@ -52,19 +52,19 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		static $post_type_labels = array();
 		
 		/**
-		 * @var string UUID Taxonomy name
+		 * @var string GUID Taxonomy name
 		 */
-		const term_uuid = 'aad-doc-uuid';
+		const term_guid = 'aad-doc-uuid';
 		
 		/**
-		 * @var array UUID Taxonomy labels
+		 * @var array GUID Taxonomy labels
 		 */
 		static $term_uuid_labels = array();
 		
 		/**
 		 * @var string Download slug
 		 */
-		static $download_slug = 'aad-document';
+		const download_slug = 'aad-document';
 
 		/**
 		 * CSV storage format version
@@ -193,6 +193,18 @@ if ( ! class_exists( "aadDocManager" ) ) {
              * Check for usage of endpoint in template_redirect
              */
             add_action( 'template_redirect', array( $this, 'action_try_endpoint' ) );
+
+			if ( class_exists( 'WooCommerce' ) ) {
+				/**
+				 * Add a woocommerce filter to enable the use of Document Manager documents as downloadable content
+				 */
+				add_filter( 'woocommerce_downloadable_file_exists', array( $this, 'filter_woo_downloadable_file_exists' ), 10, 2 );
+
+				/**
+				 * Fixup document path for woocommerce downloadable products
+				 */
+				//add_filter( 'woocommerce_file_download_path', array( $this, 'filter_woo_file_download_path' ), 10, 3 );
+			}
 		}
 
         /**
@@ -215,10 +227,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'has_archive'	 => false,
 				'rewrite'		 => false,
 				'query_var'		 => false,
-				'taxonomies'     => array( self::term_uuid )
+				'taxonomies'     => array( self::term_guid )
 			) );
 			
-			register_taxonomy( self::term_uuid, self::post_type, array(
+			register_taxonomy( self::term_guid, self::post_type, array(
 				'labels' => self::$term_uuid_labels,
 				'public'		 => true,
 				'show_ui'		 => false,
@@ -231,14 +243,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'description' => __( 'Document UUID to internal ID mapping', 'aad-doc-manager' ),
 				'query_var' => 'aad-document',
 				'rewrite' => array(
-					'slug' => self::$download_slug,
+					'slug' => self::download_slug,
 					'with_front' => true,
 					'hierarchical' => false,
 					'ep_mask' => EP_ROOT
 				)
 			) );
 			
-			register_taxonomy_for_object_type( self::term_uuid, self::post_type );
+			register_taxonomy_for_object_type( self::term_guid, self::post_type );
         }
 		
         /**
@@ -250,63 +262,27 @@ if ( ! class_exists( "aadDocManager" ) ) {
             /**
              * Does query match taxonomy endpoint?
              */
-            $requested_doc = $wp_query->get( self::$download_slug );
+            $requested_doc = $wp_query->get( self::download_slug );
             if ( ! $requested_doc )
                 return;
-
-            /**
-             * Find document based on provided UUID
-             *
-             * document type should match custom post type
-             * Post meta data should point to a media attachment
-             */
-			$args	 = array(
-				'post_type' => self::post_type,
-				'tax_query' => array(
-					array(
-						'taxonomy'	 => self::term_uuid,
-						'field'		 => 'name',
-						'terms'		 => $requested_doc
-					)
-				)
-			);
-			$query	 = new WP_Query( $args );
-			
-            $document = $query->post;
-            if ( ! $document || self::post_type != $document->post_type ) {
-                $this->error_404();
-                // Not Reached
-            }
-			$doc_id = $document->ID;
-
-            $attachment_id = get_post_meta( $doc_id, 'document_media_id', true );
-            $attachment = get_post( $attachment_id );
-            if ( ! $attachment_id || ! $attachment || 'attachment' != $attachment->post_type ) {
-                $this->error_404();
-                // Not Reached
-            }
-
-            /**
-             * Dump the file
-             */
-            $file = get_attached_file( $attachment_id );
 			
 			/**
-			 *	Just in case DB is hacked, only allow a path that is in the uploads directory.
+			 * Get Document to be downloaded
 			 */
-			$upload_dir = wp_upload_dir( $create_dir = false );
-			if (strncmp($file, $upload_dir['basedir'], strlen($upload_dir['basedir'])) !== 0) {
-				$this->error_404();
-				// Not Reached
-			}
-            
-            if (file_exists( $file ) ) {
-				/**	FIXME Validate that file is in the uploads directory - Just in case DB is hacked **/
-				
+			$document = $this->get_document_by_guid( $requested_doc );
+            if ( ! is_a( $document, 'WP_post') ) {
+                $this->error_404();
+                // Not Reached
+            }
+			
+			$attachment = $this->get_attachment_by_docid( $document->ID );			
+			$file = $this->get_realpath_by_attachment( $attachment );
+			            
+            if ( '' != $file && file_exists( $file ) ) {
                 /**
                  * Log download of the file
                  */
-                $this->log_download( $doc_id );
+                $this->log_download( $document->ID );
 
                 /**
                  * Output headers and dump the file
@@ -331,6 +307,40 @@ if ( ! class_exists( "aadDocManager" ) ) {
             }
             // Not Reached
         }
+		
+		/**
+		 * Find document based on provided UUID
+		 * 
+		 * @param string $guid UUID for requested document
+		 * @return WP_post of the requested document
+		 */
+		protected function get_document_by_guid( $guid ) {
+			if ( !$guid || ! $this->is_guidv4( $guid ) )
+				return NULL;
+			
+			$args	 = array(
+				'post_type' => self::post_type,
+				'tax_query' => array(
+					array(
+						'taxonomy'	 => self::term_guid,
+						'field'		 => 'name',
+						'terms'		 => $guid
+					)
+				)
+			);
+			$query	 = new WP_Query( $args );
+			
+			/**
+             * document type should match custom post type
+             */
+
+			$document = $query->post;
+            if ( ! $document || self::post_type != $document->post_type ) {
+                return NULL;
+            }
+
+			return $document;
+		}
 		        
         /**
          * Display a 404 error
@@ -351,7 +361,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
         /**
          * Log download of a file
          * 
-         * @param int $doc_id, document ID that was downloaded
+         * @param int $doc_id document ID that was downloaded
          * @return void
          */
         private function log_download( $doc_id ) {
@@ -447,6 +457,119 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'all'											// All media types
 			);
 			wp_enqueue_style('aad-doc-manager-datatable-css');			
+		}
+
+		/**
+		 * Allow WooCommerce to understand that a document provided by Document Manager is downloadable
+		 *
+		 * Uses filter defined in class-wc-product-download.php:file_exists()
+		 *
+		 * @param boolean $file_exists Earlier filters may have already decided if file exists
+		 * @param string $file_url path to the downloadable file
+		 */
+		function filter_woo_downloadable_file_exists( $file_exists, $file_url ) {
+			if ( '/' . self::download_slug === substr( $file_url, 0, strlen( self::download_slug) + 1 ) ) {
+				/**
+				 * link is for the plugin. Confirm GUID provided is valid
+				 */
+				$guid = substr( $file_url, strlen( self::download_slug ) + 2 );
+				if ( $this->is_guidv4( $guid ) &&  is_a( $this->get_document_by_guid( $guid ), 'WP_post') )
+					return true;
+				else
+					return false;
+			} else
+				return $file_exists;
+		}
+		
+		/**
+		 * Provide woocommerce with real path for managed documents
+		 * 
+		 * @param string $file file path recorded in woocommerce downloadable product
+		 * @param WC_product $product_id woocommerce product id
+		 * @param string $key woocommerce download document key
+		 * @return string path to file
+		 */
+		function filter_woo_file_download_path( $file, $product, $key ) {
+			if ( '/' . self::download_slug === substr( $file, 0, strlen( self::download_slug) + 1 ) ) {
+				/**
+				 * link is for the plugin. Confirm GUID provided is valid
+				 */
+				$guid = substr( $file, strlen( self::download_slug ) + 2 );
+				
+				if ( ! $this->is_guidv4( $guid ) )
+					return $file;
+				
+				$document = $this->get_document_by_guid( $guid );
+				if ( ! is_a( $document, 'WP_post' ) )
+					return $file;
+				
+				$attachment = $this->get_attachment_by_docid( $document->ID );
+				$fileurl = $this->get_url_by_attachment( $attachment );
+				
+				return $fileurl ? $fileurl : $file;
+			} else
+				return $file;
+		}
+		
+		/**
+		 * Get the attachment for a downloadable document
+		 * 
+		 * @param string $doc_id Document ID
+		 * @return WP_ Attachment Object
+		 */
+		private function get_attachment_by_docid( $doc_id ) {
+			/**
+			 * Must have a valid attachment for the document
+			 */
+			$attachment_id	 = get_post_meta( $doc_id, 'document_media_id', true );
+			$attachment		 = get_post( $attachment_id );
+			if ( !$attachment || 'attachment' != $attachment->post_type ) {
+				return null;
+			}
+
+			return $attachment;
+		}
+		
+		/**
+		 * Get the real path to an attachment
+		 * 
+		 * @param WP_ $attachment Attachment object
+		 * @return string path to downloadable file
+		 */
+		private function get_realpath_by_attachment( $attachment ) {
+			if (! is_a( $attachment, 'WP_post' ) || 'attachment' != $attachment->post_type )
+				return null;
+			
+			$filename = realpath( get_attached_file( $attachment->ID ) ); // Path to attached file
+
+			/**
+			 * 	Only allow a path that is in the uploads directory.
+			 */
+			$upload_dir		 = wp_upload_dir( $create_dir = false );
+			$upload_dir_base = realpath( $upload_dir[ 'basedir' ] );
+			if ( strncmp( $filename, $upload_dir_base, strlen( $upload_dir_base ) ) !== 0 ) {
+				return '';
+			}
+			
+			return $filename;
+		}
+		
+		/**
+		 * Get url to an attachment
+		 * 
+		 * @param WP_post $attachment attachment object
+		 * @return string File URL
+		 */
+		private function get_url_by_attachment( $attachment ) {
+			$filename = $this->get_realpath_by_attachment( $attachment );
+			
+			/* Strip off content directory */
+			$real_content_dir = realpath(WP_CONTENT_DIR);
+			if (substr($filename, 0, strlen($real_content_dir)) == $real_content_dir) {
+			    $filename = substr($filename, strlen($real_content_dir));
+			}
+			
+			return WP_CONTENT_URL . $filename;
 		}
 
 		/**
@@ -688,7 +811,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		function get_download_url_e ($doc_id ) {
 			$terms = wp_get_object_terms( $doc_id, 'aad-doc-uuid', array( 'fields' => 'names' ) );
 			if ( count( $terms ) > 0 ) {
-				return esc_url( '/' . self::$download_slug . '/' . $terms[0] );
+				return esc_url( '/' . self::download_slug . '/' . $terms[0] );
 			} else {
 				return '';
 			}
@@ -873,6 +996,17 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 * Maybe a text color name - return it.
 			 */
 			return sanitize_key( $string );
+		}
+		
+		/**
+		 * Is $uuid a valid GUID V4 string?
+		 * 
+		 * @param string $guid GUID to test
+		 * @return boolean true if string is valid GUID v4 format
+		 */
+		function is_guidv4( $guid ) {
+			$UUIDv4 = '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i';
+			return preg_match( $UUIDv4, $guid );
 		}
 	} // End class aad_doc_manager
 
