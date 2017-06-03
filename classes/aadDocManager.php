@@ -39,7 +39,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * @var string Plugin version
 		 */
-		const PLUGIN_VER = "0.5.1";
+		const PLUGIN_VER = "0.6";
 		
 		/**
 		 * @var string Post Type Name

@@ -54,10 +54,12 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
-= 0.5.1=
-* FIX: Download count column in admin screen is too wide
+= 0.6 =
 * Add download URL to Admin screen Document list
 * Enable Document Manager URLs to be used for WooCommerce downloadable products
+
+= 0.5.1=
+* FIX: Download count column in admin screen is too wide
 
 = 0.5 =
 * FIX: Highlight when searching a table is not reliably displaying
