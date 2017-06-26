@@ -209,8 +209,7 @@ if ( !class_exists( "aadDocManagerTable" ) ) {
 			$sortable = array(
 				'doc_id'		 => array( 'ID', false ),
 				'title'			 => array( 'title', false ),
-				'date_modified'	 => array( 'date', false ),
-				'type'			 => array( 'type', false )
+				'date_modified'	 => array( 'modified', false )
 			);
 
 			return $sortable;
