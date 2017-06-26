@@ -4,7 +4,7 @@
  *
  * @package Document Manager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
- * @copyright 2016 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
+ * @copyright 2017 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
  *
  * This file is part of Document Manager, a plugin for Wordpress.
  *
@@ -289,7 +289,7 @@ if ( !class_exists( "aadDocManagerTable" ) ) {
 				'post_status'	 => $post_status,
 				'posts_per_page' => $perpage,
 				'offset'		 => ( $paged - 1 ) * $perpage,
-				'order_by'		 => $orderby,
+				'orderby'		 => $orderby,
 				'order'			 => $order
 			) );
 

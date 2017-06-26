@@ -3,7 +3,7 @@ Contributors: draca
 Donate link: http://action-a-day.com/aad-document-manager
 Tags: csv, viewer, document, manager
 Requires at least: 4.2
-Tested up to: 4.7.3
+Tested up to: 4.8
 Stable tag: trunk
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -53,6 +53,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 2. This is the second screen shot
 
 == Changelog ==
+
+= 0.6.1 =
+* FIX: Table sorting not working
 
 = 0.6 =
 * Add download URL to Admin screen Document list
