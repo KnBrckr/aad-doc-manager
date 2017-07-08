@@ -4,7 +4,7 @@
  *
  * @package Document Manager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
- * @copyright 2016 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
+ * @copyright 2017 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
  *
  * This file is part of Document Manager, a plugin for Wordpress.
  *
@@ -835,7 +835,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 			/**
 			 * Document types accepted for upload
 			 */
-			$accepted_doc_types = implode( $this->accepted_doc_types, ',' );
+			$accepted_doc_types = implode( $this->accepted_doc_types, ', ' );
 
 			/**
 			 * Updating an existing document?
@@ -853,12 +853,16 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 				$checked = 'checked';
 				$file_required = 'required';
 			} else {
-				$doc_type = get_post_meta( $doc_id, 'doc_type', true );
 				$title = $post->post_title;
 				$csv_rows = get_post_meta( $doc_id, 'csv_rows', true );
 				$csv_cols = get_post_meta( $doc_id, 'csv_cols', true );
 				$checked = get_post_meta( $doc_id, 'csv_has_col_headers', true ) ? 'checked' : '';
 				$file_required = '';
+				
+				/**
+				 * When updating an existing file, only allow the same mime type to be uploaded
+				 */
+				$accepted_doc_types = $post->post_mime_type;
 			}
 
 			$action = $post ? self::$post_type_labels['edit_item'] : self::$post_type_labels['new_item'];
@@ -908,7 +912,7 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 								<div>
 									<?php
 									_e( 'Supported file types: ', 'aad-doc-manager' );
-									esc_html_e( implode( $this->accepted_doc_types, ', ' ) );
+									esc_html_e( $accepted_doc_types );
 									?>
 								</div>
 							</div>

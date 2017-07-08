@@ -54,6 +54,12 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= 0.7 =
+* Enhance: Document Updates only allow same mime type to be uploaded
+
+= 0.6.2 =
+* FIX: Sorting by mime type does not work; must be removed as it is not supported by WP_Query
+
 = 0.6.1 =
 * FIX: Table sorting not working
 
@@ -101,6 +107,10 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Future ==
 
-* Allow multiple document types to be managed
-* Allow classes of users to download a file
-* Organize documents in folders
+* RFE Allow multiple document types to be managed
+* RFE Allow classes of users to download a file
+* RFE Organize documents in folders
+* RFE Connect with media selctor to provide correct URL to files
+* RFE Delete from Media folder should completely deleted the related document entry
+* RFE Filter list by document type
+* RFE Sort on mime type using filter 'posts_orderby'

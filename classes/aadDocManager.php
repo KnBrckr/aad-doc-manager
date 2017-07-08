@@ -31,15 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
-// RFE Add shortcode to download target document
-
 if ( ! class_exists( "aadDocManager" ) ) {
 	class aadDocManager
 	{
 		/**
 		 * @var string Plugin version
 		 */
-		const PLUGIN_VER = "0.6.1";
+		const PLUGIN_VER = "0.7";
 		
 		/**
 		 * @var string Post Type Name
