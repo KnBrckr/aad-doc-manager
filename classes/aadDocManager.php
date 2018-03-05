@@ -37,32 +37,37 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		/**
 		 * @var string Plugin version
 		 */
-		const PLUGIN_VER = "0.7";
-		
+		const PLUGIN_VER = "0.8";
+
 		/**
 		 * @var string Post Type Name
 		 */
 		const post_type = 'aad-doc-manager';
-		
+
 		/**
 		 * @var array Post Labels
 		 */
 		static $post_type_labels = array();
-		
+
 		/**
 		 * @var string GUID Taxonomy name
 		 */
 		const term_guid = 'aad-doc-uuid';
-		
+
 		/**
 		 * @var array GUID Taxonomy labels
 		 */
 		static $term_uuid_labels = array();
-		
+
 		/**
 		 * @var string Download slug
 		 */
 		const download_slug = 'aad-document';
+
+		/**
+		 * @var string Path to Datatables assets
+		 */
+		private $datatables_dir_url;
 
 		/**
 		 * CSV storage format version
@@ -76,9 +81,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 *      Allows re-save of pre-rendered data without affecting post update date
 		 */
 		const CSV_STORAGE_FORMAT = 3;
-		
+
 		function __construct () {
-			;
+			$this->datatables_dir_url = plugins_url( 'aad-doc-manager/assets/DataTables' );
 		}
 
 		/**
@@ -104,7 +109,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'not_found'          => __( 'No Documents found', 'aad-doc-manager' ),
 				'not_found_in_trash' => __( 'No Documents found in Trash', 'aad-doc-manager' )
 			);
-			
+
 			self::$term_uuid_labels = array (
 				'name'						 => __( 'Document UUIDs', 'aad-doc-manager' ),
 				'singular_name'				 => __( 'Document UUID', 'aad-doc-manager' ),
@@ -227,7 +232,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'query_var'		 => false,
 				'taxonomies'     => array( self::term_guid )
 			) );
-			
+
 			register_taxonomy( self::term_guid, self::post_type, array(
 				'labels' => self::$term_uuid_labels,
 				'public'		 => true,
@@ -247,10 +252,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
 					'ep_mask' => EP_ROOT
 				)
 			) );
-			
+
 			register_taxonomy_for_object_type( self::term_guid, self::post_type );
         }
-		
+
         /**
          * Redirect to document download
          */
@@ -263,7 +268,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
             $requested_doc = $wp_query->get( self::download_slug );
             if ( ! $requested_doc )
                 return;
-			
+
 			/**
 			 * Get Document to be downloaded
 			 */
@@ -272,10 +277,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
                 $this->error_404();
                 // Not Reached
             }
-			
-			$attachment = $this->get_attachment_by_docid( $document->ID );			
+
+			$attachment = $this->get_attachment_by_docid( $document->ID );
 			$file = $this->get_realpath_by_attachment( $attachment );
-			            
+
             if ( '' != $file && file_exists( $file ) ) {
                 /**
                  * Log download of the file
@@ -290,14 +295,14 @@ if ( ! class_exists( "aadDocManager" ) ) {
                 header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
                 header( 'Content-Length: ' . filesize( $file ) );
 				nocache_headers();
-				
+
 				/**
 				 * Flush headers to avoid over-write of the Content Type by PHP or Server
 				 */
 				flush();
-				
+
 				readfile( $file );
-                
+
                 die();
             } else {
                 $this->error_404();
@@ -305,17 +310,17 @@ if ( ! class_exists( "aadDocManager" ) ) {
             }
             // Not Reached
         }
-		
+
 		/**
 		 * Find document based on provided UUID
-		 * 
+		 *
 		 * @param string $guid UUID for requested document
 		 * @return WP_post of the requested document
 		 */
 		protected function get_document_by_guid( $guid ) {
 			if ( !$guid || ! $this->is_guidv4( $guid ) )
 				return NULL;
-			
+
 			$args	 = array(
 				'post_type' => self::post_type,
 				'tax_query' => array(
@@ -327,7 +332,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				)
 			);
 			$query	 = new WP_Query( $args );
-			
+
 			/**
              * document type should match custom post type
              */
@@ -339,26 +344,26 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 			return $document;
 		}
-		        
+
         /**
          * Display a 404 error
-         * 
+         *
          * @param void
          * @return void
          */
         private function error_404() {
             global $wp_query;
-            
+
             $wp_query->set_404();
             status_header(404);
 			//	TODO Deal with situation when theme does not provide a 404 template.
             get_template_part(404);
             die();
         }
-        
+
         /**
          * Log download of a file
-         * 
+         *
          * @param int $doc_id document ID that was downloaded
          * @return void
          */
@@ -388,34 +393,39 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			wp_register_script(
 				'aad-doc-manager-datatable-js',
-				'https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js',
+				$this->datatables_dir_url . '/datatables.min.js',
 				array( 'jquery' ), 								// Dependencies
-				'1.10.15', 										// DataTables version
+				'1.10.16',	 									// Datatables version
 				true											// Enqueue in footer
 			);
-			
+
 			/**
 			 * Register mark.js highlighting plugin used by Datatables for highlighting
 			 * Ref: https://datatables.net/blog/2017-01-19
+			 *
+			 * Retrieved via
+			 *  % wget -O jquery.mark.min.js https://cdn.jsdelivr.net/g/mark.js\(jquery.mark.min.js\)
 			 */
 			wp_register_script(
 				'aad-doc-manager-mark-js',
-				'https://cdn.jsdelivr.net/g/mark.js(jquery.mark.min.js)',
+				$this->datatables_dir_url . '/jquery.mark.min.js',
 				array(),										// Dependencies
-				'8.9.0',										// Version
+				'8.9.1',										// Version of mark.js
 				true											// Enqueue in footer
 			);
 			wp_enqueue_script( 'aad-doc-manager-mark-js' );
-			
+
 			/**
 			 * Register DataTables highlighting plugin based on mark.js
 			 * Ref: https://datatables.net/blog/2017-01-19
+			 *
+			 * Retrieved from https://cdn.datatables.net/plug-ins/1.10.16/features/mark.js/datatables.mark.js
 			 */
 			wp_register_script(
 				'aad-doc-manager-datatable-mark-js',
-				'https://cdn.datatables.net/plug-ins/1.10.15/features/mark.js/datatables.mark.js',
+				$this->datatables_dir_url . '/datatables.mark.js',
 				array ( 'aad-doc-manager-datatable-js', 'aad-doc-manager-mark-js' ), // Dependencies
-				'1.10.15',										// Version
+				'1.10.16',										// Datatables version
 				true											// Enqueue in footer
 			);
 			wp_enqueue_script( 'aad-doc-manager-datatable-mark-js' );
@@ -449,12 +459,12 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			wp_register_style(
 				'aad-doc-manager-datatable-css',
-				'https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.css',
+				$this->datatables_dir_url . '/datatables.min.css',
 				false,			 								// No dependencies
-				'1.10.15', 										// DataTables version
+				'1.10.16',										// Version of Data Tables
 				'all'											// All media types
 			);
-			wp_enqueue_style('aad-doc-manager-datatable-css');			
+			wp_enqueue_style('aad-doc-manager-datatable-css');
 		}
 
 		/**
@@ -478,10 +488,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			} else
 				return $file_exists;
 		}
-		
+
 		/**
 		 * Provide woocommerce with real path for managed documents
-		 * 
+		 *
 		 * @param string $file file path recorded in woocommerce downloadable product
 		 * @param WC_product $product_id woocommerce product id
 		 * @param string $key woocommerce download document key
@@ -493,25 +503,25 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				 * link is for the plugin. Confirm GUID provided is valid
 				 */
 				$guid = substr( $file, strlen( self::download_slug ) + 2 );
-				
+
 				if ( ! $this->is_guidv4( $guid ) )
 					return $file;
-				
+
 				$document = $this->get_document_by_guid( $guid );
 				if ( ! is_a( $document, 'WP_post' ) )
 					return $file;
-				
+
 				$attachment = $this->get_attachment_by_docid( $document->ID );
 				$fileurl = $this->get_url_by_attachment( $attachment );
-				
+
 				return $fileurl ? $fileurl : $file;
 			} else
 				return $file;
 		}
-		
+
 		/**
 		 * Get the attachment for a downloadable document
-		 * 
+		 *
 		 * @param string $doc_id Document ID
 		 * @return WP_ Attachment Object
 		 */
@@ -527,17 +537,17 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 			return $attachment;
 		}
-		
+
 		/**
 		 * Get the real path to an attachment
-		 * 
+		 *
 		 * @param WP_ $attachment Attachment object
 		 * @return string path to downloadable file
 		 */
 		private function get_realpath_by_attachment( $attachment ) {
 			if (! is_a( $attachment, 'WP_post' ) || 'attachment' != $attachment->post_type )
 				return null;
-			
+
 			$filename = realpath( get_attached_file( $attachment->ID ) ); // Path to attached file
 
 			/**
@@ -548,25 +558,25 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			if ( strncmp( $filename, $upload_dir_base, strlen( $upload_dir_base ) ) !== 0 ) {
 				return '';
 			}
-			
+
 			return $filename;
 		}
-		
+
 		/**
 		 * Get url to an attachment
-		 * 
+		 *
 		 * @param WP_post $attachment attachment object
 		 * @return string File URL
 		 */
 		private function get_url_by_attachment( $attachment ) {
 			$filename = $this->get_realpath_by_attachment( $attachment );
-			
+
 			/* Strip off content directory */
 			$real_content_dir = realpath(WP_CONTENT_DIR);
 			if (substr($filename, 0, strlen($real_content_dir)) == $real_content_dir) {
 			    $filename = substr($filename, strlen($real_content_dir));
 			}
-			
+
 			return WP_CONTENT_URL . $filename;
 		}
 
@@ -695,9 +705,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 		/**
 		 * 'docmgr-created' WP shortcode
-		 * 
+		 *
 		 * Displays document creation date
-		 * 
+		 *
 		 * Usage: [docmgr-created id=<doc_id>]
 		 *
 		 * @param array _attrs associative array of shortcode parameters
@@ -729,9 +739,9 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 		/**
 		 * 'docmgr-modified' WP shortcode
-		 * 
+		 *
 		 * Displays document modified date
-		 * 
+		 *
 		 * Usage: [docmgr-modified id=<doc_id>]
 		 *
 		 * @param array _attrs associative array of shortcode parameters
@@ -760,12 +770,12 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 			return esc_attr( $this->format_date( $document->post_modified ) );
 		}
-		
+
 		/**
 		 * 'sc_docmgr-download-url' WP shortcode
-		 * 
+		 *
 		 * Usage: [docmgr-download-url id=<doc_id]text[/docmgr-download-url]
-		 * 
+		 *
 		 * @param array $_attrs associative array of shortcode parameters
 		 * @param string $content
 		 * @return string HTML content
@@ -777,7 +787,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			$doc_id = intval( $attrs['id'] );
 
 			if ( ! $doc_id ) return $content; // No id value received - nothing to do
-			
+
 			/**
 			 * Retrieve the post
 			 */
@@ -787,22 +797,22 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			/**
 			 * Make sure post type of the retrieved post is valid
 			 */
-			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) 
+			if ( self::post_type != $document->post_type || 'publish' != $document->post_status )
 				return $content;
-			
+
 			$url = $this->get_download_url_e( $doc_id );
 			if ( '' != $url ) {
 				$text = '<a href="' . $url . '">' . $content . '</a>';
 			} else {
 				$text = $content;
 			}
-			
+
 			return $text;
 		}
-		
+
 		/**
 		 * Get escaped download URL for a given document id
-		 * 
+		 *
 		 * @param string $doc_id Document ID
 		 * @return string escaped URL or '' if unable to create URL
 		 */
@@ -995,10 +1005,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			return sanitize_key( $string );
 		}
-		
+
 		/**
 		 * Is $uuid a valid GUID V4 string?
-		 * 
+		 *
 		 * @param string $guid GUID to test
 		 * @return boolean true if string is valid GUID v4 format
 		 */

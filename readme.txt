@@ -26,7 +26,7 @@ TODO Add method to disable sorting
 
 [docmgr-created id=<post_id>]
 	Displays created date for document
-	
+
 [docmgr-modified id=<post_id>]
 	Displays modified date for document
 
@@ -47,12 +47,17 @@ Ask a question!
 == Screenshots ==
 
 1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets 
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png` 
+the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
+directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
 (or jpg, jpeg, gif).
 2. This is the second screen shot
 
 == Changelog ==
+
+= 0.8 =
+* Update to Datatables 1.10.16
+* Update to mark.js 8.9.1
+* Fix: 403 errors when trying to use cdn.datatables.net by making local copies
 
 = 0.7 =
 * Enhance: Document Updates only allow same mime type to be uploaded

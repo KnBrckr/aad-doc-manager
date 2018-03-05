@@ -3,7 +3,7 @@
 Plugin Name: Document Manager
 Plugin URI:  http://action-a-day.com/document-manager-wordpress-plugin/
 Description: Custom post type to manage documents for display and download
-Version:     0.7
+Version:     0.8
 Author:      Kenneth J. Brucker
 Author URI:  http://action-a-day.com
 License:     GPL2
@@ -14,7 +14,7 @@ Text Domain: aad-doc-manager
     Copyright 2017 Kenneth J. Brucker  (email : ken.brucker@action-a-day.com)
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, version 2, as 
+    it under the terms of the GNU General Public License, version 2, as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -43,7 +43,7 @@ global $aad_doc_manager;
  */
 $required_libs = array(
 	'classes/aadDocManager.php'
-); 
+);
 if ( is_admin() ) {
 	// For admin pages, setup the extended admin class
 	$required_libs[] = 'admin/classes/aadDocManagerAdmin.php';
@@ -60,11 +60,11 @@ foreach ( $required_libs as $lib ) {
 if ( is_admin() ) {
 	$aad_doc_manager = new aadDocManagerAdmin();
 } else {
-	$aad_doc_manager = new aadDocManager();	
+	$aad_doc_manager = new aadDocManager();
 }
 $aad_doc_manager->setup();
 
-            
+
 register_activation_hook( __FILE__, array( 'aadDocManager', 'plugin_activation') );
 register_deactivation_hook( __FILE__, array( 'aadDocManager', 'plugin_deactivation' ) );
 
