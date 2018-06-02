@@ -1,0 +1,21 @@
+{
+	"name": "pumastudios/container",
+	"type": "library",
+	"description": "Container class extending pimple",
+	"keywords": ["container", "dependency injection"],
+	"homepage": "https://pumastudios.com",
+	"license": "GPL3",
+	"authors": [
+		{
+			"name": "Kenneth J. Brucker",
+			"email": "ken@pumastudios.com",
+			"homepage": "https://pumastudios.com"
+		}
+	],
+	"require": {
+		"pimple/pimple": "^3.0"
+	},
+	"autoload": {
+		"psr-4": { "PumaStudios\\": "src/" }
+	}
+}
