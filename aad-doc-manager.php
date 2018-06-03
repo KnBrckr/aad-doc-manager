@@ -1,31 +1,42 @@
 <?php
-/*
-Plugin Name: Document Manager
-Plugin URI:  http://action-a-day.com/document-manager-wordpress-plugin/
-Description: Custom post type to manage documents for display and download
-Version:     0.8
-Author:      Kenneth J. Brucker
-Author URI:  http://action-a-day.com
-License:     GPL2
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Domain Path: /languages
-Text Domain: aad-doc-manager
+/**
+ * @package   PumaStudios-DocManager
+ * @author    Kenneth J. Brucker <ken@pumastudios.com>
+ * @license   GPL-2.0+
+ * @link      http://pumastudios.com/document-manager-wordpress-plugin/
+ * @copyright 2018 Kenneth J. Brucker
+ *
+ * @wordpress-plugin
+ * Plugin Name: Document Manager
+ * Plugin URI:  http://pumastudios.com/document-manager-wordpress-plugin/
+ * Description: Custom post type to manage documents for display and download
+ * Version:     0.9
+ * Author:      Kenneth J. Brucker
+ * Author URI:  https://pumastudios.com
+ * License:     GPL-2.0+
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Domain Path: /languages
+ * Text Domain: pumastudios-doc-manager-locale
+ * GitHub Plugin URI: https://github.com/KnBrckr/<repo>
+ *
+ * Copyright 2018 Kenneth J. Brucker  (email : ken@pumastudios.com)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
-    Copyright 2017 Kenneth J. Brucker  (email : ken.brucker@action-a-day.com)
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, version 2, as
-    published by the Free Software Foundation.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+namespace PumaStudios\DocManager;
 
 /**
  * Protect from direct execution
@@ -33,38 +44,54 @@ Text Domain: aad-doc-manager
 if ( ! defined( 'ABSPATH' ) ) {
 	header( 'Status: 403 Forbidden' );
 	header( 'HTTP/1.1 403 Forbidden' );
-	exit();
+	die( 'You are doing it wrong.' );
 }
-
-global $aad_doc_manager;
 
 /**
- * Load the required libraries
+ * Include composer provided components, e.g. Pimple (https://pimple.sensiolabs.org)
  */
-$required_libs = array(
-	'classes/aadDocManager.php'
-);
-if ( is_admin() ) {
-	// For admin pages, setup the extended admin class
-	$required_libs[] = 'admin/classes/aadDocManagerAdmin.php';
-}
-foreach ( $required_libs as $lib ) {
-	if ( ! include_once( $lib ) ) {
-		die( 'Unable to load required library:  "' . $lib . '"' );  // $lib is safe
+include_once __DIR__ . '/vendor/autoload.php';
+
+/**
+ * @var const Version of this plugin
+ */
+const PLUGIN_VERSION = "0.9";
+
+/**
+ * @var const Minimum Wordpress version supported
+ */
+const MIN_WP_VERSION = "4.0";
+
+/**
+ * @var const Minimum PHP version supported
+ */
+const MIN_PHP_VERSION = "7.0";
+
+/**
+ * @var const Text domain for i18n
+ */
+const TEXT_DOMAIN = "aad-doc-manager-locale"; //FIXME
+
+/**
+ * Connect plugin to WordPress
+ */
+add_action( 'plugins_loaded', function() {
+	( new Plugin( __FILE__ ) )->register_services( plugin_container() );
+} );
+
+/**
+ * Provide container instance for plugin
+ *
+ * @staticvar \PumaStudios\Container $container Plugin container
+ * @return \PumaStudios\Container
+ */
+function plugin_container() {
+	static $container = NULL;
+
+	if ( !$container ) {
+		$container = new \PumaStudios\Container;
 	}
+
+	return $container;
 }
-
-/**
- * Instantiate the main plugin class
- */
-if ( is_admin() ) {
-	$aad_doc_manager = new aadDocManagerAdmin();
-} else {
-	$aad_doc_manager = new aadDocManager();
-}
-$aad_doc_manager->setup();
-
-
-register_activation_hook( __FILE__, array( 'aadDocManager', 'plugin_activation') );
-register_deactivation_hook( __FILE__, array( 'aadDocManager', 'plugin_deactivation' ) );
 

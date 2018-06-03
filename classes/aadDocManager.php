@@ -2,7 +2,7 @@
 /*
  * Class to display and download documents
  *
- * @package Document Manager
+ * @package PumaStudios-DocManager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
  * @copyright 2017 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
  *
@@ -35,36 +35,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 	class aadDocManager
 	{
 		/**
-		 * @var string Plugin version
-		 */
-		const PLUGIN_VER = "0.8";
-
-		/**
-		 * @var string Post Type Name
-		 */
-		const post_type = 'aad-doc-manager';
-
-		/**
-		 * @var array Post Labels
-		 */
-		static $post_type_labels = array();
-
-		/**
-		 * @var string GUID Taxonomy name
-		 */
-		const term_guid = 'aad-doc-uuid';
-
-		/**
-		 * @var array GUID Taxonomy labels
-		 */
-		static $term_uuid_labels = array();
-
-		/**
-		 * @var string Download slug
-		 */
-		const download_slug = 'aad-document';
-
-		/**
 		 * @var string Path to Datatables assets
 		 */
 		private $datatables_dir_url;
@@ -94,37 +64,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 */
 		function setup()
 		{
-			self::$post_type_labels = array (
-				'name'               => __( 'Documents', 'aad-doc-manager' ),
-				'singular_name'      => __( 'Document', 'aad-doc-manager' ),
-				'menu_name'          => __( 'Documents', 'aad-doc-manager' ),
-				'name_admin_bar'     => __( 'Document', 'aad-doc-manager' ),
-				'all_items'          => __( 'All Documents', 'aad-doc-manager' ),
-				'add_new'            => __( 'Upload Document', 'aad-doc-manager' ),
-				'add_new_item'       => __( 'Upload Document', 'aad-doc-manager' ),
-				'edit_item'          => __( 'Update Document', 'aad-doc-manager' ),
-				'new_item'           => __( 'Upload New Document', 'aad-doc-manager' ),
-				'view_item'          => __( 'View Document', 'aad-doc-manager' ),
-				'search_item'        => __( 'Search Document', 'aad-doc-manager' ),
-				'not_found'          => __( 'No Documents found', 'aad-doc-manager' ),
-				'not_found_in_trash' => __( 'No Documents found in Trash', 'aad-doc-manager' )
-			);
 
-			self::$term_uuid_labels = array (
-				'name'						 => __( 'Document UUIDs', 'aad-doc-manager' ),
-				'singular_name'				 => __( 'Document UUID', 'aad-doc-manager' ),
-				'menu_name'					 => __( 'Document UUIDs', 'aad-doc-manager' ),
-				'all_items'					 => __( 'All Document UUIDs', 'aad-doc-manager' ),
-				'edit_item'					 => __( 'Edit Document UUID', 'aad-doc-manager' ),
-				'view_item'					 => __( 'View Document UUID', 'aad-doc-manager' ),
-				'update_item'				 => __( 'Update Document UUID', 'aad-doc-manager' ),
-				'add_new_item'				 => __( 'Add new Document UUID', 'aad-doc-manager' ),
-				'new_item_name'				 => __( 'New Document UUID', 'aad-doc-manager' ),
-				'search_items'				 => __( 'Search Document UUIDs', 'aad-doc-manager' ),
-				'separate_items_with_commas' => __( 'Separate UUIDs with commands', 'aad-doc-manager' ),
-				'add_or_remove_items'		 => __( 'Add or Remove UUIDs', 'aad-doc-manager' ),
-				'not_found'					 => __( 'No Document UUIDs found', 'aad-doc-manager' )
-			);
 
 			add_action( 'init', array( $this, 'action_plugin_setup' ) );
 		}
@@ -211,52 +151,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		}
 
         /**
-         * Register document post type and associated taxonomy
-         *
-         * @param void
-         * @return void
-         */
-        private static function register_document_post_type() {
-            register_post_type( self::post_type, array(
-				'labels'		 => self::$post_type_labels,
-				'description'	 => __( 'Upload Documents for display in posts/pages', 'aad-doc-manager' ),
-				'public'		 => false,	//  Implies exclude_from_search: true,
-											//          publicly_queryable: false,
-											//          show_in_nav_menus: false,
-											//          show_ui: false
-				'menu_icon'		 => 'dashicons-media-spreadsheet',
-				'hierarchical'	 => false,
-				'supports'		 => array( 'title' ),
-				'has_archive'	 => false,
-				'rewrite'		 => false,
-				'query_var'		 => false,
-				'taxonomies'     => array( self::term_guid )
-			) );
-
-			register_taxonomy( self::term_guid, self::post_type, array(
-				'labels' => self::$term_uuid_labels,
-				'public'		 => true,
-				'show_ui'		 => false,
-				'show_in_nav_menus' => false,
-				'show_tag_cloud' => false,
-				'show_in_quick_edit' => false,
-				'show_admin_column' => false,
-				'show_in_menu' => false,
-				'show_in_ui' => false,
-				'description' => __( 'Document UUID to internal ID mapping', 'aad-doc-manager' ),
-				'query_var' => 'aad-document',
-				'rewrite' => array(
-					'slug' => self::download_slug,
-					'with_front' => true,
-					'hierarchical' => false,
-					'ep_mask' => EP_ROOT
-				)
-			) );
-
-			register_taxonomy_for_object_type( self::term_guid, self::post_type );
-        }
-
-        /**
          * Redirect to document download
          */
         function action_try_endpoint() {
@@ -310,40 +204,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
             }
             // Not Reached
         }
-
-		/**
-		 * Find document based on provided UUID
-		 *
-		 * @param string $guid UUID for requested document
-		 * @return WP_post of the requested document
-		 */
-		protected function get_document_by_guid( $guid ) {
-			if ( !$guid || ! $this->is_guidv4( $guid ) )
-				return NULL;
-
-			$args	 = array(
-				'post_type' => self::post_type,
-				'tax_query' => array(
-					array(
-						'taxonomy'	 => self::term_guid,
-						'field'		 => 'name',
-						'terms'		 => $guid
-					)
-				)
-			);
-			$query	 = new WP_Query( $args );
-
-			/**
-             * document type should match custom post type
-             */
-
-			$document = $query->post;
-            if ( ! $document || self::post_type != $document->post_type ) {
-                return NULL;
-            }
-
-			return $document;
-		}
 
         /**
          * Display a 404 error
@@ -519,24 +379,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				return $file;
 		}
 
-		/**
-		 * Get the attachment for a downloadable document
-		 *
-		 * @param string $doc_id Document ID
-		 * @return WP_ Attachment Object
-		 */
-		private function get_attachment_by_docid( $doc_id ) {
-			/**
-			 * Must have a valid attachment for the document
-			 */
-			$attachment_id	 = get_post_meta( $doc_id, 'document_media_id', true );
-			$attachment		 = get_post( $attachment_id );
-			if ( !$attachment || 'attachment' != $attachment->post_type ) {
-				return null;
-			}
-
-			return $attachment;
-		}
 
 		/**
 		 * Get the real path to an attachment
@@ -811,21 +653,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		}
 
 		/**
-		 * Get escaped download URL for a given document id
-		 *
-		 * @param string $doc_id Document ID
-		 * @return string escaped URL or '' if unable to create URL
-		 */
-		function get_download_url_e ($doc_id ) {
-			$terms = wp_get_object_terms( $doc_id, 'aad-doc-uuid', array( 'fields' => 'names' ) );
-			if ( count( $terms ) > 0 ) {
-				return esc_url( '/' . self::download_slug . '/' . $terms[0] );
-			} else {
-				return '';
-			}
-		}
-
-		/**
 		 * Re-render previously saved HTML and update DB
 		 *
 		 * @param string $doc_id post ID for target document
@@ -1006,16 +833,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			return sanitize_key( $string );
 		}
 
-		/**
-		 * Is $uuid a valid GUID V4 string?
-		 *
-		 * @param string $guid GUID to test
-		 * @return boolean true if string is valid GUID v4 format
-		 */
-		function is_guidv4( $guid ) {
-			$UUIDv4 = '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i';
-			return preg_match( $UUIDv4, $guid );
-		}
 	} // End class aad_doc_manager
 
 } // End if
