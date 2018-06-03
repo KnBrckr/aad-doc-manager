@@ -942,7 +942,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			$result .= implode( array_map( function ( $col_data ) {return "<th>" . sanitize_text_field( $col_data ) . "</th>"; }, $render_data['col-headers'] ) );
 			$result .= '</tr></thead>';
 			$result .= '<tbody>';
-			$cell_style = "";
 
 			/**
 			 * Smaller loop if only certain rows requested
