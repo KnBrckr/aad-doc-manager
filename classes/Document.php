@@ -70,13 +70,13 @@ class Document {
 	/**
 	 * Retrieve Document instance
 	 *
-	 * @param int|NULL $id get a new Document instance for the given post id
+	 * @param int|WP_Post|NULL $_post get a new Document instance for the given post id
 	 * @param string $status requested status to retrieve
 	 * @return Document|NULL
 	 */
-	public static function get_document( $id, $status = 'publish' ) {
+	public static function get_document( $_post, $status = 'publish' ) {
 		/* @var $post \WP_Post */
-		$post = \get_post( $id );
+		$post = get_post( $_post );
 
 		if ( !$post || get_post_type( $post ) != self::POST_TYPE ) {
 			return NULL;
@@ -141,9 +141,10 @@ class Document {
 	 * Find document based on provided UUID
 	 *
 	 * @param string $guid UUID for requested document
+	 * @param string $status request post status
 	 * @return WP_post of the requested document
 	 */
-	protected static function get_document_by_guid( $guid ) {
+	protected static function get_document_by_guid( $guid, $status = 'publish' ) {
 		if ( !$guid || !self::is_guidv4( $guid ) ) {
 			return NULL;
 		}
@@ -168,6 +169,10 @@ class Document {
 			return NULL;
 		}
 
+		if ( '' != $status && get_post_status($post) != $status ) {
+			return NULL;
+		}
+
 		return new Document( $post );
 	}
 
@@ -177,7 +182,7 @@ class Document {
 	 * @param string $doc_id Document ID
 	 * @return WP_ Attachment Object
 	 */
-	private static function get_attachment_by_docid( $doc_id ) {
+	private function get_attachment_by_docid( $doc_id ) {
 		/**
 		 * Must have a valid attachment for the document
 		 */
@@ -316,15 +321,14 @@ class Document {
 	}
 
 	/**
-	 * Get escaped download URL for a given document id
+	 * Get escaped download URL for Document instance
 	 *
-	 * @param string $doc_id Document ID
 	 * @return string escaped URL or '' if unable to create URL
 	 */
-	public static function get_download_url_e( $doc_id ) {
-		$terms = wp_get_object_terms( $doc_id, self::TERM_GUID, array( 'fields' => 'names' ) );
+	public function get_download_url() {
+		$terms = wp_get_object_terms( $this->post->ID, self::TERM_GUID, array( 'fields' => 'names' ) );
 		if ( count( $terms ) > 0 ) {
-			return esc_url( '/' . self::DOWNLOAD_SLUG . '/' . $terms[0] );
+			return '/' . self::DOWNLOAD_SLUG . '/' . $terms[0];
 		} else {
 			return '';
 		}

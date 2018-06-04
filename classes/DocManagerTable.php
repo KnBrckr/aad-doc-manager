@@ -413,7 +413,12 @@ class DocManagerTable extends \WP_List_Table {
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	function column_download_url( $post ) {
-		return call_user_func( $this->download_url_callback, $post->ID );
+		$document = Document::get_document( $post, '' );
+		if ( !$document ) {
+			return '';
+		}
+
+		return esc_url( $document->get_download_url() );
 	}
 
 	/**
