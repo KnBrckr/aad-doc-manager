@@ -166,8 +166,7 @@ class DocumentAdmin {
 			'plural'				 => $obj->labels->name, // Plural label
 			'ajax'					 => false, // Will not support AJAX on this table
 			'upload_url'			 => menu_page_url( self::UPLOAD_PAGE_SLUG, false ),
-			'table_url'				 => menu_page_url( self::DOCUMENT_MENU_SLUG, false ),
-			'download_url_callback'	 => array( Document::class, 'get_download_url_e' )
+			'table_url'				 => menu_page_url( self::DOCUMENT_MENU_SLUG, false )
 			) );
 
 		$pagenum = $doc_table->get_pagenum();

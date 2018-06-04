@@ -70,7 +70,6 @@ class DocManagerTable extends \WP_List_Table {
 			) );
 		$this->upload_url			 = $args['upload_url'];
 		$this->table_url			 = $args['table_url'];
-		$this->download_url_callback = $args['download_url_callback'];
 	}
 
 	/**
@@ -418,7 +417,7 @@ class DocManagerTable extends \WP_List_Table {
 			return '';
 		}
 
-		return esc_url( $document->get_download_url() );
+		return esc_url( DocumentDownload::get_download_url($document) );
 	}
 
 	/**

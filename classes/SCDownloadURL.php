@@ -69,7 +69,7 @@ class SCDownloadURL {
 			return $content;
 		}
 
-		$url = $document->get_download_url();
+		$url = DocumentDownload::get_download_url( $document );
 		if ( '' != $url ) {
 			$text = '<a href="' . esc_url( $url ) . '">' . $content . '</a>';
 		} else {

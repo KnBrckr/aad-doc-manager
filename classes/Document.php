@@ -34,19 +34,20 @@ class Document {
 	const POST_TYPE = "aad-doc-manager";
 
 	/**
-	 * @var \WP_post base WP_Post
-	 */
-	private $post;
-
-	/**
 	 * @var string GUID Taxonomy name
 	 */
 	const TERM_GUID = 'aad-doc-uuid';
 
 	/**
-	 * @var string Download slug
+	 * @var \WP_post base WP_Post
 	 */
-	const DOWNLOAD_SLUG = 'aad-document';
+	private $post = NULL;
+
+	/**
+	 *
+	 * @var WP_Attachment WP Attachment object
+	 */
+	private $attachment = NULL;
 
 	/**
 	 * Constructor
@@ -93,6 +94,15 @@ class Document {
 	}
 
 	/**
+	 * Get WP Post ID
+	 *
+	 * @return int Post ID
+	 */
+	public function get_id() {
+		return $this->post->ID;
+	}
+
+	/**
 	 * Get status for document
 	 *
 	 * @return string
@@ -121,10 +131,20 @@ class Document {
 
 	/**
 	 * Get create date in GMT for document
+	 *
 	 * @return string
 	 */
 	public function get_date_gmt() {
 		return $this->post->post_date_gmt;
+	}
+
+	/**
+	 * Get mime_type
+	 *
+	 * @return string
+	 */
+	public function get_mime_type() {
+		return $this->post->post_mime_type;
 	}
 
 	/**
@@ -138,38 +158,38 @@ class Document {
 	}
 
 	/**
-	 * Find document based on provided UUID
+	 * Find document based on provided GUID
 	 *
-	 * @param string $guid UUID for requested document
+	 * @param string $guid GUID for requested document
 	 * @param string $status request post status
 	 * @return WP_post of the requested document
 	 */
-	protected static function get_document_by_guid( $guid, $status = 'publish' ) {
+	public static function get_document_by_guid( $guid, $status = 'publish' ) {
 		if ( !$guid || !self::is_guidv4( $guid ) ) {
 			return NULL;
 		}
 
 		$args	 = array(
-			'post_type'	 => self::post_type,
+			'post_type'	 => self::POST_TYPE,
 			'tax_query'	 => array(
 				array(
-					'taxonomy'	 => self::term_guid,
+					'taxonomy'	 => self::TERM_GUID,
 					'field'		 => 'name',
 					'terms'		 => $guid
 				)
 			)
 		);
-		$query	 = new WP_Query( $args );
+		$query	 = new \WP_Query( $args );
 
 		/**
 		 * document type should match custom post type
 		 */
 		$post = $query->post;
-		if ( !$post || self::POST_TYPE != $post->post_type ) {
+		if ( !$post || self::POST_TYPE != get_post_type( $post ) ) {
 			return NULL;
 		}
 
-		if ( '' != $status && get_post_status($post) != $status ) {
+		if ( '' != $status && get_post_status( $post ) != $status ) {
 			return NULL;
 		}
 
@@ -179,20 +199,49 @@ class Document {
 	/**
 	 * Get the attachment for a downloadable document
 	 *
-	 * @param string $doc_id Document ID
-	 * @return WP_ Attachment Object
+	 * @return WP_Attachment Object
 	 */
-	private function get_attachment_by_docid( $doc_id ) {
+	private function get_attachment() {
+		if ( $this->attachment ) {
+			return $this->attachment;
+		}
+
 		/**
 		 * Must have a valid attachment for the document
 		 */
-		$attachment_id	 = get_post_meta( $doc_id, 'document_media_id', true );
+		$attachment_id	 = get_post_meta( $this->get_id(), 'document_media_id', true );
 		$attachment		 = get_post( $attachment_id );
-		if ( !$attachment || 'attachment' != $attachment->post_type ) {
+		if ( !$attachment || 'attachment' != get_post_type( $attachment ) ) {
 			return null;
 		}
 
+		$this->attachment = $attachment;
 		return $attachment;
+	}
+
+	/**
+	 * Get the real path to document attachment
+	 *
+	 * @return string path to downloadable file
+	 */
+	public function get_attachment_realpath() {
+		$attachment = $this->get_attachment();
+		if ( !$attachment ) {
+			return NULL;
+		}
+
+		$filename = realpath( get_attached_file( $attachment->ID ) ); // Path to attached file
+
+		/**
+		 * 	Only allow a path that is in the uploads directory.
+		 */
+		$upload_dir		 = wp_upload_dir();
+		$upload_dir_base = realpath( $upload_dir['basedir'] );
+		if ( strncmp( $filename, $upload_dir_base, strlen( $upload_dir_base ) ) !== 0 ) {
+			return NULL;
+		}
+
+		return $filename;
 	}
 
 	/**
@@ -201,7 +250,7 @@ class Document {
 	 * @access private
 	 * @return string GUID
 	 */
-	private function generate_guid() {
+	private static function generate_guid() {
 		return self::guidv4( openssl_random_pseudo_bytes( 16 ) );
 	}
 
@@ -211,7 +260,7 @@ class Document {
 	 * @param blob $data 16 bytes binary data
 	 * @return string
 	 */
-	private function guidv4( $data ) {
+	private static function guidv4( $data ) {
 		assert( strlen( $data ) == 16 );
 
 		$data[6] = chr( ord( $data[6] ) & 0x0f | 0x40 ); // set version to 0100
@@ -226,7 +275,7 @@ class Document {
 	 * @param string $guid GUID to test
 	 * @return boolean true if string is valid GUID v4 format
 	 */
-	private function is_guidv4( $guid ) {
+	private static function is_guidv4( $guid ) {
 		$UUIDv4 = '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i';
 		return preg_match( $UUIDv4, $guid );
 	}
@@ -309,29 +358,16 @@ class Document {
 			'show_in_ui'		 => false,
 			'description'		 => __( 'Document UUID to internal ID mapping', TEXT_DOMAIN ),
 			'query_var'			 => 'aad-document',
-			'rewrite'			 => [
-				'slug'			 => self::DOWNLOAD_SLUG,
-				'with_front'	 => true,
-				'hierarchical'	 => false,
-				'ep_mask'		 => EP_ROOT
-			]
+			'rewrite'			 => false
+//			'rewrite'			 => [
+//				'slug'			 => self::DOWNLOAD_SLUG,
+//				'with_front'	 => true,
+//				'hierarchical'	 => false,
+//				'ep_mask'		 => EP_ROOT
+//			]
 		] );
 
 		register_taxonomy_for_object_type( self::TERM_GUID, self::POST_TYPE );
-	}
-
-	/**
-	 * Get escaped download URL for Document instance
-	 *
-	 * @return string escaped URL or '' if unable to create URL
-	 */
-	public function get_download_url() {
-		$terms = wp_get_object_terms( $this->post->ID, self::TERM_GUID, array( 'fields' => 'names' ) );
-		if ( count( $terms ) > 0 ) {
-			return '/' . self::DOWNLOAD_SLUG . '/' . $terms[0];
-		} else {
-			return '';
-		}
 	}
 
 }

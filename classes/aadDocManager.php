@@ -108,11 +108,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
              */
 			add_action( 'wp_enqueue_scripts', array( $this, 'action_enqueue_styles' ) );
 
-            /**
-             * Check for usage of endpoint in template_redirect
-             */
-            add_action( 'template_redirect', array( $this, 'action_try_endpoint' ) );
-
 			if ( class_exists( 'WooCommerce' ) ) {
 				/**
 				 * Add a woocommerce filter to enable the use of Document Manager documents as downloadable content
@@ -125,93 +120,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				//add_filter( 'woocommerce_file_download_path', array( $this, 'filter_woo_file_download_path' ), 10, 3 );
 			}
 		}
-
-        /**
-         * Redirect to document download
-         */
-        function action_try_endpoint() {
-            global $wp_query;
-
-            /**
-             * Does query match taxonomy endpoint?
-             */
-            $requested_doc = $wp_query->get( self::download_slug );
-            if ( ! $requested_doc )
-                return;
-
-			/**
-			 * Get Document to be downloaded
-			 */
-			$document = $this->get_document_by_guid( $requested_doc );
-            if ( ! is_a( $document, 'WP_post') ) {
-                $this->error_404();
-                // Not Reached
-            }
-
-			$attachment = $this->get_attachment_by_docid( $document->ID );
-			$file = $this->get_realpath_by_attachment( $attachment );
-
-            if ( '' != $file && file_exists( $file ) ) {
-                /**
-                 * Log download of the file
-                 */
-                $this->log_download( $document->ID );
-
-                /**
-                 * Output headers and dump the file
-                 */
-                header( 'Content-Description: File Transfer' );
-                header( 'Content-Type: ' . esc_attr( $attachment->post_mime_type ) );
-                header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
-                header( 'Content-Length: ' . filesize( $file ) );
-				nocache_headers();
-
-				/**
-				 * Flush headers to avoid over-write of the Content Type by PHP or Server
-				 */
-				flush();
-
-				readfile( $file );
-
-                die();
-            } else {
-                $this->error_404();
-                // Not Reached
-            }
-            // Not Reached
-        }
-
-        /**
-         * Display a 404 error
-         *
-         * @param void
-         * @return void
-         */
-        private function error_404() {
-            global $wp_query;
-
-            $wp_query->set_404();
-            status_header(404);
-			//	TODO Deal with situation when theme does not provide a 404 template.
-            get_template_part(404);
-            die();
-        }
-
-        /**
-         * Log download of a file
-         *
-         * @param int $doc_id document ID that was downloaded
-         * @return void
-         */
-        private function log_download( $doc_id ) {
-            /**
-             * Atomic Increment download count
-             */
-            do {
-                $value = $old = get_post_meta( $doc_id, 'download_count', true );
-                $value++;
-            } while ( ! update_post_meta( $doc_id, 'download_count', $value, $old ) );
-        }
 
 		/**
 		 * WP Action 'wp_enqueue_styles'
@@ -285,31 +193,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				return $fileurl ? $fileurl : $file;
 			} else
 				return $file;
-		}
-
-
-		/**
-		 * Get the real path to an attachment
-		 *
-		 * @param WP_ $attachment Attachment object
-		 * @return string path to downloadable file
-		 */
-		private function get_realpath_by_attachment( $attachment ) {
-			if (! is_a( $attachment, 'WP_post' ) || 'attachment' != $attachment->post_type )
-				return null;
-
-			$filename = realpath( get_attached_file( $attachment->ID ) ); // Path to attached file
-
-			/**
-			 * 	Only allow a path that is in the uploads directory.
-			 */
-			$upload_dir		 = wp_upload_dir( $create_dir = false );
-			$upload_dir_base = realpath( $upload_dir[ 'basedir' ] );
-			if ( strncmp( $filename, $upload_dir_base, strlen( $upload_dir_base ) ) !== 0 ) {
-				return '';
-			}
-
-			return $filename;
 		}
 
 		/**

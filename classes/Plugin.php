@@ -116,6 +116,7 @@ class Plugin {
 		if ( is_admin() ) {
 			DocumentAdmin::run();
 		}
+		DocumentDownload::run();
 
 		/**
 		 * Start Shortcodes
