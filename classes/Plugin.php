@@ -123,6 +123,7 @@ class Plugin {
 		SCCSVTable::run();
 		SCCreated::run();
 		SCModified::run();
+		SCDownloadURL::run();
 
 //		/**
 //		 * Instantiate the main plugin class

@@ -104,13 +104,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
             self::register_document_post_type();
 
             /**
-             * Add shortcodes
-             */
-			add_shortcode( 'docmgr-created', array( $this, 'sc_docmgr_created' ) );
-			add_shortcode( 'docmgr-modified', array( $this, 'sc_docmgr_modified' ) );
-			add_shortcode( 'docmgr-download-url', array( $this, 'sc_docmgr_download_url' ) );
-
-            /**
              * Setup needed actions
              */
 			add_action( 'wp_enqueue_scripts', array( $this, 'action_enqueue_styles' ) );
@@ -336,114 +329,6 @@ if ( ! class_exists( "aadDocManager" ) ) {
 
 			return WP_CONTENT_URL . $filename;
 		}
-
-		/**
-		 * 'docmgr-created' WP shortcode
-		 *
-		 * Displays document creation date
-		 *
-		 * Usage: [docmgr-created id=<doc_id>]
-		 *
-		 * @param array _attrs associative array of shortcode parameters
-		 * @param string $content Expected to be empty
-		 * @return string HTML content
-		 */
-		function sc_docmgr_created( $_attrs, $content = null )
-		{
-			$default_attrs = array( 'id' => null );
-
-			$attrs = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
-			$doc_id = intval( $attrs['id'] );
-
-			if ( ! $doc_id ) return ""; // No id value received
-
-			/**
-			 * Retrieve the post
-			 */
-			$document = get_post( $doc_id );
-			if ( ! $document ) return "";
-
-			/**
-			 * Make sure post type of the retrieved post is valid
-			 */
-			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) return "";
-
-			return esc_attr( $this->format_date( $document->post_date ) );
-		}
-
-		/**
-		 * 'docmgr-modified' WP shortcode
-		 *
-		 * Displays document modified date
-		 *
-		 * Usage: [docmgr-modified id=<doc_id>]
-		 *
-		 * @param array _attrs associative array of shortcode parameters
-		 * @param string $content Expected to be empty
-		 * @return string HTML content
-		 */
-		function sc_docmgr_modified( $_attrs, $content = null )
-		{
-			$default_attrs = array( 'id' => null );
-
-			$attrs = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
-			$doc_id = intval( $attrs['id'] );
-
-			if ( ! $doc_id ) return ""; // No id value received - nothing to do
-
-			/**
-			 * Retrieve the post
-			 */
-			$document = get_post( $doc_id );
-			if ( ! $document ) return "";
-
-			/**
-			 * Make sure post type of the retrieved post is valid
-			 */
-			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) return;
-
-			return esc_attr( $this->format_date( $document->post_modified ) );
-		}
-
-		/**
-		 * 'sc_docmgr-download-url' WP shortcode
-		 *
-		 * Usage: [docmgr-download-url id=<doc_id]text[/docmgr-download-url]
-		 *
-		 * @param array $_attrs associative array of shortcode parameters
-		 * @param string $content
-		 * @return string HTML content
-		 */
-		function sc_docmgr_download_url( $_attrs, $content = null ) {
-			$default_attrs = array( 'id' => null );
-
-			$attrs = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
-			$doc_id = intval( $attrs['id'] );
-
-			if ( ! $doc_id ) return $content; // No id value received - nothing to do
-
-			/**
-			 * Retrieve the post
-			 */
-			$document = get_post( $doc_id );
-			if ( ! $document ) return $content;
-
-			/**
-			 * Make sure post type of the retrieved post is valid
-			 */
-			if ( self::post_type != $document->post_type || 'publish' != $document->post_status )
-				return $content;
-
-			$url = $this->get_download_url_e( $doc_id );
-			if ( '' != $url ) {
-				$text = '<a href="' . $url . '">' . $content . '</a>';
-			} else {
-				$text = $content;
-			}
-
-			return $text;
-		}
-
 
 	} // End class aad_doc_manager
 
