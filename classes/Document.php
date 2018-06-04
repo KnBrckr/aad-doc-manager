@@ -71,12 +71,22 @@ class Document {
 	 * Retrieve Document instance
 	 *
 	 * @param int|NULL $id get a new Document instance for the given post id
+	 * @param string $status requested status to retrieve
+	 * @return Document|NULL
 	 */
-	public static function get_document( $id ) {
-		$post = get_post( $id );
+	public static function get_document( $id, $status = 'publish' ) {
+		/* @var $post \WP_Post */
+		$post = \get_post( $id );
 
 		if ( !$post || get_post_type( $post ) != self::POST_TYPE ) {
-			return NULL; // TODO Return WP_Error?
+			return NULL;
+		}
+
+		/**
+		 * Only return post if of requested status
+		 */
+		if ( '' != $status && get_post_status( $post ) != $status ) {
+			return NULL;
 		}
 
 		return new Document( $post );

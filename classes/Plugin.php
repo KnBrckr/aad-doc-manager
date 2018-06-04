@@ -121,6 +121,8 @@ class Plugin {
 		 * Start Shortcodes
 		 */
 		SCCSVTable::run();
+		SCCreated::run();
+		SCModified::run();
 
 //		/**
 //		 * Instantiate the main plugin class

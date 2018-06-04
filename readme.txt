@@ -126,3 +126,5 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 * RFE Delete from Media folder should completely deleted the related document entry
 * RFE Filter list by document type
 * RFE Sort on mime type using filter 'posts_orderby'
+* RFE Improve download activity log
+* RFE Support versions of a document

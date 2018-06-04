@@ -60,7 +60,7 @@ const PLUGIN_VERSION = "0.9";
 /**
  * @var const Minimum Wordpress version supported
  */
-const MIN_WP_VERSION = "4.0";
+const MIN_WP_VERSION = "4.6";
 
 /**
  * @var const Minimum PHP version supported

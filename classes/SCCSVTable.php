@@ -21,7 +21,7 @@
 namespace PumaStudios\DocManager;
 
 /**
- * Description of SCCSVTable
+ * Shortcode to display a CVS table in HTML format
  *
  * @package PumaStudios-DocManager
  * @author Kenneth J. Brucker <ken@pumastudios.com>
@@ -205,14 +205,6 @@ class SCCSVTable {
 		}
 
 		/**
-		 * Only display published documents
-		 */
-		if ( 'publish' != $document->get_post_status() ) {
-			return "";
-		}
-
-
-		/**
 		 * Start of content area
 		 *
 		 *     *******************************************************************
@@ -232,7 +224,7 @@ class SCCSVTable {
 				$text = __( 'Updated', TEXT_DOMAIN );
 			}
 			$result	 .= '<caption>';
-			$result	 .= "$text: " . \get_the_date( NULL, $doc_id ); // esc_attr( self::format_date( $document->get_modified() ) );
+			$result	 .= "$text: " . \get_the_modified_date( '', $doc_id );
 			$result	 .= '</caption>';
 		}
 
@@ -514,22 +506,6 @@ class SCCSVTable {
 		 * Maybe a text color name - return it.
 		 */
 		return sanitize_key( $color );
-	}
-
-	/**
-	 * Format a date/time using WP General Settings format
-	 *
-	 * @param string $date Date+Time YYYY-MM-DD HH:MM:SS
-	 * @return string, formatted date + time
-	 */
-	private function format_date( $date ) {
-		static $format;
-
-		if ( !isset( $format ) ) {
-			$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
-		}
-
-		return esc_attr( mysql2date( $format, $date ) );
 	}
 
 }
