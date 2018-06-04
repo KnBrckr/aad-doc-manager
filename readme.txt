@@ -55,6 +55,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= NEXT =
+* Refactored code
+
 = 0.9 =
 * Add rows option to docmgr-csv-table shortcode.
 

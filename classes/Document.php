@@ -34,7 +34,7 @@ class Document {
 	const POST_TYPE = "aad-doc-manager";
 
 	/**
-	 * @var WP_post base WP_Post
+	 * @var \WP_post base WP_Post
 	 */
 	private $post;
 
@@ -83,11 +83,47 @@ class Document {
 	}
 
 	/**
+	 * Get status for document
+	 *
+	 * @return string
+	 */
+	public function get_post_status() {
+		return $this->post->post_status;
+	}
+
+	/**
+	 * Get modified date in gmt for document
+	 *
+	 * @return string
+	 */
+	public function get_modified_gmt() {
+		return $this->post->post_modified_gmt;
+	}
+
+	/**
+	 * Get modified date for document
+	 *
+	 * @return string
+	 */
+	public function get_modified() {
+		return $this->post->post_modified;
+	}
+
+	/**
+	 * Get create date in GMT for document
+	 * @return string
+	 */
+	public function get_date_gmt() {
+		return $this->post->post_date_gmt;
+	}
+
+	/**
 	 * Retrieve WP_Post for this document
 	 *
 	 * @return WP_Post
 	 */
 	public function get_post() {
+		_doing_it_wrong( __FUNCTION__, 'Should use methods to get access to specific post content', '0.9' );
 		return $this->post;
 	}
 

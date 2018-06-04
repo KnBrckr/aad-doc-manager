@@ -48,11 +48,13 @@ class Plugin {
 
 		$plugin_dir_url	 = plugin_dir_url( $plugin );
 		self::$urls		 = [
-			'plugin' => $plugin_dir_url,
-			'js'	 => $plugin_dir_url . 'assets/js/',
-			'css'	 => $plugin_dir_url . 'assets/css/',
-			'fonts'	 => $plugin_dir_url . 'assets/fonts/',
-			'images' => $plugin_dir_url . 'assets/images/' ];
+			'plugin'	 => $plugin_dir_url,
+			'js'		 => $plugin_dir_url . 'assets/js/',
+			'css'		 => $plugin_dir_url . 'assets/css/',
+			'fonts'		 => $plugin_dir_url . 'assets/fonts/',
+			'images'	 => $plugin_dir_url . 'assets/images/',
+			'DataTables' => $plugin_dir_url . 'assets/DataTables/' // TODO need better way to locate libraries
+		];
 	}
 
 	/**
@@ -111,10 +113,14 @@ class Plugin {
 		 * Hook up other services here
 		 */
 		Document::run();
-
 		if ( is_admin() ) {
 			DocumentAdmin::run();
 		}
+
+		/**
+		 * Start Shortcodes
+		 */
+		SCCSVTable::run();
 
 //		/**
 //		 * Instantiate the main plugin class
