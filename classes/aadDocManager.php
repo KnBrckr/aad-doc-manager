@@ -427,10 +427,11 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 *
 		 * Usage: [docmgr-csv-table id=<post_id> {disp_date=0|1}]
 		 *  id is mandatory and must specify the post id of a custom post supported by this plugin
-		 *  date, boolean, 1 ==> Include last modified date in table caption
-		 *  row-colors, string, comma separated list of row color for each n-rows.
-		 *  row-number, boolean, 1 ==> Include row numbers
-		 *  page-length, integer, number of rows to display by default in table
+		 *  date boolean 1 ==> Include last modified date in table caption
+		 *  row-colors string comma separated list of row color for each n-rows.
+		 *  row-number boolean 1 ==> Include row numbers
+		 *  page-length integer number of rows to display by default in table
+		 *  rows string list of rows to include in output
 		 *
 		 * @param array _attrs associative array of shortcode parameters
 		 * @param string $content Expected to be empty
@@ -443,7 +444,8 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'date'       => 1,		// Display modified date in caption by default
 				'row-colors' => null,	// Use default row colors
 				'row-number' => 1,		// Display row numbers
-				'page-length' => 10     // Default # rows to display per page
+				'page-length' => 10,     // Default # rows to display per page
+				'rows'		 => NULL   // List of rows to display
 			);
 
 			/**
@@ -456,24 +458,32 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			$attrs[ 'row-number' ]           = intval( $attrs[ 'row-number' ] );
 			$attrs[ 'row-colors' ]           = $this->sanitize_row_colors( $attrs[ 'row-colors' ] );
 			$page_length                     = intval( $attrs['page-length'] );
+			$attrs['rows']					 = self::parse_numbers( $attrs['rows'] );
+
 
 			/**
 			 * Must re-render if any options change default rendering
 			 */
-			$render_defaults = $attrs['row-colors'] == null && $attrs['row-number'] == 1;
+			$render_defaults = $attrs['row-colors'] == NULL && $attrs['row-number'] == 1 && $attrs['rows'] == NULL;
 
-			if ( ! $doc_id ) return ""; // No id value received - nothing to do
+			if ( !$doc_id ) {
+				return "";
+			} // No id value received - nothing to do
 
 			/**
 			 * Retrieve the post
 			 */
 			$document = get_post($doc_id);
-			if ( ! $document ) return "";
+			if ( !$document ) {
+				return "";
+			}
 
 			/**
 			 * Make sure post type of the retrieved post is valid
 			 */
-			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) return "";
+			if ( self::post_type != $document->post_type || 'publish' != $document->post_status ) {
+				return "";
+			}
 
 			/**
 			 * Start of content area
@@ -543,6 +553,42 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			$result .= '</table></div>';
 
 			return $result;
+		}
+
+		/**
+		 * Parse a string containing sets of numbers such as:
+		 * 3
+		 * 1,3,5
+		 * 2-4
+		 * 1-5,7,15-17
+		 * spaces are ignored
+		 *
+		 * routine returns a sorted array containing all the numbers
+		 * duplicates are removed - e.g. '5,4-7' returns 4,5,6,7
+		 *
+		 * @param string $input
+		 * @return array Numbers as specified by provided input
+		 */
+		private function parse_numbers( $input ) {
+			if ( NULL == $input ) {
+				return [];
+			}
+
+			$input	 = str_replace( ' ', '', $input ); // strip out spaces
+			$output	 = array();
+			foreach ( explode( ',', $input ) as $nums ) {
+				if ( strpos( $nums, '-' ) !== false ) {
+					list($from, $to) = explode( '-', $nums );
+					$output = array_merge( $output, range( (int) $from, (int) $to ) );
+				} else {
+					$output[] = (int) $nums;
+				}
+			}
+
+			$output = array_unique( $output, SORT_NUMERIC ); // remove duplicates
+			sort( $output );
+
+			return $output;
 		}
 
 		/**
@@ -667,7 +713,8 @@ if ( ! class_exists( "aadDocManager" ) ) {
 				'columns'     => get_post_meta( $doc_id, 'csv_cols', true ),
 				'table'       => get_post_meta( $doc_id, 'csv_table', true ),
 				'row-number'  => $attrs['row-number'],
-				'row-colors'  => $attrs['row-colors']
+				'row-colors'  => $attrs['row-colors'],
+				'rows'		  => $attrs['rows']
 			);
 
 			$html = $this->render_csv( $render_data );
@@ -697,8 +744,11 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 */
 		protected function render_csv( $render_data )
 		{
-			$row_num = array_key_exists( 'row-number', $render_data ) ? $render_data['row-number'] : 1;
+			$number_rows = array_key_exists( 'row-number', $render_data ) ? $render_data['row-number'] : 1;
 			$row_colors = array_key_exists( 'row-colors', $render_data ) ? $render_data['row-colors'] : null;
+			$include_rows = array_key_exists( 'rows', $render_data ) ? $render_data['rows'] : [];
+			$column_cnt = $render_data['columns'];
+
 
 			/**
 			 * Build table header and body
@@ -709,27 +759,64 @@ if ( ! class_exists( "aadDocManager" ) ) {
 			 */
 			$result = '<thead><tr>';
 
-			if ($row_num) $result .= '<th>#</th>'; // Include row number?
+			/**
+			 * Include row number in output?
+			 */
+			if ( $number_rows ) {
+				$result .= '<th>#</th>';
+			}
 
 			$result .= implode( array_map( function ( $col_data ) {return "<th>" . sanitize_text_field( $col_data ) . "</th>"; }, $render_data['col-headers'] ) );
 			$result .= '</tr></thead>';
 			$result .= '<tbody>';
-			$cell_style = "";
-			foreach ( $render_data['table'] as $index => $row ) {
-				if ( $row_colors ) {
-					$cell_style = 'style="background-color: ' . $row_colors[$index % count( $row_colors )] . '"';
-				}
-				$result .= '<tr>';
 
-				if ( $row_num ) $result .= '<td>' . intval( $index + 1 )  . '</td>'; // Include row number?
-
-				$row = array_pad( $row, $render_data['columns'], '' ); // Pad the row to the overall column count
-				foreach ($row as $col_data) {
-					$result .= '<td ' . $cell_style . '>' . $this->nl2list( $col_data ) . '</td>';
+			/**
+			 * Smaller loop if only certain rows requested
+			 */
+			if ( count( $include_rows ) > 0 ) {
+				foreach ( $include_rows as $index ) {
+					/**
+					 * include_rows is 1 based
+					 */
+					$result .= self::render_csv_row( $index - 1, $render_data['table'][$index - 1], $column_cnt, $row_colors, $number_rows );
 				}
-				$result .= '</tr>';
+			} else {
+				foreach ( $render_data['table'] as $index => $row ) {
+					$result .= self::render_csv_row( $index, $row, $column_cnt, $row_colors, $number_rows );
+				}
 			}
 			$result .= '</tbody></table>';
+
+			return $result;
+		}
+
+		/**
+		 * Render a row of CSV data
+		 *
+		 * @param int $index Index number of the row
+		 * @param array $row CSV data
+		 * @param int $column_cnt Number of columns in table data
+		 * @param type $row_colors Colors to apply to rows
+		 * @param type $number_rows should row index be included in the output?
+		 * @return string HTML for row of csv data
+		 */
+		private function render_csv_row( $index, $row, $column_cnt, $row_colors, $number_rows ) {
+			if ( $row_colors ) {
+				$cell_style = 'style="background-color: ' . $row_colors[$index % count( $row_colors )] . '"';
+			} else {
+				$cell_style = '';
+			}
+			$result = '<tr>';
+
+			if ( $number_rows ) {
+				$result .= '<td>' . intval( $index + 1 ) . '</td>';
+			} // Include row number?
+
+			$row = array_pad( $row, $column_cnt, '' ); // Pad the row to the overall column count
+			foreach ( $row as $col_data ) {
+				$result .= '<td ' . $cell_style . '>' . self::nl2list( $col_data ) . '</td>';
+			}
+			$result .= '</tr>';
 
 			return $result;
 		}
@@ -740,7 +827,7 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 * @param string $text with embedded new-line characters
 		 * @return string HTML
 		 */
-		private function nl2list( $text )
+		private static function nl2list( $text )
 		{
 			/**
 			 * Split the input on new-line and turn into a list format if more than one line present

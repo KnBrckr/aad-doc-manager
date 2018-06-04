@@ -21,6 +21,7 @@ Custom post type to manage and display uploaded documents. A Shortcode is availa
 	row-number => boolean, 1 ==> Include row numbers
 	row-colors => string, comma separated list of row color for each n-rows.
     page-length => integer, number of rows to display in table by default
+	rows => string, list of rows to include in resulting table. e.g. "1-10,23,100-199"
 
 TODO Add method to disable sorting
 
@@ -53,6 +54,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 2. This is the second screen shot
 
 == Changelog ==
+
+= 0.9 =
+* Add rows option to docmgr-csv-table shortcode.
 
 = 0.8 =
 * Update to Datatables 1.10.16
