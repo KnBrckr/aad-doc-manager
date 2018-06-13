@@ -156,7 +156,7 @@ class Plugin {
 		 * Enforce minimum PHP version requirements
 		 */
 		if ( version_compare( MIN_PHP_VERSION, phpversion(), '>' ) ) {
-			self::notify_admin( sprintf(
+			self::admin_error( sprintf(
 					__( '%s plugin requires minimum PHP v%s, you are runing v%s', TEXT_DOMAIN ), __NAMESPACE__, MIN_PHP_VERSION, phpversion() )
 			);
 			$version_ok = false;
@@ -166,7 +166,7 @@ class Plugin {
 		 * Enforce minimum WP version requirements
 		 */
 		if ( version_compare( MIN_WP_VERSION, $wp_version, '>' ) ) {
-			self::notify_admin( sprintf(
+			self::admin_error( sprintf(
 					__( '%s plugin requires minimum Wordpress v%s, you are runing v%s', TEXT_DOMAIN ), __NAMESPACE__, MIN_WP_VERSION, $wp_version )
 			);
 			$version_ok = false;
@@ -176,7 +176,7 @@ class Plugin {
 		 * Enforce minimum WooCommerce version requirements
 		 */
 		if ( defined( 'MIN_WOO_VERSION' ) && function_exists( 'WC' ) && version_compare( MIN_WOO_VERSION, WC()->version, '>' ) ) {
-			self::notify_admin( sprintf(
+			self::admin_error( sprintf(
 					__( '%s plugin requires minimum WooCommerce v%s, you are runing v%s', TEXT_DOMAIN ), __NAMESPACE__, MIN_WOO_VERSION, WC()->version )
 			);
 			$version_ok = false;
@@ -185,9 +185,27 @@ class Plugin {
 		return $version_ok;
 	}
 
-	public function notify_admin( $notice ) {
-		add_action( 'admin_notices', function() use ($notice) {
-			printf( '<div class=error><p>%s</p></div>', esc_html( $notice ) );
+
+	/**
+	 * Display error message in admin screen
+	 *
+	 * @param type $notice string for display in admin screen
+	 * @since 1.0
+	 */
+	public static function admin_error( $notice ) {
+		self::admin_notice( 'error', $notice);
+	}
+
+	/**
+	 * Add admin_notice action to report a message with given status
+	 *
+	 * @access private
+	 * @param string $class class name for admin notice
+	 * @param string $notice string to display
+	 */
+	private static function admin_notice( string $class, string $notice ) {
+		add_action( 'admin_notices', function() use ($class, $notice) {
+			printf( '<div class=%s><p>%s</p></div>', esc_attr( $class), esc_html( $notice ) );
 		} );
 	}
 
