@@ -26,5 +26,8 @@
         "psr-4": {
             "PumaStudios\\DocManager\\": ["classes"]
         }
-    }
+    },
+	"require-dev": {
+		"phpunit/phpunit": "^6"
+	}
 }

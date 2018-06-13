@@ -1,25 +1,31 @@
 <?php
 /**
- * Autoload classes
+ * PHPUnit bootstrap file
+ *
+ * @package Aad_Doc_Manager
  */
-include_once('AutoLoader.php');
-AutoLoader::registerDirectory('.');
-AutoLoader::registerDirectory('admin');
 
-/**
- * Need ABSPATH defined for plugin code to load properly
- */
-define( 'ABSPATH', '/some/path');
+$_tests_dir = getenv( 'WP_TESTS_DIR' );
 
-/**
- * No-debug
- */
-define( 'WP_DEBUG', false);
-
-$_vendor_dir = getenv( 'COMPOSER_VENDOR_DIR' );
-if ( ! $_vendor_dir ) {
-	$_vendor_dir = realpath(dirname( __FILE__ ) . '/../../../../../vendor');
+if ( ! $_tests_dir ) {
+	$_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
 }
 
-require_once $_vendor_dir . '/autoload.php';
+if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
+	echo "Could not find $_tests_dir/includes/functions.php, have you run bin/install-wp-tests.sh ?" . PHP_EOL;
+	exit( 1 );
+}
 
+// Give access to tests_add_filter() function.
+require_once $_tests_dir . '/includes/functions.php';
+
+/**
+ * Manually load the plugin being tested.
+ */
+function _manually_load_plugin() {
+	require dirname( dirname( __FILE__ ) ) . '/aad-doc-manager.php';
+}
+tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
+
+// Start up the WP testing environment.
+require $_tests_dir . '/includes/bootstrap.php';
