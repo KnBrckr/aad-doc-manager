@@ -60,6 +60,8 @@ class Document {
 
 	/**
 	 * Plug into WP
+	 *
+	 * @since 1.0
 	 */
 	public static function run() {
 		add_action( 'init', function () {
@@ -74,6 +76,7 @@ class Document {
 	 * @param int|WP_Post|NULL $_post get a new Document instance for the given post id
 	 * @param string $status requested status to retrieve
 	 * @return Document|NULL
+	 * @since 1.0
 	 */
 	public static function get_document( $_post, $status = 'publish' ) {
 		/* @var $post \WP_Post */
@@ -97,6 +100,7 @@ class Document {
 	 * Get WP Post ID
 	 *
 	 * @return int Post ID
+	 * @since 1.0
 	 */
 	public function get_id() {
 		return $this->post->ID;
@@ -106,6 +110,7 @@ class Document {
 	 * Get status for document
 	 *
 	 * @return string
+	 * @since 1.0
 	 */
 	public function get_post_status() {
 		return $this->post->post_status;
@@ -115,6 +120,7 @@ class Document {
 	 * Get modified date in gmt for document
 	 *
 	 * @return string
+	 * @since 1.0
 	 */
 	public function get_modified_gmt() {
 		return $this->post->post_modified_gmt;
@@ -124,6 +130,7 @@ class Document {
 	 * Get modified date for document
 	 *
 	 * @return string
+	 * @since 1.0
 	 */
 	public function get_modified() {
 		return $this->post->post_modified;
@@ -133,6 +140,7 @@ class Document {
 	 * Get create date in GMT for document
 	 *
 	 * @return string
+	 * @since 1.0
 	 */
 	public function get_date_gmt() {
 		return $this->post->post_date_gmt;
@@ -142,6 +150,7 @@ class Document {
 	 * Get mime_type
 	 *
 	 * @return string
+	 * @since 1.0
 	 */
 	public function get_mime_type() {
 		return $this->post->post_mime_type;
@@ -151,9 +160,10 @@ class Document {
 	 * Retrieve WP_Post for this document
 	 *
 	 * @return WP_Post
+	 * @deprecated since version 1.0
 	 */
 	public function get_post() {
-		_doing_it_wrong( __FUNCTION__, 'Should use methods to get access to specific post content', '0.9' );
+		_doing_it_wrong( __FUNCTION__, 'Should use methods to get access to specific post content', '1.0' );
 		return $this->post;
 	}
 
@@ -163,6 +173,7 @@ class Document {
 	 * @param string $guid GUID for requested document
 	 * @param string $status request post status
 	 * @return WP_post of the requested document
+	 * @since 1.0
 	 */
 	public static function get_document_by_guid( $guid, $status = 'publish' ) {
 		if ( !$guid || !self::is_guidv4( $guid ) ) {
@@ -223,6 +234,7 @@ class Document {
 	 * Get the real path to document attachment
 	 *
 	 * @return string path to downloadable file
+	 * @since 1.0
 	 */
 	public function get_attachment_realpath() {
 		$attachment = $this->get_attachment();
@@ -282,29 +294,10 @@ class Document {
 
 	/*
 	 * Register the Document post type with WP
-	 */
-
-	public static function register_post_type() {
-		register_post_type( self::POST_TYPE, [
-			'labels'		 => self::get_post_type_labels(),
-			'description'	 => __( 'Upload Documents for display in posts/pages', TEXT_DOMAIN ),
-			'public'		 => false, // Implies exclude_from_search: true, publicly_queryable: false, show_in_nav_menus: false, show_ui: false
-			'menu_icon'		 => 'dashicons-media-spreadsheet',
-			'hierarchical'	 => false,
-			'supports'		 => array( 'title' ),
-			'has_archive'	 => false,
-			'rewrite'		 => false,
-			'query_var'		 => false,
-			'taxonomies'	 => [ self::TERM_GUID ]
-		] );
-	}
-
-	/**
-	 * Provide labels for managing Document post type
 	 *
-	 * @return array WP Post label names
+	 * @since 1.0
 	 */
-	public static function get_post_type_labels() {
+	public static function register_post_type() {
 		$post_type_labels = [
 			'name'				 => _x( 'Documents', 'post type general name', TEXT_DOMAIN ),
 			'singular_name'		 => __( 'Document', TEXT_DOMAIN ),
@@ -323,11 +316,24 @@ class Document {
 			'name_admin_bar'	 => __( 'Document', TEXT_DOMAIN ),
 		];
 
-		return $post_type_labels;
+		register_post_type( self::POST_TYPE, [
+			'labels'		 => $post_type_labels,
+			'description'	 => __( 'Upload Documents for display in posts/pages', TEXT_DOMAIN ),
+			'public'		 => false, // Implies exclude_from_search: true, publicly_queryable: false, show_in_nav_menus: false, show_ui: false
+			'menu_icon'		 => 'dashicons-media-spreadsheet',
+			'hierarchical'	 => false,
+			'supports'		 => array( 'title' ),
+			'has_archive'	 => false,
+			'rewrite'		 => false,
+			'query_var'		 => false,
+			'taxonomies'	 => [ self::TERM_GUID ]
+		] );
 	}
 
 	/**
 	 * Register UUID Taxonomy for documents
+	 *
+	 * @since 1.0
 	 */
 	public static function register_taxonomy() {
 		$term_uuid_labels = array(
