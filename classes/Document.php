@@ -96,7 +96,7 @@ class Document {
 	 * @return Document|NULL
 	 * @since 1.0
 	 */
-	public static function get_document( $_post, $status = 'publish' ) {
+	public static function get_instance( $_post, $status = 'publish' ) {
 		/* @var $post \WP_Post */
 		$post = get_post( $_post );
 

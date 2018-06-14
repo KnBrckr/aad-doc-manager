@@ -667,7 +667,7 @@ class DocumentAdmin {
 		 * Updating an existing document?
 		 */
 		$doc_id		 = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
-		$document	 = Document::get_document( $doc_id );
+		$document	 = Document::get_instance( $doc_id );
 		$post		 = $document ? $document->get_post() : NULL;
 
 		/**

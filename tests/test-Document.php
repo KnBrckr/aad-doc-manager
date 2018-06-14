@@ -65,23 +65,23 @@ class TestDocument extends WP_UnitTestCase {
 		/**
 		 * Invalid document
 		 */
-		$this->assertNull( Document::get_document( '999999' ) );
+		$this->assertNull( Document::get_instance( '999999' ) );
 
 		/**
 		 * Wrong post type
 		 */
-		$this->assertNull( Document::get_document( self::$normal_post_id ) );
+		$this->assertNull( Document::get_instance( self::$normal_post_id ) );
 
 		/**
 		 * not published
 		 */
-		$this->assertNull( Document::get_document( self::$document_revision_post_id ) );
-		$this->assertTrue( Document::get_document( self::$document_revision_post_id, 'inherit' ) instanceof Document );
+		$this->assertNull( Document::get_instance( self::$document_revision_post_id ) );
+		$this->assertTrue( Document::get_instance( self::$document_revision_post_id, 'inherit' ) instanceof Document );
 
 		/**
 		 * Normal document
 		 */
-		$document = Document::get_document( self::$document_post_id );
+		$document = Document::get_instance( self::$document_post_id );
 
 		$this->assertTrue( $document instanceof Document );
 		if ( $document instanceof Document ) {

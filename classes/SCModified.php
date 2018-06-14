@@ -66,7 +66,7 @@ class SCModified {
 		/**
 		 * Retrieve the Document
 		 */
-		$document = Document::get_document( $doc_id );
+		$document = Document::get_instance( $doc_id );
 		if ( !$document ) {
 			return "";
 		}

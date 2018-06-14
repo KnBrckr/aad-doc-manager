@@ -66,7 +66,7 @@ class SCCreated {
 		/**
 		 * Retrieve the post
 		 */
-		$document = Document::get_document( $doc_id, 'publish' );
+		$document = Document::get_instance( $doc_id, 'publish' );
 		if ( !$document ) {
 			return "";
 		}

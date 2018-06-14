@@ -199,7 +199,7 @@ class SCCSVTable {
 		/**
 		 * Retrieve the post
 		 */
-		$document = Document::get_document( $doc_id );
+		$document = Document::get_instance( $doc_id );
 		if ( NULL == $document ) {
 			return "";
 		}
