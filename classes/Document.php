@@ -59,6 +59,24 @@ class Document {
 	}
 
 	/**
+	 * get object properties
+	 *
+	 * @param string $name object value requested
+	 * @return various
+	 * @since 1.0 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type'
+	 */
+	public function __get( $name ) {
+		$post_properties = [ 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type' ];
+		if ( in_array( $name, $post_properties ) ) {
+			$result = $this->post->$name;
+		} else {
+			$result = null;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Plug into WP
 	 *
 	 * @since 1.0
@@ -94,66 +112,6 @@ class Document {
 		}
 
 		return new Document( $post );
-	}
-
-	/**
-	 * Get WP Post ID
-	 *
-	 * @return int Post ID
-	 * @since 1.0
-	 */
-	public function get_id() {
-		return $this->post->ID;
-	}
-
-	/**
-	 * Get status for document
-	 *
-	 * @return string
-	 * @since 1.0
-	 */
-	public function get_post_status() {
-		return $this->post->post_status;
-	}
-
-	/**
-	 * Get modified date in gmt for document
-	 *
-	 * @return string
-	 * @since 1.0
-	 */
-	public function get_modified_gmt() {
-		return $this->post->post_modified_gmt;
-	}
-
-	/**
-	 * Get modified date for document
-	 *
-	 * @return string
-	 * @since 1.0
-	 */
-	public function get_modified() {
-		return $this->post->post_modified;
-	}
-
-	/**
-	 * Get create date in GMT for document
-	 *
-	 * @return string
-	 * @since 1.0
-	 */
-	public function get_date_gmt() {
-		return $this->post->post_date_gmt;
-	}
-
-	/**
-	 * Get mime_type
-	 *
-	 * @return string
-	 * @since 1.0
-	 */
-	public function get_mime_type() {
-		return $this->post->post_mime_type;
 	}
 
 	/**
@@ -220,7 +178,7 @@ class Document {
 		/**
 		 * Must have a valid attachment for the document
 		 */
-		$attachment_id	 = get_post_meta( $this->get_id(), 'document_media_id', true );
+		$attachment_id	 = get_post_meta( $this->ID, 'document_media_id', true );
 		$attachment		 = get_post( $attachment_id );
 		if ( !$attachment || 'attachment' != get_post_type( $attachment ) ) {
 			return null;

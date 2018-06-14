@@ -78,13 +78,13 @@ class DocumentDownload {
 			/**
 			 * Log download of the file
 			 */
-			self::log_download( $document->get_id() );
+			self::log_download( $document->ID );
 
 			/**
 			 * Output headers and dump the file
 			 */
 			header( 'Content-Description: File Transfer' );
-			header( 'Content-Type: ' . esc_attr( $document->get_mime_type() ) );
+			header( 'Content-Type: ' . esc_attr( $document->post_mime_type ) );
 			header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
 			header( 'Content-Length: ' . filesize( $file ) );
 			nocache_headers();
@@ -111,7 +111,7 @@ class DocumentDownload {
 	 * @return string escaped URL or '' if unable to create URL
 	 */
 	public static function get_download_url( $document ) {
-		$terms = get_the_terms( $document->get_id(), Document::TERM_GUID );
+		$terms = get_the_terms( $document->ID, Document::TERM_GUID );
 
 		if ( $terms && count( $terms ) > 0 ) {
 			return '/' . self::DOWNLOAD_SLUG . '/' . $terms[0]->slug; // TODO Create a Document method to get GUID

@@ -218,7 +218,7 @@ class SCCSVTable {
 		 * Include caption if needed
 		 */
 		if ( $caption_date ) {
-			if ( $document->get_modified_gmt() == $document->get_date_gmt() ) {
+			if ( $document->post_modified_gmt == $document->post_date_gmt ) {
 				$text = __( 'Created', TEXT_DOMAIN );
 			} else {
 				$text = __( 'Updated', TEXT_DOMAIN );
