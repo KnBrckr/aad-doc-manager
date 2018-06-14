@@ -187,6 +187,26 @@ class Plugin {
 
 
 	/**
+	 * Display log message in admin screen
+	 *
+	 * @param type $notice string for display in admin screen
+	 * @since 1.0
+	 */
+	public static function admin_log( $notice ) {
+		self::admin_notice( 'updated', $notice);
+	}
+
+	/**
+	 * Display warning message in admin screen
+	 *
+	 * @param type $notice string for display in admin screen
+	 * @since 1.0
+	 */
+	public static function admin_warn( $notice ) {
+		self::admin_notice( 'update-nag', $notice);
+	}
+
+	/**
 	 * Display error message in admin screen
 	 *
 	 * @param type $notice string for display in admin screen
@@ -199,8 +219,13 @@ class Plugin {
 	/**
 	 * Add admin_notice action to report a message with given status
 	 *
+	 * WP defines the following classes for display:
+	 * 	- updated (Green)
+	 * 	- update-nag  (Yellow)
+	 *  - error (Red)
+	 *
 	 * @access private
-	 * @param string $class class name for admin notice
+	 * @param string $class class name for admin notice defined WP classes
 	 * @param string $notice string to display
 	 */
 	private static function admin_notice( string $class, string $notice ) {
