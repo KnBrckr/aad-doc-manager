@@ -39,6 +39,12 @@ class Document {
 	const TERM_GUID = 'aad-doc-uuid';
 
 	/**
+	 *  @var array Accepted document types
+	 */
+	protected static $accepted_mime_types = [ 'text/csv', 'application/pdf' ];
+	// if ( !in_array( $doc_type, $this->accepted_doc_types ) )
+
+	/**
 	 * @var \WP_post base WP_Post
 	 */
 	private $post = NULL;
@@ -74,6 +80,15 @@ class Document {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Get mime types supported by class
+	 * 
+	 * @return array of strings
+	 */
+	public static function get_supported_mime_types() {
+		return self::$accepted_mime_types;
 	}
 
 	/**
@@ -255,6 +270,7 @@ class Document {
 	 *
 	 * @since 1.0
 	 */
+
 	public static function register_post_type() {
 		$post_type_labels = [
 			'name'				 => _x( 'Documents', 'post type general name', TEXT_DOMAIN ),
@@ -332,6 +348,20 @@ class Document {
 		] );
 
 		register_taxonomy_for_object_type( self::TERM_GUID, self::POST_TYPE );
+	}
+
+	/**
+	 * Is given mime type supported as a document?
+	 *
+	 * @param string $mime_type
+	 * @return boolean true if mime type is supported
+	 */
+	function is_mime_type_supported( string $mime_type ) {
+		if ( in_array( $mime_type, self::$accepted_mime_types ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 }

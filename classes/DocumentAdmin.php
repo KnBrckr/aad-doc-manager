@@ -43,11 +43,6 @@ class DocumentAdmin {
 	const NONCE = 'pumastudios-docmgr-nonce';
 
 	/**
-	 *  @var array Accepted document types
-	 */
-	protected static $accepted_doc_types = [ 'text/csv', 'application/pdf' ];
-
-	/**
 	 * Instantiate
 	 */
 	public function __construct() {
@@ -309,16 +304,16 @@ class DocumentAdmin {
 		$untrashed	 = isset( $_REQUEST['untrashed'] ) ? intval( $_REQUEST['untrashed'] ) : NULL;
 
 		if ( $locked ) {
-			$this->log_admin_notice( 'yellow', sprintf( __( 'Skipped %d locked documents.', TEXT_DOMAIN ), $locked ) );
+			Plugin::admin_warn( sprintf( __( 'Skipped %d locked documents.', TEXT_DOMAIN ), $locked ) );
 		}
 		if ( $trashed ) {
-			$this->log_admin_notice( 'green', sprintf( __( 'Moved %d documents to the trash.', TEXT_DOMAIN ), $trashed ) );
+			Plugin::admin_log( sprintf( __( 'Moved %d documents to the trash.', TEXT_DOMAIN ), $trashed ) );
 		}
 		if ( $deleted ) {
-			$this->log_admin_notice( 'green', sprintf( __( 'Permanently deleted %d documents from trash.', TEXT_DOMAIN ), $deleted ) );
+			Plugin::admin_log( sprintf( __( 'Permanently deleted %d documents from trash.', TEXT_DOMAIN ), $deleted ) );
 		}
 		if ( $untrashed ) {
-			$this->log_admin_notice( 'green', sprintf( __( "Restored %d documents from trash.", TEXT_DOMAIN ), $untrashed ) );
+			Plugin::admin_log( sprintf( __( "Restored %d documents from trash.", TEXT_DOMAIN ), $untrashed ) );
 		}
 
 		$container = plugin_container();
@@ -446,7 +441,7 @@ class DocumentAdmin {
 				 */
 				$doc_id = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
 				if ( !$doc_id ) {
-					$this->log_admin_notice( 'red', __( 'Bad Request - No post id to update; plugin error?', TEXT_DOMAIN ) );
+					Plugin::admin_error( __( 'Bad Request - No post id to update; plugin error?', TEXT_DOMAIN ) );
 					return;
 				}
 				$post['ID'] = $doc_id;
@@ -456,7 +451,7 @@ class DocumentAdmin {
 				 */
 				$old_post = get_post( $doc_id );
 				if ( $old_post && $old_post->post_type != self::post_type ) {
-					$this->log_admin_notice( 'red', __( 'Sorry - Request to update invalid document id; plugin error?', TEXT_DOMAIN ) );
+					Plugin::admin_error( __( 'Sorry - Request to update invalid document id; plugin error?', TEXT_DOMAIN ) );
 					return;
 				}
 
@@ -475,14 +470,14 @@ class DocumentAdmin {
 					$have_upload = true;
 
 					$doc_type = $_FILES['document']['type'];
-					if ( !in_array( $doc_type, $this->accepted_doc_types ) ) {
-						$this->log_admin_notice( 'red', sprintf( __( 'Document type %s is not supported; plugin error?', TEXT_DOMAIN ), esc_attr( $doc_type ) ) );
+					if ( !Document::is_mime_type_supported( $doc_type ) ) {
+						Plugin::admin_error( sprintf( __( 'Document type %s is not supported; plugin error?', TEXT_DOMAIN ), esc_attr( $doc_type ) ) );
 						return;
 					}
 					$post['post_mime_type'] = $doc_type;
 
 					if ( !isset( $_FILES['document']['name'] ) ) {
-						$this->log_admin_notice( 'red', __( '$_FILES not sane; plugin error?', TEXT_DOMAIN ) );
+						Plugin::admin_error( __( '$_FILES not sane; plugin error?', TEXT_DOMAIN ) );
 						return;
 					}
 					$post['post_title'] = $_FILES['document']['name'];
@@ -492,7 +487,7 @@ class DocumentAdmin {
 					 */
 					$tmp_file = $_FILES['document']['tmp_name'];
 					if ( !is_uploaded_file( $tmp_file ) ) {
-						$this->log_admin_notice( 'red', __( 'Something fishy is going on, file does not appear to have been uploaded properly', TEXT_DOMAIN ) );
+						Plugin::admin_error( __( 'Upload file is missing.', TEXT_DOMAIN ) );
 						return;
 					}
 
@@ -501,7 +496,7 @@ class DocumentAdmin {
 					 */
 					$doc_content = $this->get_document_content( $doc_type, $tmp_file );
 					if ( isset( $doc_content['error'] ) ) {
-						$this->log_admin_notice( 'red', sprintf( __( 'Failed processing document content: %s', TEXT_DOMAIN ), $doc_content['error'] ) );
+						Plugin::admin_error( sprintf( __( 'Failed processing document content: %s', TEXT_DOMAIN ), $doc_content['error'] ) );
 						return;
 					}
 
@@ -516,14 +511,14 @@ class DocumentAdmin {
 					/**
 					 * Uploaded file is too large
 					 */
-					$this->log_admin_notice( 'red', __( "Uploaded file is too large.", TEXT_DOMAIN ) );
+					Plugin::admin_error( __( "Uploaded file is too large.", TEXT_DOMAIN ) );
 					return;
 
 				case UPLOAD_ERR_PARTIAL:
 					/**
 					 * Partial upload - Retry
 					 */
-					$this->log_admin_notice( 'red', __( "Partial upload received, please retry.", TEXT_DOMAIN ) );
+					Plugin::admin_error( __( "Partial upload received, please retry.", TEXT_DOMAIN ) );
 					return;
 
 				case UPLOAD_ERR_NO_FILE:
@@ -534,28 +529,28 @@ class DocumentAdmin {
 					/**
 					 * Configuration problem - No temp directory available
 					 */
-					$this->log_admin_notice( 'red', __( "Server error: No temp directory available", TEXT_DOMAIN ) );
+					Plugin::admin_error( __( "Server error: No temp directory available", TEXT_DOMAIN ) );
 					return;
 
 				case UPLOAD_ERR_CANT_WRITE:
 					/**
 					 * Configuration problem - Can't write to temp directory
 					 */
-					$this->log_admin_notice( 'red', __( "Server error: Can’t write to temp directory", TEXT_DOMAIN ) );
+					Plugin::admin_error( __( "Server error: Can’t write to temp directory", TEXT_DOMAIN ) );
 					return;
 
 				case UPLOAD_ERR_EXTENSION:
 					/**
 					 * Upload blocked by a php plugin
 					 */
-					$this->log_admin_notice( 'red', __( "PHP Plugin blocked upload; server logs may have details.", TEXT_DOMAIN ) );
+					Plugin::admin_error( __( "PHP Plugin blocked upload; server logs may have details.", TEXT_DOMAIN ) );
 					return;
 
 				default:
 					/**
 					 * Unknown error
 					 */
-					$this->log_admin_notice( 'red', __( sprintf( "Unknown file upload error: %d", $_FILES['document']['error'] ), TEXT_DOMAIN ) );
+					Plugin::admin_error( __( sprintf( "Unknown file upload error: %d", $_FILES['document']['error'] ), TEXT_DOMAIN ) );
 					return;
 			}
 		} else {
@@ -574,7 +569,7 @@ class DocumentAdmin {
 				 * New uploads require a file to be provided
 				 */
 				if ( !$have_upload ) {
-					$this->log_admin_notice( 'red', __( "No document uploaded.", TEXT_DOMAIN ) );
+					Plugin::admin_error( __( "Required document not provided.", TEXT_DOMAIN ) );
 					return;
 				}
 
@@ -584,7 +579,7 @@ class DocumentAdmin {
 				$doc_id = wp_insert_post( $post );
 
 				if ( !$doc_id ) {
-					$this->log_admin_notice( 'red', __( 'Error inserting post data! WP Config issue?', TEXT_DOMAIN ) );
+					Plugin::admin_error( __( 'Error inserting post data! WP Config issue?', TEXT_DOMAIN ) );
 					return;
 				}
 
@@ -612,7 +607,7 @@ class DocumentAdmin {
 			$attachment_id = media_handle_upload( 'document', $doc_id );
 
 			if ( is_wp_error( $attachment_id ) ) {
-				$this->log_admin_notice( 'red', sprintf( __( 'Unable to handle upload: %s', TEXT_DOMAIN ), $attachment_id->get_error_message() ) );
+				Plugin::admin_error( sprintf( __( 'Internal error, upload failed: %s', TEXT_DOMAIN ), $attachment_id->get_error_message() ) );
 				return;
 			} else {
 				/**
@@ -627,7 +622,7 @@ class DocumentAdmin {
 					$old_media_id = get_post_meta( $doc_id, 'document_media_id', true );
 					if ( $old_media_id ) {
 						if ( !wp_delete_attachment( $old_media_id, true ) ) {
-							$this->log_admin_notice( sprintf( __( 'Unable to remove old attachment; ID=%d', TEXT_DOMAIN ), $old_media_id ) );
+							Plugin::admin_warn( sprintf( __( 'Unable to remove old document; ID=%d', TEXT_DOMAIN ), $old_media_id ) );
 						}
 					}
 				}
@@ -683,7 +678,7 @@ class DocumentAdmin {
 			/**
 			 * All available Document types accepted for upload
 			 */
-			$accepted_doc_types = implode( self::$accepted_doc_types, ', ' );
+			$accepted_doc_types = implode( Document::get_supported_mime_types(), ', ' );
 		} else {
 			$title			 = $post->post_title;
 			$csv_rows		 = get_post_meta( $doc_id, 'csv_rows', true );

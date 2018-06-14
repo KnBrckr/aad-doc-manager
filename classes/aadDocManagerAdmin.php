@@ -191,48 +191,6 @@ if ( ! class_exists( "aadDocManagerAdmin" ) ) {
 		}
 
 		/**
-		 * Add a message to notice messages
-		 *
-		 * @param $class, string "red", "yellow", "green".  Selects log message type
-		 * @param $msg, string or HTML content to display.  User input should be scrubbed by caller
-		 * @return void
-		 **/
-		function log_admin_notice( $class, $msg )
-		{
-			$this->admin_notices[] = array( $class, $msg );
-		}
-
-		/**
-		 * Display Notice messages at head of admin screen
-		 *
-		 * @return void
-		 **/
-		function render_admin_notices()
-		{
-			/*
-				WP defines the following classes for display:
-					- error  (Red)
-					- updated  (Green)
-					- update-nag  (Yellow)
-			*/
-
-			static $notice_class = array(
-				'red' => 'error',
-				'yellow' => 'update-nag',
-				'green' => 'updated'
-			);
-
-			if ( count( $this->admin_notices ) ) {
-				foreach ( $this->admin_notices as $notice ) {
-					// TODO Handle undefined notice class
-					echo '<div class="'. esc_attr( $notice_class[$notice[0]] ) . '">';
-					echo '<p>' . wp_kses($notice[1], array(), array()) . '</p>';
-					echo '</div>';
-				}
-			}
-		}
-
-		/**
 		 * When deleting a media attachment via WP interfaces, remove the associated document as well
 		 *
 		 * @param int $attachment_id, post_id for attachment being removed
