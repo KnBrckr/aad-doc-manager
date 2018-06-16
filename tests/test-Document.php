@@ -93,4 +93,12 @@ class TestDocument extends WP_UnitTestCase {
 
 	}
 
+	function test_get_supported_mime_types() {
+		$expected_mime_types = [
+			'text/csv', 'application/pdf'
+		];
+
+		$this->assertEqualSets( $expected_mime_types, Document::get_supported_mime_types(), 'Supported Mime Types');
+	}
+
 }
