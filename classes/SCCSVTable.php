@@ -192,15 +192,11 @@ class SCCSVTable {
 		 */
 		$render_defaults = $attrs['row-colors'] == NULL && $attrs['row-number'] == 1 && $attrs['rows'] == NULL;
 
-		if ( !$doc_id ) {
-			return "";
-		} // No id value received - nothing to do
-
 		/**
 		 * Retrieve the post
 		 */
 		$document = Document::get_instance( $doc_id );
-		if ( NULL == $document ) {
+		if ( NULL == $document || 'text/csv' != $document->post_mime_type ) {
 			return "";
 		}
 
