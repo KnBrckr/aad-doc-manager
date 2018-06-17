@@ -84,7 +84,7 @@ class Document {
 
 	/**
 	 * Get mime types supported by class
-	 * 
+	 *
 	 * @return array of strings
 	 */
 	public static function get_supported_mime_types() {
@@ -356,7 +356,7 @@ class Document {
 	 * @param string $mime_type
 	 * @return boolean true if mime type is supported
 	 */
-	function is_mime_type_supported( string $mime_type ) {
+	public static function is_mime_type_supported( string $mime_type ) {
 		if ( in_array( $mime_type, self::$accepted_mime_types ) ) {
 			return true;
 		}
