@@ -48,6 +48,22 @@ class DocumentDownload {
 		 * Check for usage of endpoint in template_redirect
 		 */
 		add_action( 'template_redirect', [ self::class, 'action_try_endpoint' ] );
+
+		/**
+		 * Hook into WooCommerce if it's installed
+		 */
+		if ( class_exists( 'WooCommerce' ) ) {
+			/**
+			 * Add a woocommerce filter to enable the use of Document Manager documents as downloadable content
+			 */
+			add_filter( 'woocommerce_downloadable_file_exists', array( self::class, 'filter_woo_downloadable_file_exists' ), 10, 2 );
+
+			/**
+			 * Fixup document path for woocommerce downloadable products
+			 */
+			//add_filter( 'woocommerce_file_download_path', array( $this, 'filter_woo_file_download_path' ), 10, 3 );
+		}
+
 	}
 
 	/**
@@ -147,6 +163,80 @@ class DocumentDownload {
 		//	TODO Deal with situation when theme does not provide a 404 template.
 		get_template_part( 404 );
 		die();
+	}
+
+	/**
+	 * Allow WooCommerce to understand that a document provided by Document Manager is downloadable
+	 *
+	 * Uses filter defined in class-wc-product-download.php:file_exists()
+	 *
+	 * @param boolean $file_exists Earlier filters may have already decided if file exists
+	 * @param string $file_url path to the downloadable file
+	 */
+	public static function filter_woo_downloadable_file_exists( $file_exists, $file_url ) {
+		if ( '/' . self::DOWNLOAD_SLUG === substr( $file_url, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
+			/**
+			 * link is for the plugin. Confirm GUID provided is valid
+			 */
+			$guid = substr( $file_url, strlen( self::DOWNLOAD_SLUG ) + 2 );
+			if ( $this->is_guidv4( $guid ) && is_a( $this->get_document_by_guid( $guid ), 'WP_post' ) ) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return $file_exists;
+		}
+	}
+
+	/**
+	 * Provide woocommerce with real path for managed documents
+	 *
+	 * TODO Is this function needed?
+	 *
+	 * @param string $file file path recorded in woocommerce downloadable product
+	 * @param WC_product $product_id woocommerce product id
+	 * @param string $key woocommerce download document key
+	 * @return string path to file
+	 */
+	function filter_woo_file_download_path( $file, $product, $key ) {
+		if ( '/' . self::DOWNLOAD_SLUG === substr( $file, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
+			/**
+			 * link is for the plugin. Confirm GUID provided is valid
+			 */
+			$guid = substr( $file, strlen( self::DOWNLOAD_SLUG ) + 2 );
+
+			if ( !$this->is_guidv4( $guid ) )
+				return $file;
+
+			$document = $this->get_document_by_guid( $guid );
+			if ( !is_a( $document, 'WP_post' ) )
+				return $file;
+
+			$attachment	 = $this->get_attachment_by_docid( $document->ID );
+			$fileurl	 = $this->get_url_by_attachment( $attachment );
+
+			return $fileurl ? $fileurl : $file;
+		} else
+			return $file;
+	}
+
+	/**
+	 * Get url to an attachment
+	 *
+	 * @param WP_post $attachment attachment object
+	 * @return string File URL
+	 */
+	private function get_url_by_attachment( $attachment ) {
+		$filename = $this->get_realpath_by_attachment( $attachment );
+
+		/* Strip off content directory */
+		$real_content_dir = realpath( WP_CONTENT_DIR );
+		if ( substr( $filename, 0, strlen( $real_content_dir ) ) == $real_content_dir ) {
+			$filename = substr( $filename, strlen( $real_content_dir ) );
+		}
+
+		return WP_CONTENT_URL . $filename;
 	}
 
 }

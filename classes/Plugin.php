@@ -53,7 +53,7 @@ class Plugin {
 			'css'		 => $plugin_dir_url . 'assets/css/',
 			'fonts'		 => $plugin_dir_url . 'assets/fonts/',
 			'images'	 => $plugin_dir_url . 'assets/images/',
-			'DataTables' => $plugin_dir_url . 'assets/DataTables/' // TODO need better way to locate libraries
+			'DataTables' => $plugin_dir_url . 'assets/DataTables/' // TODO Use composer to load datatables?
 		];
 	}
 
@@ -108,6 +108,11 @@ class Plugin {
 		 * Setup i18n using default languages subdirectory
 		 */
 		load_plugin_textdomain( TEXT_DOMAIN );
+
+		/**
+		 * Enqueue Plugin CSS
+		 */
+		add_action( 'init', array( self::class, 'action_enqueue_styles' ) );
 
 		/**
 		 * Hook up other services here
@@ -185,7 +190,6 @@ class Plugin {
 		return $version_ok;
 	}
 
-
 	/**
 	 * Display log message in admin screen
 	 *
@@ -193,7 +197,7 @@ class Plugin {
 	 * @since 1.0
 	 */
 	public static function admin_log( $notice ) {
-		self::admin_notice( 'updated', $notice);
+		self::admin_notice( 'updated', $notice );
 	}
 
 	/**
@@ -203,7 +207,7 @@ class Plugin {
 	 * @since 1.0
 	 */
 	public static function admin_warn( $notice ) {
-		self::admin_notice( 'update-nag', $notice);
+		self::admin_notice( 'update-nag', $notice );
 	}
 
 	/**
@@ -213,7 +217,7 @@ class Plugin {
 	 * @since 1.0
 	 */
 	public static function admin_error( $notice ) {
-		self::admin_notice( 'error', $notice);
+		self::admin_notice( 'error', $notice );
 	}
 
 	/**
@@ -230,8 +234,26 @@ class Plugin {
 	 */
 	private static function admin_notice( string $class, string $notice ) {
 		add_action( 'admin_notices', function() use ($class, $notice) {
-			printf( '<div class=%s><p>%s</p></div>', esc_attr( $class), esc_html( $notice ) );
+			printf( '<div class=%s><p>%s</p></div>', esc_attr( $class ), esc_html( $notice ) );
 		} );
+	}
+
+	/**
+	 * Add plugin CSS
+	 *
+	 * Called during WP Action 'wp_enqueue_scripts'
+	 *
+	 * @param void
+	 * @return void
+	 */
+	public static function action_enqueue_styles() {
+		/**
+		 * Enqueue plugin CSS file using handle aad-doc-manager-css
+		 *
+		 * no dependencies and use for all media types
+		 */
+		wp_register_style( 'aad-doc-manager-css', self::get_asset_url( 'css', 'aad-doc-manager.css' ), false, PLUGIN_VERSION, 'all' );
+		wp_enqueue_style( 'aad-doc-manager-css' );
 	}
 
 }
