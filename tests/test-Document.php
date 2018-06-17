@@ -12,8 +12,10 @@ use PumaStudios\DocManager\Document;
  */
 class TestDocument extends WP_UnitTestCase {
 
-	const DATESTAMP				 = '2018-06-13 05:37:30';
-	const DATESTAMP_GMT			 = '2018-06-13 12:37:30';
+	const DATESTAMP		 = '2018-06-13 05:37:30';
+	const DATESTAMP_GMT	 = '2018-06-13 12:37:30';
+	const GUID1			 = '378ff88b-7eef-4156-836c-85e1eefc1e65';
+	const GUID2			 = '3809d4e8-16ff-4a58-9a24-2bc79cf0d425';
 
 	/**
 	 * @var int PostID for a normal post
@@ -42,10 +44,10 @@ class TestDocument extends WP_UnitTestCase {
 		 * A valid document
 		 */
 		$doc_attrs				 = [
-			'post_type'			 => Document::POST_TYPE,
-			'post_date'			 => self::DATESTAMP,
-			'post_date_gmt'		 => self::DATESTAMP_GMT,
-			'post_mime_type'	 => 'text/csv'
+			'post_type'		 => Document::POST_TYPE,
+			'post_date'		 => self::DATESTAMP,
+			'post_date_gmt'	 => self::DATESTAMP_GMT,
+			'post_mime_type' => 'text/csv'
 		];
 		self::$document_post_id	 = $factory->post->create( $doc_attrs );
 
@@ -59,9 +61,23 @@ class TestDocument extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test registration of taxonomy
+	 */
+	function test_register_taxonomy() {
+		self::markTestIncomplete();
+	}
+
+	/**
+	 * Test registration of post type
+	 */
+	function test_register_post_type() {
+		self::markTestIncomplete();
+	}
+
+	/**
 	 * Test document retrieval
 	 */
-	function test_get_document() {
+	function test_emtpy_get_document() {
 		/**
 		 * Invalid document
 		 */
@@ -76,29 +92,94 @@ class TestDocument extends WP_UnitTestCase {
 		 * not published
 		 */
 		$this->assertNull( Document::get_instance( self::$document_revision_post_id ) );
-		$this->assertTrue( Document::get_instance( self::$document_revision_post_id, 'inherit' ) instanceof Document );
+	}
+
+	/**
+	 *
+	 * @return Document
+	 */
+	function test_get_instance() {
+		$this->assertTrue( Document::get_instance( self::$document_revision_post_id, 'inherit' ) instanceof Document, 'find document revision' );
 
 		/**
 		 * Normal document
 		 */
 		$document = Document::get_instance( self::$document_post_id );
+		$this->assertTrue( $document instanceof Document, 'find published document by ID' );
 
-		$this->assertTrue( $document instanceof Document );
-		if ( $document instanceof Document ) {
-			$this->assertEquals( self::DATESTAMP, $document->post_modified );
-			$this->assertEquals( self::DATESTAMP_GMT, $document->post_modified_gmt );
-			$this->assertEquals( self::DATESTAMP_GMT, $document->post_date_gmt );
-			$this->assertEquals( 'text/csv', $document->post_mime_type );
-		}
-
+		return $document;
 	}
 
-	function test_get_supported_mime_types() {
+	/**
+	 *
+	 * @depends test_get_instance
+	 * @param Document $document
+	 */
+	function test_document_contents( Document $document ) {
+		$this->assertEquals( self::$document_post_id, $document->ID );
+		$this->assertEquals( self::DATESTAMP, $document->post_modified );
+		$this->assertEquals( self::DATESTAMP_GMT, $document->post_modified_gmt );
+		$this->assertEquals( self::DATESTAMP_GMT, $document->post_date_gmt );
+		$this->assertEquals( 'text/csv', $document->post_mime_type );
+	}
+
+	/**
+	 * Test document access by GUID
+	 */
+	function test_get_document_by_guid() {
+		/**
+		 * Invalid guid
+		 */
+		$this->assertNull( Document::get_document_by_guid( 'bad-guid' ), "malformed GUID" );
+
+		/**
+		 * Valid guid, no document
+		 */
+		$this->assertNull( Document::get_document_by_guid( self::GUID1 ), "no such GUID" );
+
+		/**
+		 * Valid guid, matching document
+		 */
+		self::markTestIncomplete( 'find document by valid GUID must be implemented' );
+		$document = Document::get_document_by_guid( self::GUID2 );
+		$this->assertTrue( $document instanceof Document, "find document by valid GUID" );
+	}
+
+	/**
+	 * Test retrieval of attachment for a document
+	 *
+	 * @depends test_get_instance
+	 * @param Document $document A document post
+	 */
+	function test_get_attachment( Document $document ) {
+		self::markTestIncomplete();
+	}
+
+	/**
+	 * Test retrieval of real path to an attachment
+	 *
+	 * @depends test_get_instance
+	 * @param Document $document A document post
+	 */
+	function test_get_attachment_real_path( Document $document ) {
+		self::markTestIncomplete();
+	}
+
+	/**
+	 * Test supported mime types
+	 */
+	function test_supported_mime_types() {
 		$expected_mime_types = [
 			'text/csv', 'application/pdf'
 		];
 
-		$this->assertEqualSets( $expected_mime_types, Document::get_supported_mime_types(), 'Supported Mime Types');
+		$this->assertEqualSets( $expected_mime_types, Document::get_supported_mime_types(), 'Supported Mime Types' );
+
+		foreach ( $expected_mime_types as $mime_type ) {
+			$this->assertTrue( Document::is_mime_type_supported( $mime_type ) );
+		}
+
+		$this->assertFalse( Document::is_mime_type_supported( 'bad-mime-type' ) );
 	}
 
 }
