@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class SampleTest
  *
@@ -11,10 +12,24 @@
 class DocumentDownloadTest extends WP_UnitTestCase {
 
 	/**
-	 * A single example test.
+	 * Test download endpoint
 	 */
-	function test_sample() {
-		// Replace this with some actual testing code.
-		$this->assertTrue( true );
+	function test_action_try_endpoint() {
+		self::markTestIncomplete();
 	}
+
+	/**
+	 * Test woocommerce filter
+	 */
+	function test_filter_woo_downloadable_file_exists() {
+		self::markTestIncomplete();
+	}
+
+	/**
+	 * Test retrieval of download URL
+	 */
+	function test_get_download_url() {
+		self::markTestIncomplete();
+	}
+
 }
