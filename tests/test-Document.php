@@ -23,9 +23,14 @@ class TestDocument extends WP_UnitTestCase {
 	protected static $normal_post_id;
 
 	/**
-	 * @var int  PostID for a normal document
+	 * @var int  PostID for a CSV document
 	 */
-	protected static $document_post_id;
+	protected static $document_csv_post_id;
+
+	/**
+	 * @var int PostID for a PDF document
+	 */
+	protected static $document_pdf_post_id;
 
 	/**
 	 * @var int PostID for a document revision
@@ -49,7 +54,13 @@ class TestDocument extends WP_UnitTestCase {
 			'post_date_gmt'	 => self::DATESTAMP_GMT,
 			'post_mime_type' => 'text/csv'
 		];
-		self::$document_post_id	 = $factory->post->create( $doc_attrs );
+		self::$document_csv_post_id	 = $factory->post->create( $doc_attrs );
+
+		/**
+		 * A PDF document
+		 */
+		$doc_attrs['post_mime_type'] = 'application/pdf';
+		self::$document_pdf_post_id = $factory->post->create( $doc_attrs );
 
 		/**
 		 * An older revision
@@ -104,7 +115,7 @@ class TestDocument extends WP_UnitTestCase {
 		/**
 		 * Normal document
 		 */
-		$document = Document::get_instance( self::$document_post_id );
+		$document = Document::get_instance( self::$document_csv_post_id );
 		$this->assertTrue( $document instanceof Document, 'find published document by ID' );
 
 		return $document;
@@ -116,7 +127,7 @@ class TestDocument extends WP_UnitTestCase {
 	 * @param Document $document
 	 */
 	function test_document_contents( Document $document ) {
-		$this->assertEquals( self::$document_post_id, $document->ID );
+		$this->assertEquals( self::$document_csv_post_id, $document->ID );
 		$this->assertEquals( self::DATESTAMP, $document->post_modified );
 		$this->assertEquals( self::DATESTAMP_GMT, $document->post_modified_gmt );
 		$this->assertEquals( self::DATESTAMP_GMT, $document->post_date_gmt );
@@ -180,6 +191,22 @@ class TestDocument extends WP_UnitTestCase {
 		}
 
 		$this->assertFalse( Document::is_mime_type_supported( 'bad-mime-type' ) );
+	}
+
+	/**
+	 * Negative test for document of CSV mime type
+	 */
+	function test_is_csv_false() {
+		$document = Document::get_instance( self::$document_pdf_post_id );
+		$this->assertFalse( $document->is_csv() );
+	}
+
+	/**
+	 * Positive test for document of CSV mime type
+	 */
+	function test_is_csv_true() {
+		$document = Document::get_instance( self::$document_csv_post_id );
+		$this->assertTrue( $document->is_csv() );
 	}
 
 }

@@ -42,18 +42,26 @@ class Document {
 	 *  @var array Accepted document types
 	 */
 	protected static $accepted_mime_types = [ 'text/csv', 'application/pdf' ];
-	// if ( !in_array( $doc_type, $this->accepted_doc_types ) )
 
 	/**
-	 * @var \WP_post base WP_Post
+	 * @var \WP_post underlying WP_Post
 	 */
 	private $post = NULL;
 
 	/**
-	 *
-	 * @var WP_Attachment WP Attachment object
+	 * @var WP_Attachment The attached document
 	 */
 	private $attachment = NULL;
+
+	/**
+	 * @var int Document (WP_Post) ID
+	 */
+	private $ID;
+
+	/**
+	 * @var string The document mime type
+	 */
+	private $post_mime_type;
 
 	/**
 	 * Constructor
@@ -61,7 +69,9 @@ class Document {
 	 * @param WP_post $post Wordpress Post to treat as a document
 	 */
 	public function __construct( \WP_Post $post ) {
-		$this->post = $post;
+		$this->post				 = $post;
+		$this->ID				 = $post->ID;
+		$this->post_mime_type	 = get_post_mime_type( $post->ID );
 	}
 
 	/**
@@ -127,17 +137,6 @@ class Document {
 		}
 
 		return new Document( $post );
-	}
-
-	/**
-	 * Retrieve WP_Post for this document
-	 *
-	 * @return WP_Post
-	 * @deprecated since version 1.0
-	 */
-	public function get_post() {
-		_doing_it_wrong( __FUNCTION__, 'Should use methods to get access to specific post content', '1.0' );
-		return $this->post;
 	}
 
 	/**
@@ -318,6 +317,7 @@ class Document {
 	 *
 	 * @param string $mime_type
 	 * @return boolean true if mime type is supported
+	 * @since 1.0
 	 */
 	public static function is_mime_type_supported( string $mime_type ) {
 		if ( in_array( $mime_type, self::$accepted_mime_types ) ) {
@@ -327,4 +327,17 @@ class Document {
 		return false;
 	}
 
+	/**
+	 * Is document a CSV document?
+	 *
+	 * @return boolean true if document is CSV
+	 * @since 1.0
+	 */
+	public function is_csv() {
+		if ( 'text/csv' == $this->post_mime_type ) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 }
