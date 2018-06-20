@@ -419,19 +419,14 @@ class DocumentAdmin {
 		/**
 		 * Initialize new/updated post content
 		 */
-		$post				 = array();
-		$post['post_title']	 = '';
+		$post = array();
 
 		switch ( $action ) {
 			case 'new':
 				/**
 				 * Adding a new document
 				 */
-				$post['post_excerpt']	 = '';
-				$post['post_type']		 = self::post_type;
-				$post['post_status']	 = 'publish';
-				$post['comment_status']	 = 'closed';
-				$post['ping_status']	 = 'closed';
+
 
 				break;
 
@@ -469,33 +464,11 @@ class DocumentAdmin {
 					 */
 					$have_upload = true;
 
-					$doc_type = $_FILES['document']['type'];
-					if ( !Document::is_mime_type_supported( $doc_type ) ) {
-						Plugin::admin_error( sprintf( __( 'Document type %s is not supported; plugin error?', TEXT_DOMAIN ), esc_attr( $doc_type ) ) );
-						return;
-					}
-					$post['post_mime_type'] = $doc_type;
-
-					if ( !isset( $_FILES['document']['name'] ) ) {
-						Plugin::admin_error( __( '$_FILES not sane; plugin error?', TEXT_DOMAIN ) );
-						return;
-					}
-					$post['post_title'] = $_FILES['document']['name'];
-
-					/**
-					 * Confirm there's a valid uploaded file
-					 */
-					$tmp_file = $_FILES['document']['tmp_name'];
-					if ( !is_uploaded_file( $tmp_file ) ) {
-						Plugin::admin_error( __( 'Upload file is missing.', TEXT_DOMAIN ) );
-						return;
-					}
-
 					/**
 					 * Process document content (if appropriate for the content type)
 					 */
 					$doc_content = $this->get_document_content( $doc_type, $tmp_file );
-					if ( isset( $doc_content['error'] ) ) {
+					if ( isset( $doc_content['error'] ) ) { // FIXME - should be a thrown error
 						Plugin::admin_error( sprintf( __( 'Failed processing document content: %s', TEXT_DOMAIN ), $doc_content['error'] ) );
 						return;
 					}
@@ -506,52 +479,7 @@ class DocumentAdmin {
 					$post['post_content'] = $doc_content['post_content'];
 					break;
 
-				case UPLOAD_ERR_INI_SIZE:
-				case UPLOAD_ERR_FORM_SIZE:
-					/**
-					 * Uploaded file is too large
-					 */
-					Plugin::admin_error( __( "Uploaded file is too large.", TEXT_DOMAIN ) );
-					return;
 
-				case UPLOAD_ERR_PARTIAL:
-					/**
-					 * Partial upload - Retry
-					 */
-					Plugin::admin_error( __( "Partial upload received, please retry.", TEXT_DOMAIN ) );
-					return;
-
-				case UPLOAD_ERR_NO_FILE:
-					$have_upload = false;
-					break;
-
-				case UPLOAD_ERR_NO_TMP_DIR:
-					/**
-					 * Configuration problem - No temp directory available
-					 */
-					Plugin::admin_error( __( "Server error: No temp directory available", TEXT_DOMAIN ) );
-					return;
-
-				case UPLOAD_ERR_CANT_WRITE:
-					/**
-					 * Configuration problem - Can't write to temp directory
-					 */
-					Plugin::admin_error( __( "Server error: Can’t write to temp directory", TEXT_DOMAIN ) );
-					return;
-
-				case UPLOAD_ERR_EXTENSION:
-					/**
-					 * Upload blocked by a php plugin
-					 */
-					Plugin::admin_error( __( "PHP Plugin blocked upload; server logs may have details.", TEXT_DOMAIN ) );
-					return;
-
-				default:
-					/**
-					 * Unknown error
-					 */
-					Plugin::admin_error( __( sprintf( "Unknown file upload error: %d", $_FILES['document']['error'] ), TEXT_DOMAIN ) );
-					return;
 			}
 		} else {
 			$have_upload = false;
@@ -576,19 +504,12 @@ class DocumentAdmin {
 				/**
 				 * Insert new post
 				 */
-				$doc_id = wp_insert_post( $post );
-
-				if ( !$doc_id ) {
-					Plugin::admin_error( __( 'Error inserting post data! WP Config issue?', TEXT_DOMAIN ) );
+				$document = Document::create_document( $post, 'document' );
+				if ( is_wp_error( $document )) {
+					Plugin::admin_error( $document->get_error_message() );
 					return;
 				}
-
-				/**
-				 * Generate a GUID for this document
-				 */
-				$guid = $this->generate_guid();
-				wp_set_object_terms( $doc_id, $guid, self::term_guid );
-
+				
 				break;
 
 			case 'update':
@@ -599,35 +520,6 @@ class DocumentAdmin {
 				break;
 		}
 
-
-		/**
-		 * Save uploaded file as media
-		 */
-		if ( $have_upload ) {
-			$attachment_id = media_handle_upload( 'document', $doc_id );
-
-			if ( is_wp_error( $attachment_id ) ) {
-				Plugin::admin_error( sprintf( __( 'Internal error, upload failed: %s', TEXT_DOMAIN ), $attachment_id->get_error_message() ) );
-				return;
-			} else {
-				/**
-				 * Upload file saved successfully, preserve the new attachment ID
-				 */
-				$doc_content['post_meta']['document_media_id'] = $attachment_id;
-
-				/**
-				 * On update, remove previously saved revision of the document
-				 */
-				if ( 'update' == $action ) {
-					$old_media_id = get_post_meta( $doc_id, 'document_media_id', true );
-					if ( $old_media_id ) {
-						if ( !wp_delete_attachment( $old_media_id, true ) ) {
-							Plugin::admin_warn( sprintf( __( 'Unable to remove old document; ID=%d', TEXT_DOMAIN ), $old_media_id ) );
-						}
-					}
-				}
-			}
-		}
 
 		/**
 		 * Save meta data related to document content

@@ -82,7 +82,7 @@ class Document {
 	 * @since 1.0 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type'
 	 */
 	public function __get( $name ) {
-		$post_properties = [ 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type' ];
+		$post_properties = [ 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type', 'post_title' ];
 		if ( in_array( $name, $post_properties ) ) {
 			$result = $this->post->$name;
 		} else {
@@ -114,7 +114,7 @@ class Document {
 	}
 
 	/**
-	 * Retrieve Document instance
+	 * Retrieve Document instance for an existing Document
 	 *
 	 * @param int|WP_Post|NULL $_post get a new Document instance for the given post id
 	 * @param string $status requested status to retrieve
@@ -137,6 +137,171 @@ class Document {
 		}
 
 		return new Document( $post );
+	}
+
+	/**
+	 * Create a new document in the DB
+	 *
+	 * @param array $_postarr Post creation parameters
+	 * @param string $file_id Index of the `$_FILES` array that the file was sent.
+	 * @return Document|WP_Error Document object on success
+	 * @since 1.0
+	 */
+	public static function create_document( $_postarr, $file_id ) {
+		$default_postarr = [
+			'post_excerpt'	 => '',
+			'post_type'		 => self::POST_TYPE,
+			'post_status'	 => 'publish',
+			'comment_status' => 'closed',
+			'ping_status'	 => 'closed',
+		];
+
+		/**
+		 * Apply defaults to input
+		 */
+		$postarr = array_merge( $default_postarr, $_postarr );
+
+		/**
+		 * Only continue if a valid upload file is available
+		 */
+		$file = self::filter_file( $file_id );
+		if ( is_wp_error( $file ) ) {
+			return $file;
+		}
+
+		$postarr['post_title'] = $file['name'];
+
+		/**
+		 * Set mime type based on incoming file contents
+		 */
+		$mime_type = self::validate_mime_type( $file['name'], $file['tmp_name'] );
+		if ( is_wp_error( $mime_type ) ) {
+			return $mime_type;
+		}
+		$postarr['post_mime_type'] = $mime_type;
+
+		/**
+		 * Create new post entry for the document
+		 */
+		$doc_id = wp_insert_post( $postarr );
+		if ( !$doc_id ) {
+			return new \WP_Error( 'WP_ERROR', __( 'Internal Wordpress error; unable to insert post data.', TEXT_DOMAIN ) );
+		}
+
+		$attachment_id = self::handle_upload( $doc_id, $file_id );
+		if ( is_wp_error( $attachment_id ) ) {
+			return $attachment_id;
+		}
+
+		/**
+		 * Generate a GUID for this document
+		 */
+		$guid = Guid::generate_guid();
+		wp_set_object_terms( $doc_id, $guid, self::TERM_GUID );
+
+		return self::get_instance( $doc_id );
+	}
+
+	/**
+	 * filter $_FILES file_id for processing
+	 *
+	 * @param string $file_id ID to examine within $_FILES input
+	 * @return array|\WP_Error
+	 */
+	private static function filter_file( $file_id ) {
+		/**
+		 * @var array Upload error strings
+		 */
+		$upload_error = [
+			UPLOAD_ERR_NO_FILE		 => __( "No file received.", TEXT_DOMAIN ),
+			UPLOAD_ERR_INI_SIZE		 => __( "Requested file is too large.", TEXT_DOMAIN ),
+			UPLOAD_ERR_FORM_SIZE	 => __( "Requested file is too large.", TEXT_DOMAIN ),
+			UPLOAD_ERR_PARTIAL		 => __( "Partial upload received; please retry.", TEXT_DOMAIN ),
+			UPLOAD_ERR_NO_TMP_DIR	 => __( "Server error: No temporary directory available", TEXT_DOMAIN ),
+			UPLOAD_ERR_CANT_WRITE	 => __( "Server error: Can’t write to temporary directory", TEXT_DOMAIN ),
+			UPLOAD_ERR_EXTENSION	 => __( "PHP Plugin blocked upload; server logs may have details.", TEXT_DOMAIN )
+		];
+
+		/**
+		 * @var array Filter settings to use for $file input
+		 */
+		$args = [
+			'error'		 => FILTER_VALIDATE_INT,
+			'name'		 => FILTER_SANITIZE_STRING,
+			'type'		 => FILTER_SANITIZE_STRING,
+			'size'		 => FILTER_VALIDATE_INT,
+			'tmp_name'	 => FILTER_SANITIZE_STRING
+		];
+
+		if ( !is_array( $_FILES ) || !array_key_exists( $file_id, $_FILES ) ) {
+			return new \WP_Error( 'NO_FILES', __( 'Internal Error: No uploaded file information found in request.', TEXT_DOMAIN ) );
+		}
+
+		$filtered_file = filter_var_array( $_FILES[$file_id], $args );
+
+		$error_code = $filtered_file['error'];
+
+		if ( UPLOAD_ERR_OK != $error_code ) {
+			if ( array_key_exists( $error_code, $upload_error ) ) {
+				$error = new \WP_Error( 'UPLOAD_ERR', $upload_error[$error_code] );
+			} else {
+				$error = new \WP_Error( 'UPLOAD_ERR', sprintf( __( "Unknown file upload error: %d", TEXT_DOMAIN ), $error_code ) );
+			}
+
+			return $error;
+		}
+
+		/**
+		 * Confirm there's a valid uploaded file
+		 */
+		if ( !is_uploaded_file( $filtered_file['tmp_name'] ) ) {
+			return new \WP_Error( 'UPLOAD_ERR', sprintf( __( 'Upload file "%s" is missing.', TEXT_DOMAIN ), $filtered_file['tmp_name'] ) );
+		}
+
+		return $filtered_file;
+	}
+
+	private static function validate_mime_type( string $name, string $path ) {
+		$mime_type = mime_content_type( $path );
+
+		/**
+		 * For plain files, examine file extension to identify CSV files
+		 */
+		if ( 'text/plain' == $mime_type ) {
+			$ext = pathinfo( $name, PATHINFO_EXTENSION );
+			if ( strcasecmp( 'csv', $ext ) == 0 ) {
+				$mime_type = 'text/csv';
+			}
+		}
+
+		if ( !self::is_mime_type_supported( $mime_type ) ) {
+			$msg = sprintf( __( 'Document type %s is not supported.', TEXT_DOMAIN ), esc_attr( $mime_type ) );
+			return new \WP_Error( 'UNSUPPORTED_MIME', $msg );
+		}
+
+		return $mime_type;
+	}
+
+	private static function handle_upload( $doc_id, $file_id ) {
+		$attachment_id = media_handle_upload( $file_id, $doc_id );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			return $attachment_id;
+		}
+
+		/**
+		 * Remove previously saved revision of the document
+		 */
+		$old_media_id = get_post_meta( $doc_id, 'document_media_id', true );
+		if ( $old_media_id ) {
+			if ( !wp_delete_attachment( $old_media_id, true ) ) {
+				return new \WP_Error( 'DELETE_ERROR', sprintf( __( 'Unable to remove old document; ID=%d', TEXT_DOMAIN ), $old_media_id ) );
+			}
+		}
+
+		update_post_meta( $doc_id, 'document_media_id', $attachment_id );
+
+		return $attachment_id;
 	}
 
 	/**
@@ -340,4 +505,5 @@ class Document {
 			return false;
 		}
 	}
+
 }

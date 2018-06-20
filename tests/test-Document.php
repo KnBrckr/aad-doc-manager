@@ -5,12 +5,37 @@
  *
  * @package Aad_Doc_Manager
  */
-use PumaStudios\DocManager\Document;
+
+namespace PumaStudios\DocManager;
+
+/**
+ * Override PHP is_uploaded_file() for testing purposes
+ *
+ * @param string $path path to file
+ * @return boolean
+ */
+function is_uploaded_file( string $path ) {
+	return file_exists( $path );
+}
+
+/**
+ * Override WordPress media_handle_upload to override PHP handling that only works in browser mode
+ *
+ * @param type $file_id
+ * @param type $post_id
+ * @param type $post_data
+ * @param type $_overrides
+ * @return mixed
+ */
+function media_handle_upload( $file_id, $post_id, $post_data = array(), $_overrides = array( 'test_form' => false ) ) {
+	$overrides = array_merge( $_overrides, [ 'action' => 'copy_file' ] );
+	return \media_handle_upload( $file_id, $post_id, $post_data, $overrides );
+}
 
 /**
  * Sample test case.
  */
-class TestDocument extends WP_UnitTestCase {
+class TestDocument extends \WP_UnitTestCase {
 
 	const DATESTAMP		 = '2018-06-13 05:37:30';
 	const DATESTAMP_GMT	 = '2018-06-13 12:37:30';
@@ -48,7 +73,7 @@ class TestDocument extends WP_UnitTestCase {
 		/**
 		 * A valid document
 		 */
-		$doc_attrs				 = [
+		$doc_attrs					 = [
 			'post_type'		 => Document::POST_TYPE,
 			'post_date'		 => self::DATESTAMP,
 			'post_date_gmt'	 => self::DATESTAMP_GMT,
@@ -60,7 +85,7 @@ class TestDocument extends WP_UnitTestCase {
 		 * A PDF document
 		 */
 		$doc_attrs['post_mime_type'] = 'application/pdf';
-		self::$document_pdf_post_id = $factory->post->create( $doc_attrs );
+		self::$document_pdf_post_id	 = $factory->post->create( $doc_attrs );
 
 		/**
 		 * An older revision
@@ -135,9 +160,9 @@ class TestDocument extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test document access by GUID
+	 * Negative test document access by GUID
 	 */
-	function test_get_document_by_guid() {
+	function test_get_document_by_guid_negative() {
 		/**
 		 * Invalid guid
 		 */
@@ -147,6 +172,12 @@ class TestDocument extends WP_UnitTestCase {
 		 * Valid guid, no document
 		 */
 		$this->assertNull( Document::get_document_by_guid( self::GUID1 ), "no such GUID" );
+	}
+
+	/**
+	 * Positive test for document access by GUID
+	 */
+	function test_get_document_by_guid_positive() {
 
 		/**
 		 * Valid guid, matching document
@@ -207,6 +238,83 @@ class TestDocument extends WP_UnitTestCase {
 	function test_is_csv_true() {
 		$document = Document::get_instance( self::$document_csv_post_id );
 		$this->assertTrue( $document->is_csv() );
+	}
+
+	/**
+	 * negative tests for Document::create_document()
+	 */
+	function test_create_document_negative() {
+		$this->assertWPError( Document::create_document( [], 'bad' ) );
+
+		$_FILES = [
+			'document' => [
+				'error' => UPLOAD_ERR_NO_TMP_DIR
+			]
+		];
+
+		$this->assertWPError( Document::create_document( [], 'bad' ) );
+		$this->assertWPError( Document::create_document( [], 'document' ) );
+
+		/*
+		 * Test an unknown error code
+		 */
+		$_FILES = [
+			'document' => [
+				'error' => 999999
+			]
+		];
+		$this->assertWPError( Document::create_document( [], 'document' ) );
+	}
+
+	/**
+	 * positive test for Document::create_document()
+	 */
+	function test_create_document_positive() {
+
+		$tmpfile = tempnam( sys_get_temp_dir(), 'phpunit-uploadtest' );
+		copy( __DIR__ . '/samples/cat-breeds.csv', $tmpfile );
+
+		$_FILES = [
+			'document' => [
+				'error'		 => UPLOAD_ERR_OK,
+				'name'		 => 'cat-breeds.csv',
+				'type'		 => 'text/csv',
+				'size'		 => '3484',
+				'tmp_name'	 => $tmpfile
+			]
+		];
+
+		$document = Document::create_document( [], 'document' );
+		if ( is_wp_error( $document ) ) {
+			$msg = $document->get_error_message();
+		} else {
+			$msg = "Create document postive test";
+		}
+
+		/**
+		 * Cleanup before assert
+		 */
+		@unlink( $tmpfile );
+
+		$this->assertTrue( $document instanceof Document, $msg );
+
+		$path = $document->get_attachment_realpath();
+		$upload_dir = wp_upload_dir();
+
+		$this->assertRegExp('|^' . $upload_dir['path'] . '|', $path, 'Expect a path to a file');
+
+		return $document;
+	}
+
+	/**
+	 * Confirm valid CSV document object
+	 *
+	 * @param Document $document Document Object under test
+	 * @depends test_create_document_positive
+	 */
+	function test_valid_csv_document( Document $document ) {
+		$this->assertEquals( 'cat-breeds.csv', $document->post_title, "Expected title to match upload file name" );
+		$this->assertTrue( $document->is_csv(), "Expected document to be CSV mime type" );
 	}
 
 }
