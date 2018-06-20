@@ -63,7 +63,6 @@ class DocumentDownload {
 			 */
 			//add_filter( 'woocommerce_file_download_path', array( $this, 'filter_woo_file_download_path' ), 10, 3 );
 		}
-
 	}
 
 	/**
@@ -174,18 +173,18 @@ class DocumentDownload {
 	 * @param string $file_url path to the downloadable file
 	 */
 	public static function filter_woo_downloadable_file_exists( $file_exists, $file_url ) {
-		if ( '/' . self::DOWNLOAD_SLUG === substr( $file_url, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
-			/**
-			 * link is for the plugin. Confirm GUID provided is valid
-			 */
-			$guid = substr( $file_url, strlen( self::DOWNLOAD_SLUG ) + 2 );
-			if ( $this->is_guidv4( $guid ) && is_a( $this->get_document_by_guid( $guid ), 'WP_post' ) ) {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
+		if ( '/' . self::DOWNLOAD_SLUG !== substr( $file_url, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
 			return $file_exists;
+		}
+
+		/**
+		 * link is for the plugin. Does requested GUID match an available document?
+		 */
+		$guid = substr( $file_url, strlen( self::DOWNLOAD_SLUG ) + 2 );
+		if ( is_a( Document::get_document_by_guid( $guid ), 'Document' ) ) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 
@@ -199,7 +198,7 @@ class DocumentDownload {
 	 * @param string $key woocommerce download document key
 	 * @return string path to file
 	 */
-	function filter_woo_file_download_path( $file, $product, $key ) {
+	private function filter_woo_file_download_path( $file, $product, $key ) {
 		if ( '/' . self::DOWNLOAD_SLUG === substr( $file, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
 			/**
 			 * link is for the plugin. Confirm GUID provided is valid
