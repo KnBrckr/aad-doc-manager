@@ -269,7 +269,7 @@ class TestDocument extends \WP_UnitTestCase {
 	/**
 	 * positive test for Document::create_document()
 	 */
-	function test_create_document_positive() {
+	function test_create_csv_document() {
 
 		$tmpfile = tempnam( sys_get_temp_dir(), 'phpunit-uploadtest' );
 		copy( __DIR__ . '/samples/cat-breeds.csv', $tmpfile );
@@ -288,7 +288,7 @@ class TestDocument extends \WP_UnitTestCase {
 		if ( is_wp_error( $document ) ) {
 			$msg = $document->get_error_message();
 		} else {
-			$msg = "Create document postive test";
+			$msg = "Create csv document postive test";
 		}
 
 		/**
@@ -298,10 +298,10 @@ class TestDocument extends \WP_UnitTestCase {
 
 		$this->assertTrue( $document instanceof Document, $msg );
 
-		$path = $document->get_attachment_realpath();
-		$upload_dir = wp_upload_dir();
+		$path		 = $document->get_attachment_realpath();
+		$upload_dir	 = wp_upload_dir();
 
-		$this->assertRegExp('|^' . $upload_dir['path'] . '|', $path, 'Expect a path to a file');
+		$this->assertRegExp( '|^' . $upload_dir['path'] . '|', $path, 'Expect a path to a file' );
 
 		return $document;
 	}
@@ -310,11 +310,61 @@ class TestDocument extends \WP_UnitTestCase {
 	 * Confirm valid CSV document object
 	 *
 	 * @param Document $document Document Object under test
-	 * @depends test_create_document_positive
+	 * @depends test_create_csv_document
 	 */
 	function test_valid_csv_document( Document $document ) {
-		$this->assertEquals( 'cat-breeds.csv', $document->post_title, "Expected title to match upload file name" );
-		$this->assertTrue( $document->is_csv(), "Expected document to be CSV mime type" );
+		$this->assertEquals( 'cat-breeds.csv', $document->post_title, "Expect title to match upload file name" );
+		$this->assertTrue( $document->is_csv(), "Expect document to be CSV mime type" );
+	}
+
+	/**
+	 * Create a valid PDF document
+	 */
+	function test_create_pdf_document() {
+		$tmpfile = tempnam( sys_get_temp_dir(), 'phpunit-uploadtest' );
+		copy( __DIR__ . '/samples/small.pdf', $tmpfile );
+
+		$_FILES = [
+			'document' => [
+				'error'		 => UPLOAD_ERR_OK,
+				'name'		 => 'small.pdf',
+				'type'		 => 'text/pdf',
+				'size'		 => '3484',
+				'tmp_name'	 => $tmpfile
+			]
+		];
+
+		$document = Document::create_document( [], 'document' );
+		if ( is_wp_error( $document ) ) {
+			$msg = $document->get_error_message();
+		} else {
+			$msg = "Create pdf document postive test";
+		}
+
+		/**
+		 * Cleanup before assert
+		 */
+		@unlink( $tmpfile );
+
+		$this->assertTrue( $document instanceof Document, $msg, "Expect create_document to return Document object" );
+
+		$path		 = $document->get_attachment_realpath();
+		$upload_dir	 = wp_upload_dir();
+
+		$this->assertRegExp( '|^' . $upload_dir['path'] . '|', $path, 'Expect a path to a file' );
+
+		return $document;
+	}
+
+	/**
+	 * Confirm valid PDF document object
+	 *
+	 * @param Document $document Document Object under test
+	 * @depends test_create_pdf_document
+	 */
+	function test_valid_pdf_document( Document $document ) {
+		$this->assertEquals( 'small.pdf', $document->post_title, "Expect title to match upload file name" );
+		$this->assertFalse( $document->is_csv(), "Expect document is not a CSV file" );
 	}
 
 }
