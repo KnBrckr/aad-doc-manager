@@ -61,7 +61,11 @@ class WP_UnitTest_Factory_For_Document extends WP_UnitTest_Factory_For_Thing {
 
 		@unlink( $tmpfile );
 
-		return $document->ID;
+		if ( $document ) {
+			return $document->ID;
+		} else {
+			return NULL;
+		}
 	}
 
 	function update_object( $post_id, $fields ) {
@@ -71,6 +75,22 @@ class WP_UnitTest_Factory_For_Document extends WP_UnitTest_Factory_For_Thing {
 
 	function get_object_by_id( $post_id ) {
 		return get_post( $post_id );
+	}
+
+	/**
+	 * Remove any attachments that were created
+	 */
+	function destroy() {
+
+		$query = new \WP_Query( [ 'post_type' => Document::POST_TYPE ] );
+		$documents = $query->get_posts();
+
+		foreach ( $documents as $document ) {
+			$attachments = get_attached_media( '', $document->ID );
+			foreach ( $attachments as $attachment ) {
+				wp_delete_attachment( $attachment->ID );
+			}
+		}
 	}
 
 }
