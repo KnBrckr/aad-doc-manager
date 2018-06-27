@@ -21,7 +21,7 @@
 namespace PumaStudios\DocManager;
 
 /**
- * Description of Document
+ * Container class for a WP_Post
  *
  * @package PumaStudios-DocManager
  * @author Kenneth J. Brucker <ken@pumastudios.com>
@@ -107,10 +107,8 @@ class Document {
 	 * @since 1.0
 	 */
 	public static function run() {
-		add_action( 'init', function () {
-			Document::register_post_type();
-			Document::register_taxonomy();
-		} );
+		add_action( 'init', [ Document::class, 'register_post_type' ], 10 );
+		add_action( 'init', [ Document::class, 'register_taxonomy' ], 11 ); // Depends on post_type being registered
 	}
 
 	/**

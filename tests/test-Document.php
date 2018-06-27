@@ -92,22 +92,32 @@ class TestDocument extends \WP_UnitTestCase {
 		 */
 		$doc_attrs['post_status']		 = 'inherit';
 		self::$document_revision_post_id = $factory->post->create( $doc_attrs );
+	}
 
-		Document::register_taxonomy();
+	/**
+	 * Test run method does needed setup
+	 *
+	 * Document::run() will be done as a part of starting the plugin for test.
+	 */
+	function test_run() {
+		$register_post_type_prio = has_action( 'init', [ Document::class, 'register_post_type' ] );
+		$register_taxonomy_prio	 = has_action( 'init', [ Document::class, 'register_taxonomy' ] );
+		$this->assertEquals( 10, $register_post_type_prio, 'Document::register_post_type() must run during WP init action' );
+		$this->assertEquals( 11, $register_taxonomy_prio, 'Document::register_taxonomy() must run during WP init action after post type registered' );
 	}
 
 	/**
 	 * Test registration of taxonomy
 	 */
 	function test_register_taxonomy() {
-		self::markTestIncomplete();
+		$this->assertTrue( taxonomy_exists( Document::TERM_GUID ), "Taxonomy for Document GUIDs must exist" );
 	}
 
 	/**
 	 * Test registration of post type
 	 */
 	function test_register_post_type() {
-		self::markTestIncomplete();
+		$this->assertTrue( post_type_exists( Document::POST_TYPE ), "Document Post Type must exist" );
 	}
 
 	/**
