@@ -37,30 +37,6 @@ function media_handle_upload( $file_id, $post_id, $post_data = array(), $_overri
  */
 class TestDocument extends \WP_UnitTestCase {
 
-	const DATESTAMP		 = '2018-06-13 05:37:30';
-	const DATESTAMP_GMT	 = '2018-06-13 12:37:30';
-	const GUID1			 = '378ff88b-7eef-4156-836c-85e1eefc1e65';
-	const GUID2			 = '3809d4e8-16ff-4a58-9a24-2bc79cf0d425';
-
-	/**
-	 * @var int PostID for a normal post
-	 */
-	protected static $normal_post_id;
-
-	/**
-	 * @var int  PostID for a CSV document
-	 */
-	protected static $document_csv_post_id;
-
-	/**
-	 * @var int PostID for a PDF document
-	 */
-	protected static $document_pdf_post_id;
-
-	/**
-	 * @var int PostID for a document revision
-	 */
-	protected static $document_revision_post_id;
 
 	/**
 	 * Setup for entire class
@@ -72,30 +48,18 @@ class TestDocument extends \WP_UnitTestCase {
 		 * Setup factory for Documents
 		 */
 		$factory->document = new \WP_UnitTest_Factory_For_Document( $factory );
+	}
 
-		self::$normal_post_id = $factory->post->create();
+	function tearDown() {
+		/**
+		 * Remove document attachments before rolling back the DB
+		 */
+		$this->factory->document->destroy();
 
 		/**
-		 * A valid document
+		 * Rollback WP environment
 		 */
-		$doc_attrs					 = [
-			'post_date'		 => self::DATESTAMP,
-			'post_date_gmt'	 => self::DATESTAMP_GMT,
-			'target_file'	 => __DIR__ . '/samples/cat-breeds.csv'
-		];
-		self::$document_csv_post_id	 = $factory->document->create( $doc_attrs );
-
-		/**
-		 * A PDF document
-		 */
-		$doc_attrs['target_file']	 = __DIR__ . '/samples/small.pdf';
-		self::$document_pdf_post_id	 = $factory->document->create( $doc_attrs );
-
-		/**
-		 * An older revision
-		 */
-		$doc_attrs['post_status']		 = 'inherit';
-		self::$document_revision_post_id = $factory->document->create( $doc_attrs );
+		parent::tearDown();
 	}
 
 	/**
@@ -127,55 +91,74 @@ class TestDocument extends \WP_UnitTestCase {
 	/**
 	 * Test document retrieval
 	 */
-	function test_emtpy_get_document() {
+	function test_no_post() {
 		/**
 		 * Invalid document
 		 */
 		$this->assertNull( Document::get_instance( '999999' ) );
+	}
 
-		/**
-		 * Wrong post type
-		 */
-		$this->assertNull( Document::get_instance( self::$normal_post_id ) );
+	/**
+	 * Wrong post type
+	 */
+	function test_not_a_document() {
+		$post_id = $this->factory->post->create();
+		$this->assertNull( Document::get_instance( $post_id ) );
+	}
 
+	/**
+	 * Document is not published
+	 */
+	function test_document_not_published() {
+		self::markTestIncomplete( 'Must implement ability to manage document revisions' );
 		/**
-		 * not published
+		 * An older revision
 		 */
-		$this->assertNull( Document::get_instance( self::$document_revision_post_id ) );
+		$doc_attrs	 = [
+			'target_file'	 => __DIR__ . '/samples/small.pdf',
+			'post_status'	 => 'inherit'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		$this->assertNull( Document::get_instance( $post_id ) );
 	}
 
 	/**
 	 * Test retrieval of document revision
+	 *
+	 * See test_document_not_published for setup
 	 */
 	function test_get_revision() {
-		self::markTestIncomplete('Must implement ability to manage document revisions');
+		self::markTestIncomplete( 'Must implement ability to manage document revisions' );
 		$this->assertTrue( Document::get_instance( self::$document_revision_post_id, 'inherit' ) instanceof Document, 'retrieve a document revision' );
 	}
 
 	/**
-	 *
-	 * @return Document
+	 * Test document property interface
 	 */
-	function test_get_csv_instance() {
+	function test_document_properties() {
+		$datestamp		 = '2018-06-13 05:37:30';
+		$datestamp_gmt	 = '2018-06-13 12:37:30';
+
 		/**
-		 * Retrieve a CSV document
+		 * Create valid CSV document
 		 */
-		$document = Document::get_instance( self::$document_csv_post_id );
+		$doc_attrs	 = [
+			'post_date'		 => $datestamp,
+			'post_date_gmt'	 => $datestamp_gmt,
+			'target_file'	 => __DIR__ . '/samples/cat-breeds.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		/**
+		 * Retrieve the CSV document
+		 */
+		$document = Document::get_instance( $post_id );
 		$this->assertTrue( $document instanceof Document, 'find published document by ID' );
-
-		return $document;
-	}
-
-	/**
-	 *
-	 * @depends test_get_csv_instance
-	 * @param Document $document
-	 */
-	function test_document_contents( Document $document ) {
-		$this->assertEquals( self::$document_csv_post_id, $document->ID );
-		$this->assertEquals( self::DATESTAMP, $document->post_modified );
-		$this->assertEquals( self::DATESTAMP_GMT, $document->post_modified_gmt );
-		$this->assertEquals( self::DATESTAMP_GMT, $document->post_date_gmt );
+		$this->assertEquals( $post_id, $document->ID );
+		$this->assertEquals( $datestamp, $document->post_modified );
+		$this->assertEquals( $datestamp_gmt, $document->post_modified_gmt );
+		$this->assertEquals( $datestamp_gmt, $document->post_date_gmt );
 		$this->assertEquals( 'text/csv', $document->post_mime_type );
 	}
 
@@ -191,19 +174,20 @@ class TestDocument extends \WP_UnitTestCase {
 		/**
 		 * Valid guid, no document
 		 */
-		$this->assertNull( Document::get_document_by_guid( self::GUID1 ), "no such GUID" );
+		$this->assertNull( Document::get_document_by_guid( '378ff88b-7eef-4156-836c-85e1eefc1e65' ), "no such GUID" );
 	}
 
 	/**
 	 * Positive test for document access by GUID
 	 */
 	function test_get_document_by_guid_positive() {
+		$guid	 = '3809d4e8-16ff-4a58-9a24-2bc79cf0d425';
 
 		/**
 		 * Valid guid, matching document
 		 */
 		self::markTestIncomplete( 'find document by valid GUID must be implemented' );
-		$document = Document::get_document_by_guid( self::GUID2 );
+		$document = Document::get_document_by_guid( $guid );
 		$this->assertTrue( $document instanceof Document, "find document by valid GUID" );
 	}
 
@@ -211,11 +195,23 @@ class TestDocument extends \WP_UnitTestCase {
 	 * Test retrieval of real path to an attachment
 	 */
 	function test_get_attachment_real_path() {
-		$document	 = Document::get_instance( self::$document_pdf_post_id );
+		$target_file = __DIR__ . '/samples/small.pdf';
+		$post_id	 = $this->factory->document->create( [ 'target_file' => $target_file ] );
+		$document	 = Document::get_instance( $post_id );
 		$path		 = $document->get_attachment_realpath();
 
 		$this->assertNotNull( $path, 'Expect download path to exist' );
-		$this->assertFileExists( $path, 'Download File must exist' );
+
+		/**
+		 * Path should be in upload directory
+		 */
+		$upload_dir = wp_upload_dir();
+		$this->assertRegExp( '|^' . $upload_dir['path'] . '|', $path, 'Expect a path to a file' );
+
+		/**
+		 * Contents should match original file
+		 */
+		$this->assertFileEquals( $target_file, $path, 'Expect equal file contents' );
 	}
 
 	/**
@@ -239,7 +235,10 @@ class TestDocument extends \WP_UnitTestCase {
 	 * Negative test for document of CSV mime type
 	 */
 	function test_is_csv_false() {
-		$document = Document::get_instance( self::$document_pdf_post_id );
+		$target_file = __DIR__ . '/samples/small.pdf';
+		$post_id	 = $this->factory->document->create( [ 'target_file' => $target_file ] );
+
+		$document = Document::get_instance( $post_id );
 		$this->assertFalse( $document->is_csv() );
 	}
 
@@ -247,7 +246,10 @@ class TestDocument extends \WP_UnitTestCase {
 	 * Positive test for document of CSV mime type
 	 */
 	function test_is_csv_true() {
-		$document = Document::get_instance( self::$document_csv_post_id );
+		$target_file = __DIR__ . '/samples/cat-breeds.csv';
+		$post_id	 = $this->factory->document->create( [ 'target_file' => $target_file ] );
+
+		$document = Document::get_instance( $post_id );
 		$this->assertTrue( $document->is_csv() );
 	}
 
@@ -308,24 +310,6 @@ class TestDocument extends \WP_UnitTestCase {
 		@unlink( $tmpfile );
 
 		$this->assertTrue( $document instanceof Document, $msg );
-
-		$path		 = $document->get_attachment_realpath();
-		$upload_dir	 = wp_upload_dir();
-
-		$this->assertRegExp( '|^' . $upload_dir['path'] . '|', $path, 'Expect a path to a file' );
-
-		return $document;
-	}
-
-	/**
-	 * Confirm valid CSV document object
-	 *
-	 * @param Document $document Document Object under test
-	 * @depends test_create_csv_document
-	 */
-	function test_valid_csv_document( Document $document ) {
-		$this->assertEquals( 'cat-breeds.csv', $document->post_title, "Expect title to match upload file name" );
-		$this->assertTrue( $document->is_csv(), "Expect document to be CSV mime type" );
 	}
 
 	/**
@@ -358,24 +342,6 @@ class TestDocument extends \WP_UnitTestCase {
 		@unlink( $tmpfile );
 
 		$this->assertTrue( $document instanceof Document, $msg, "Expect create_document to return Document object" );
-
-		$path		 = $document->get_attachment_realpath();
-		$upload_dir	 = wp_upload_dir();
-
-		$this->assertRegExp( '|^' . $upload_dir['path'] . '|', $path, 'Expect a path to a file' );
-
-		return $document;
-	}
-
-	/**
-	 * Confirm valid PDF document object
-	 *
-	 * @param Document $document Document Object under test
-	 * @depends test_create_pdf_document
-	 */
-	function test_valid_pdf_document( Document $document ) {
-		$this->assertEquals( 'small.pdf', $document->post_title, "Expect title to match upload file name" );
-		$this->assertFalse( $document->is_csv(), "Expect document is not a CSV file" );
 	}
 
 }
