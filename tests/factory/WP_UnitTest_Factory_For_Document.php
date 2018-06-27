@@ -21,7 +21,7 @@
 use PumaStudios\DocManager\Document;
 
 /**
- * Description of WP_UnitTest_Factory_for_Document
+ * Factory to create PDF documents
  *
  * @package PumaStudios-DocManager
  * @author Kenneth J. Brucker <ken@pumastudios.com>
@@ -41,7 +41,27 @@ class WP_UnitTest_Factory_For_Document extends WP_UnitTest_Factory_For_Thing {
 	}
 
 	function create_object( $args ) {
-		return wp_insert_post( $args );
+
+		$file = $args['target_file'];
+
+		$tmpfile = tempnam( sys_get_temp_dir(), 'phpunit-uploadtest' );
+		copy( $file, $tmpfile );
+
+		$_FILES = [
+			'document' => [
+				'error'		 => UPLOAD_ERR_OK,
+				'name'		 => basename( $file ),
+				'type'		 => mime_content_type( $file ),
+				'size'		 => filesize( $file ),
+				'tmp_name'	 => $tmpfile
+			]
+		];
+
+		$document = Document::create_document( $args, 'document' );
+
+		@unlink( $tmpfile );
+
+		return $document->ID;
 	}
 
 	function update_object( $post_id, $fields ) {

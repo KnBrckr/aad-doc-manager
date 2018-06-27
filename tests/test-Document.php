@@ -79,17 +79,16 @@ class TestDocument extends \WP_UnitTestCase {
 		 * A valid document
 		 */
 		$doc_attrs					 = [
-			'post_type'		 => Document::POST_TYPE,
 			'post_date'		 => self::DATESTAMP,
 			'post_date_gmt'	 => self::DATESTAMP_GMT,
-			'post_mime_type' => 'text/csv'
+			'target_file'	 => __DIR__ . '/samples/cat-breeds.csv'
 		];
 		self::$document_csv_post_id	 = $factory->document->create( $doc_attrs );
 
 		/**
 		 * A PDF document
 		 */
-		$doc_attrs['post_mime_type'] = 'application/pdf';
+		$doc_attrs['target_file']	 = __DIR__ . '/samples/small.pdf';
 		self::$document_pdf_post_id	 = $factory->document->create( $doc_attrs );
 
 		/**
@@ -146,14 +145,20 @@ class TestDocument extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Test retrieval of document revision
+	 */
+	function test_get_revision() {
+		self::markTestIncomplete('Must implement ability to manage document revisions');
+		$this->assertTrue( Document::get_instance( self::$document_revision_post_id, 'inherit' ) instanceof Document, 'retrieve a document revision' );
+	}
+
+	/**
 	 *
 	 * @return Document
 	 */
-	function test_get_instance() {
-		$this->assertTrue( Document::get_instance( self::$document_revision_post_id, 'inherit' ) instanceof Document, 'find document revision' );
-
+	function test_get_csv_instance() {
 		/**
-		 * Normal document
+		 * Retrieve a CSV document
 		 */
 		$document = Document::get_instance( self::$document_csv_post_id );
 		$this->assertTrue( $document instanceof Document, 'find published document by ID' );
@@ -163,7 +168,7 @@ class TestDocument extends \WP_UnitTestCase {
 
 	/**
 	 *
-	 * @depends test_get_instance
+	 * @depends test_get_csv_instance
 	 * @param Document $document
 	 */
 	function test_document_contents( Document $document ) {
@@ -203,23 +208,14 @@ class TestDocument extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Test retrieval of attachment for a document
-	 *
-	 * @depends test_get_instance
-	 * @param Document $document A document post
-	 */
-	function test_get_attachment( Document $document ) {
-		self::markTestIncomplete();
-	}
-
-	/**
 	 * Test retrieval of real path to an attachment
-	 *
-	 * @depends test_get_instance
-	 * @param Document $document A document post
 	 */
-	function test_get_attachment_real_path( Document $document ) {
-		self::markTestIncomplete();
+	function test_get_attachment_real_path() {
+		$document	 = Document::get_instance( self::$document_pdf_post_id );
+		$path		 = $document->get_attachment_realpath();
+
+		$this->assertNotNull( $path, 'Expect download path to exist' );
+		$this->assertFileExists( $path, 'Download File must exist' );
 	}
 
 	/**
