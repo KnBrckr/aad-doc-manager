@@ -68,6 +68,11 @@ class TestDocument extends \WP_UnitTestCase {
 	 * @param Factor $factory Factory class used to create objects
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
+		/**
+		 * Setup factory for Documents
+		 */
+		$factory->document = new \WP_UnitTest_Factory_For_Document( $factory );
+
 		self::$normal_post_id = $factory->post->create();
 
 		/**
@@ -79,19 +84,19 @@ class TestDocument extends \WP_UnitTestCase {
 			'post_date_gmt'	 => self::DATESTAMP_GMT,
 			'post_mime_type' => 'text/csv'
 		];
-		self::$document_csv_post_id	 = $factory->post->create( $doc_attrs );
+		self::$document_csv_post_id	 = $factory->document->create( $doc_attrs );
 
 		/**
 		 * A PDF document
 		 */
 		$doc_attrs['post_mime_type'] = 'application/pdf';
-		self::$document_pdf_post_id	 = $factory->post->create( $doc_attrs );
+		self::$document_pdf_post_id	 = $factory->document->create( $doc_attrs );
 
 		/**
 		 * An older revision
 		 */
 		$doc_attrs['post_status']		 = 'inherit';
-		self::$document_revision_post_id = $factory->post->create( $doc_attrs );
+		self::$document_revision_post_id = $factory->document->create( $doc_attrs );
 	}
 
 	/**

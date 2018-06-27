@@ -27,6 +27,11 @@
             "PumaStudios\\DocManager\\": ["classes"]
         }
     },
+	"autoload-dev": {
+		"psr-4": {
+			"": ["tests/factory"]
+		}
+	},
 	"require-dev": {
 		"phpunit/phpunit": "^6"
 	}
