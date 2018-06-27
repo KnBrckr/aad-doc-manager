@@ -67,6 +67,7 @@ class Document {
 	 * Constructor
 	 *
 	 * @param WP_post $post Wordpress Post to treat as a document
+	 * @since 1.0
 	 */
 	public function __construct( \WP_Post $post ) {
 		$this->post				 = $post;
@@ -79,10 +80,10 @@ class Document {
 	 *
 	 * @param string $name object value requested
 	 * @return various
-	 * @since 1.0 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type'
+	 * @since 1.0 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type', 'post_title'
 	 */
 	public function __get( $name ) {
-		$post_properties = [ 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type', 'post_title' ];
+		$post_properties = [ 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type', 'post_title' ];
 		if ( in_array( $name, $post_properties ) ) {
 			$result = $this->post->$name;
 		} else {
@@ -96,6 +97,7 @@ class Document {
 	 * Get mime types supported by class
 	 *
 	 * @return array of strings
+	 * @since 1.0
 	 */
 	public static function get_supported_mime_types() {
 		return self::$accepted_mime_types;

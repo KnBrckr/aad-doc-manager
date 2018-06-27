@@ -29,14 +29,9 @@ namespace PumaStudios\DocManager;
 class SCModified {
 
 	/**
-	 * Instantiate
-	 */
-	public function __construct() {
-
-	}
-
-	/**
 	 * Plug into WP
+	 *
+	 * @since 1.0
 	 */
 	public static function run() {
 		add_shortcode( 'docmgr-modified', array( self::class, 'sc_docmgr_modified' ) );
@@ -52,6 +47,7 @@ class SCModified {
 	 * @param array _attrs associative array of shortcode parameters
 	 * @param string $content Expected to be empty
 	 * @return string HTML content
+	 * @since 1.0
 	 */
 	public static function sc_docmgr_modified( $_attrs, $content = null ) {
 		$default_attrs = array( 'id' => null );

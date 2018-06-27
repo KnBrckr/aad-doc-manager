@@ -50,20 +50,24 @@ class SCCSVTable {
 
 	/**
 	 * Plug into WP
+	 *
+	 * @since 1.0
 	 */
 	public static function run() {
-		\add_shortcode( 'csvview', [ self::class, 'sc_csvview' ] ); // Deprecated in v0.3
-		\add_shortcode( 'docmgr-csv-table', [ self::class, 'sc_docmgr_csv_table' ] );
+		add_shortcode( 'csvview', [ self::class, 'sc_csvview' ] ); // Deprecated in v0.3
+		add_shortcode( 'docmgr-csv-table', [ self::class, 'sc_docmgr_csv_table' ] );
 
 		/**
 		 * Setup Datatables
 		 */
-		\add_action( 'wp_enqueue_scripts', [ self::class, 'action_enqueue_datatables' ] );
-		\add_action( 'wp_footer', [ self::class, 'action_init_datatables' ] );
+		add_action( 'wp_enqueue_scripts', [ self::class, 'action_enqueue_datatables' ] );
+		add_action( 'wp_footer', [ self::class, 'action_init_datatables' ] );
 	}
 
 	/**
 	 * Register and enqueue required Datatables JS scripts
+	 *
+	 * @since 1.0
 	 */
 	public static function action_enqueue_datatables() {
 		/**
@@ -130,6 +134,8 @@ class SCCSVTable {
 	 * Emit HTML required to initialize DataTables Javascript plugin
 	 *
 	 * Setup as wp_footer action
+	 *
+	 * @since 1.0
 	 */
 	public static function action_init_datatables() {
 		/**

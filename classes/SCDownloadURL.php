@@ -29,14 +29,9 @@ namespace PumaStudios\DocManager;
 class SCDownloadURL {
 
 	/**
-	 * Instantiate
-	 */
-	public function __construct() {
-
-	}
-
-	/**
 	 * Plug into WP
+	 *
+	 * @since 1.0
 	 */
 	public static function run() {
 		add_shortcode( 'docmgr-download-url', array( self::class, 'sc_docmgr_download_url' ) );
@@ -50,6 +45,8 @@ class SCDownloadURL {
 	 * @param array $_attrs associative array of shortcode parameters
 	 * @param string $content
 	 * @return string HTML content
+	 *
+	 * @since 1.0
 	 */
 	public static function sc_docmgr_download_url( $_attrs, $content = null ) {
 		$default_attrs = array( 'id' => null );
