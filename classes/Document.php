@@ -56,7 +56,7 @@ class Document {
 	/**
 	 * @var int Document (WP_Post) ID
 	 */
-	private $ID;
+	public $ID;
 
 	/**
 	 * @var string The document mime type
