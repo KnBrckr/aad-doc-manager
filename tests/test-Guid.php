@@ -8,7 +8,9 @@
 use PumaStudios\DocManager\Guid;
 
 /**
- * Sample test case.
+ * Test Guid class used for Document taxonomy
+ *
+ * @group document
  */
 class TestGuid extends WP_UnitTestCase {
 

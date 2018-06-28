@@ -20,6 +20,9 @@
 
 namespace PumaStudios\DocManager;
 
+use League\Csv\Reader;
+use League\Csv\Statement;
+
 /**
  * Container class for a WP_Post
  *
@@ -62,6 +65,17 @@ class Document {
 	 * @var string The document mime type
 	 */
 	private $post_mime_type;
+
+	/**
+	 * @var \League\Csv\Reader
+	 */
+	private $csv = NULL;
+
+	/**
+	 *
+	 * @var \League\Csv\ResultSet
+	 */
+	private $csv_records = NULL;
 
 	/**
 	 * Constructor
@@ -208,7 +222,7 @@ class Document {
 	 * @param string $file_id ID to examine within $_FILES input
 	 * @return array|\WP_Error
 	 */
-	private static function filter_file( $file_id ) {
+	private static function filter_file( string $file_id ) {
 		/**
 		 * @var array Upload error strings
 		 */
@@ -261,6 +275,13 @@ class Document {
 		return $filtered_file;
 	}
 
+	/**
+	 * Validate document mime type conforms to supported types
+	 *
+	 * @param string $name file name provided in input
+	 * @param string $path path to uploaded file
+	 * @return \WP_Error|string attachment mime type
+	 */
 	private static function validate_mime_type( string $name, string $path ) {
 		$mime_type = mime_content_type( $path );
 
@@ -282,7 +303,14 @@ class Document {
 		return $mime_type;
 	}
 
-	private static function handle_upload( $doc_id, $file_id ) {
+	/**
+	 * Insert uploaded file into DB
+	 *
+	 * @param string $doc_id Document post ID
+	 * @param string $file_id index into $_FILES array for upload file
+	 * @return \WP_Error|int attachment ID uploaded
+	 */
+	private static function handle_upload( string $doc_id, string $file_id ) {
 		$attachment_id = media_handle_upload( $file_id, $doc_id );
 
 		if ( is_wp_error( $attachment_id ) ) {
@@ -504,6 +532,86 @@ class Document {
 		} else {
 			return false;
 		}
+	}
+
+	/**
+	 * Use League\Csv to process CVS content
+	 *
+	 * @return \League\Csv\Reader
+	 */
+	private function get_csv() {
+		if ( $this->csv ) {
+			return $this->csv;
+		}
+
+		$csv = Reader::createFromPath( $this->get_attachment_realpath(), 'r' );
+		$csv->setHeaderOffset( 0 );
+
+		$this->csv = $csv;
+		return $csv;
+	}
+
+	/**
+	 * Retrieve records for a CSV document, save results in object
+	 *
+	 * @return \League\Csv\ResultSet|array Iterator object
+	 */
+	private function _get_csv_records() {
+		if ( $this->csv_records ) {
+			return $this->csv_records;
+		}
+
+		$csv	 = $this->get_csv();
+		$this->csv_records = $records = (new Statement() )->process( $csv );
+
+		return $records;
+	}
+
+	/**
+	 * Retrieve records for a CSV document
+	 *
+	 * @return \League\Csv\ResultSet|array Iterator object for CSV table or empty array if not a CSV file
+	 * @since 1.0
+	 */
+	public function get_csv_records() {
+		if ( !$this->is_csv() ) {
+			return [];
+		}
+
+		return $this->_get_csv_records();
+	}
+
+	/**
+	 * Retrieve row data for given CSV row
+	 *
+	 * @param int $index
+	 * @return array Row data
+	 * @since 1.0
+	 */
+	public function get_csv_record( int $index ) {
+		if ( !$this->is_csv() ) {
+			return [];
+		}
+
+		$records = $this->_get_csv_records();
+
+		return $records->fetchOne( $index );
+	}
+
+	/**
+	 * Retrieve CSV table header
+	 *
+	 * @return array Column headers
+	 * @since 1.0
+	 */
+	public function get_csv_header() {
+		if ( !$this->is_csv() ) {
+			return [];
+		}
+
+		$csv = $this->get_csv();
+
+		return $csv->getHeader();
 	}
 
 }
