@@ -38,8 +38,9 @@ class SCCSVTable {
 	 *      HTML content modified to support highlighting plugin - requires regen of older HTML to support
 	 * 3 => Rendered data stored as meta data - post_content is empty
 	 *      Allows re-save of pre-rendered data without affecting post update date
+	 * 4 => No cache
 	 */
-	const CSV_STORAGE_FORMAT = 3;
+	const CSV_STORAGE_FORMAT = 4;
 
 	/**
 	 * Instantiate
@@ -188,7 +189,7 @@ class SCCSVTable {
 
 		$doc_id				 = intval( $attrs['id'] );
 		$caption_date		 = intval( $attrs['date'] );
-		$attrs['row-number'] = intval( $attrs['row-number'] );
+		$number_rows		 = filter_var( $attrs['row-number'], FILTER_VALIDATE_BOOLEAN );
 		$attrs['row-colors'] = self::sanitize_row_colors( $attrs['row-colors'] );
 		$page_length		 = intval( $attrs['page-length'] );
 		$attrs['rows']		 = self::parse_numbers( $attrs['rows'] );
@@ -202,7 +203,7 @@ class SCCSVTable {
 		 * Retrieve the post
 		 */
 		$document = Document::get_instance( $doc_id );
-		if ( NULL == $document || 'text/csv' != $document->post_mime_type ) {
+		if ( !( $document && $document->is_csv() ) ) {
 			return "";
 		}
 
@@ -230,45 +231,49 @@ class SCCSVTable {
 			$result	 .= '</caption>';
 		}
 
+		$result	 .= self::render_header( $document, $number_rows );
+		$result	 .= self::render_rows( $document, $number_rows );
+
 		/**
 		 * CSV Storage format 1:
 		 *   post_content has pre-rendered HTML, post_meta[csv_table] is table in array form
 		 * Original format (Undefined value for csv_storage_format):
 		 *   post_content is serialized array of table content
 		 */
-		$storage_format = \get_post_meta( $doc_id, 'csv_storage_format', true );
-		switch ( $storage_format ) {
-			case 1:
-			case 2:
-				/**
-				 * Some formatting changes have been made in HTML - Re-render
-				 *
-				 * Save result only if default options have been selected
-				 */
-				$result .= self::re_render_csv( $doc_id, $attrs, $render_defaults );
-				break;
-
-			case self::CSV_STORAGE_FORMAT:
-				/**
-				 * If non-default options or DEBUG mode specific, must re-render table
-				 */
-				if ( !$render_defaults || WP_DEBUG ) {
-					$result .= self::re_render_csv( $doc_id, $attrs, false ); // re-render, do not save result in DB
-				} else {
-					$result .= \get_post_meta( $doc_id, 'csv_rendered', true ); // Use pre-rendered content for default display
-				}
-				break;
-
-			default:
-				/**
-				 * Unknown storage format
-				 */
-				if ( WP_DEBUG ) {
-					$result	 .= '<tr><td>';
-					$result	 .= sprintf( __( 'Unknown CSV Storage format "%s" found for post_id %d', TEXT_DOMAIN ), esc_attr( $storage_format ), esc_attr( $doc_id ) );
-					$result	 .= '<td></tr>';
-				}
-		}
+//		$storage_format = \get_post_meta( $doc_id, 'csv_storage_format', true );
+//		switch ( $storage_format ) {
+//			case 1:
+//			case 2:
+//			case 3:
+//				/**
+//				 * Some formatting changes have been made in HTML or stored data format - Re-render
+//				 *
+//				 * Save result only if default options have been selected
+//				 */
+//				$result .= self::re_render_csv( $doc_id, $attrs, $render_defaults );
+//				break;
+//
+//			case self::CSV_STORAGE_FORMAT:
+//				/**
+//				 * If non-default options or DEBUG mode specific, must re-render table
+//				 */
+//				if ( !$render_defaults || WP_DEBUG ) {
+//					$result .= self::re_render_csv( $doc_id, $attrs, false ); // re-render, do not save result in DB
+//				} else {
+//					$result .= \get_post_meta( $doc_id, 'csv_rendered', true ); // Use pre-rendered content for default display
+//				}
+//				break;
+//
+//			default:
+//				/**
+//				 * Unknown storage format
+//				 */
+//				if ( WP_DEBUG ) {
+//					$result	 .= '<tr><td>';
+//					$result	 .= sprintf( __( 'Unknown CSV Storage format "%s" found for post_id %d', TEXT_DOMAIN ), esc_attr( $storage_format ), esc_attr( $doc_id ) );
+//					$result	 .= '<td></tr>';
+//				}
+//		}
 		$result .= '</table></div>';
 
 		return $result;
@@ -290,6 +295,60 @@ class SCCSVTable {
 		_deprecated_hook( __CLASS__ . '\sc_csvview', '0.3', __CLASS__ . '\sc_docmgr_csv_table', $message );
 
 		return self::sc_docmgr_csv_table( $_attrs, $content );
+	}
+
+	/**
+	 * Render the table header
+	 *
+	 * @param \PumaStudios\DocManager\Document $document
+	 * @param boolean $number_rows True if rows should include number
+	 * @return HTML for table header row
+	 */
+	private static function render_header( Document $document, $number_rows = false ) {
+		$result = '<tr>';
+
+		if ($number_rows) {
+			$result .= '<th>#</th>';
+		}
+
+		$headers = $document->get_csv_header();
+		foreach ( $headers as $header ) {
+			$result .= '<th>' . $header . '</th>';
+		}
+		$result .= '</tr>';
+		return $result;
+	}
+
+	/**
+	 * Render the table body
+	 *
+	 * @param \PumaStudios\DocManager\Document $document
+	 * @param boolean $number_rows True if rows should include number
+	 * @return string HTML for table body
+	 */
+	private static function render_rows( Document $document, $number_rows = false ) {
+		$headers = $document->get_csv_header();
+
+		$result	 = '';
+		$row_num = 0;
+		foreach ( $document->get_csv_records() as $row ) {
+			$row_num++;
+
+			$result .= '<tr>';
+			/**
+			 * Include table row # if requested
+			 */
+			if ( $number_rows ) {
+				$result .= "<td>$row_num</td>";
+			}
+
+			foreach ( $headers as $index ) {
+				$result .= '<td>' . self::nl2list( $row[$index] ) . '</td>';
+			}
+			$result .= '</tr>';
+		}
+
+		return $result;
 	}
 
 	/**
@@ -422,6 +481,9 @@ class SCCSVTable {
 	 * @return string HTML
 	 */
 	private static function nl2list( $text ) {
+		if ( !$text ) {
+			return '';
+		}
 		/**
 		 * Split the input on new-line and turn into a list format if more than one line present
 		 */
@@ -430,12 +492,13 @@ class SCCSVTable {
 			/**
 			 * Build list of multi-line item
 			 */
-			return '<ul class="aad-doc-manager-csv-list">' .
+			return '<ul class="aad-doc-manager-csv-cell-list">' .
 				implode( array_map( function( $li ) {
 						return '<li>' . esc_attr( $li );
 					}, $list ) ) . '</ul>';
-		} else
+		} else {
 			return esc_attr( $text );
+		}
 	}
 
 	/**

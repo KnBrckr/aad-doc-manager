@@ -136,18 +136,43 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test SCCSVTable shortcode with invalid document
+	 * Test SCCSVTable shortcode with simple csv file
 	 */
 	function test_sc_csv_table_simple() {
-		self::markTestIncomplete();
+		$doc_attrs	 = [
+			'target_file' => __DIR__ . '/samples/simple.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
 
 		/**
 		 * Test Valid Table
 		 */
-		$attrs		 = [ 'id' => self::$document_csv_post_id ];
+		$attrs		 = [ 'id' => $post_id ];
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv searchHighlight responsive no-wrap" width="100%"><caption>%a</caption>%a</table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Valid document post type" );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>#</th><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>1</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>2</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>3</td><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Simple 3-line CSV file, no extra options" );
+	}
+
+	/**
+	 * Test SCCSVTable shortcode with multi-line entry in a column
+	 */
+	function test_sc_csv_table_td_list() {
+		self::markTestIncomplete();
+
+		$doc_attrs	 = [
+			'target_file' => __DIR__ . '/samples/td-list.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		$document = Document::get_instance( $post_id );
+
+		/**
+		 * Test Valid Table
+		 */
+		$attrs		 = [ 'id' => $post_id ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Column with new-lines" );
 	}
 
 	/**
@@ -186,10 +211,59 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test row-number option in csv_table
+	 * Test enabled row-number option
+	 *
+	 * @param string $number_rows Input values to test
+	 * @testWith [ 1 ]
+	 *           [ "1" ]
+	 *           [ "yes" ]
+	 *           [ "true" ]
+	 *           [ "On" ]
 	 */
-	function test_sc_csv_table_row_number() {
-		self::markTestIncomplete();
+	function test_sc_csv_table_row_number_enabled( string $number_rows ) {
+		$_number_rows = filter_var( $number_rows, FILTER_VALIDATE_BOOLEAN );
+
+		$doc_attrs	 = [
+			'target_file' => __DIR__ . '/samples/simple.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		/**
+		 * Test Valid Table
+		 */
+		$attrs		 = [ 'id' => $post_id, 'row-number' => $number_rows ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>#</th><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>1</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>2</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>3</td><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Simple 3-line CSV file with row numbers" );
+	}
+
+	/**
+	 * Test disabled row-number option
+	 *
+	 * @param string $number_rows Input values to test
+	 * @testWith [ 0 ]
+	 *           [ "0" ]
+	 *           [ "n" ]
+	 *           [ "No" ]
+	 *           [ "false" ]
+	 * 			 [ "abc" ]
+	 *           [ "off" ]
+	 */
+	function test_sc_csv_table_row_number_disabled( string $number_rows ) {
+		$_number_rows = filter_var( $number_rows, FILTER_VALIDATE_BOOLEAN );
+
+		$doc_attrs	 = [
+			'target_file' => __DIR__ . '/samples/simple.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		/**
+		 * Test Valid Table
+		 */
+		$attrs		 = [ 'id' => $post_id, 'row-number' => $number_rows ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Simple 3-line CSV file without row numbers" );
 	}
 
 	/**

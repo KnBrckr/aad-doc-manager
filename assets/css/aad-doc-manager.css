@@ -4,11 +4,11 @@
  * @package Document Manager
  * @author Kenneth J. Brucker <ken.brucker@action-a-day.com>
  * @copyright 2015 Kenneth J. Brucker (email: ken.brucker@action-a-day.com)
- * 
+ *
  * This file is part of Document Manager, a plugin for Wordpress.
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, version 2, as 
+ * it under the terms of the GNU General Public License, version 2, as
  * published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
@@ -21,26 +21,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  **/
 
-.aad-doc-manager table {
+table.aad-doc-manager-csv {
 /*	overflow: scroll;*/
 /*	word-wrap: break-word;*/
 /*	padding: 5px;*/
 }
 
-.aad-doc-manager-csv caption {
+table.aad-doc-manager-csv caption {
 	text-align: left;
 }
 
-.aad-doc-manager table td {
+table.aad-doc-manager-csv td {
 	padding: 5px;
 	font-size: 90%;
 }
 
-ul.aad-doc-manager-csv-list {
+ul.aad-doc-manager-csv-cell-list {
 	padding: 2px;
 }
 
-ul.aad-doc-manager-csv-list li {
+ul.aad-doc-manager-csv-cell-list li {
 	margin-bottom: 2px;
 	line-height: 1.25em;
 }
