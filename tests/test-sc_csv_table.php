@@ -61,7 +61,27 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 *           [ "wp_footer", [ "PumaStudios\\DocManager\\SCCSVTable", "action_init_datatables" ] ]
 	 */
 	function test_actions_exist( $action, $func ) {
-		$this->assertEquals( 10, has_action( $action, $func), "Hooked to action $action" );
+		$this->assertEquals( 10, has_action( $action, $func ), "Hooked to action $action" );
+	}
+
+	/**
+	 * Test enqueuing of datables JS script
+	 */
+	function test_action_enqueue_datatables() {
+		SCCSVTable::action_enqueue_datatables();
+
+		$this->assertTrue( wp_script_is( "aad-doc-manager-datatable-js", 'registered' ), "script aad-doc-manager-mark-js is registered" );
+		$this->assertTrue( wp_script_is( "aad-doc-manager-mark-js", 'enqueued' ), "script aad-doc-manager-mark-js is enqueued" );
+		$this->assertTrue( wp_script_is( "aad-doc-manager-datatable-mark-js", 'enqueued' ), "script aad-doc-manager-datatable-mark-js is enqueued" );
+		$this->assertTrue( wp_style_is( "aad-doc-manager-datatable-css", 'enqueued' ), "style aad-doc-manager-datatable-css is enqueued" );
+	}
+
+	/**
+	 * Test init of datatables
+	 */
+	function test_action_init_datatables() {
+		$this->expectOutputRegex( '/^\s*\<script\X*script\>\s*$/' );
+		SCCSVTable::action_init_datatables();
 	}
 
 	/**
@@ -115,13 +135,6 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		$this->assertEquals( "", SCCSVTable::sc_docmgr_csv_table( $attrs ), "Wrong mime type" );
 	}
 
-	function test_sc_csv_table_not_document() {
-		$post_id = $this->factory->post->create();
-
-		$attrs['id'] = $post_id;
-		$this->assertEquals( "", SCCSVTable::sc_docmgr_csv_table( $attrs ), "Wrong post type" );
-	}
-
 	/**
 	 * Test SCCSVTable shortcode with invalid document
 	 */
@@ -135,20 +148,6 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
 		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv searchHighlight responsive no-wrap" width="100%"><caption>%a</caption>%a</table></div>';
 		$this->assertStringMatchesFormat( $expected, $result, "Valid document post type" );
-	}
-
-	/**
-	 * Test enqueuing of datables JS script
-	 */
-	function test_action_enqueue_datatables() {
-		self::markTestIncomplete();
-	}
-
-	/**
-	 * Test init of datatables
-	 */
-	function test_action_init_datatables() {
-		self::markTestIncomplete();
 	}
 
 	/**
