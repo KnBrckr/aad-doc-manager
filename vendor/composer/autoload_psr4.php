@@ -11,6 +11,7 @@ return array(
     'PumaStudios\\DocManager\\' => array($baseDir . '/classes'),
     'PumaStudios\\' => array($vendorDir . '/pumastudios/container/src'),
     'Psr\\Container\\' => array($vendorDir . '/psr/container/src'),
+    'League\\Csv\\' => array($vendorDir . '/league/csv/src'),
     'Doctrine\\Instantiator\\' => array($vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator'),
     'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
     '' => array($baseDir . '/tests/factory'),

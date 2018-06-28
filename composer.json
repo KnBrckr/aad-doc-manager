@@ -20,7 +20,8 @@
     ],
 	"require": {
 		"php": ">=7.0",
-		"pumastudios/container": "^1.0"
+		"pumastudios/container": "^1.0",
+		"league/csv": "^9.0"
 	},
     "autoload": {
         "psr-4": {

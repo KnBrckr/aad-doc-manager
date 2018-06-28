@@ -8,6 +8,7 @@ class ComposerStaticInit9222f19021011fa34cc7c190c8a894d7
 {
     public static $files = array (
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
+        '9e4824c5afbdc1482b6025ce3d4dfde8' => __DIR__ . '/..' . '/league/csv/src/functions_include.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -24,6 +25,10 @@ class ComposerStaticInit9222f19021011fa34cc7c190c8a894d7
             'PumaStudios\\DocManager\\' => 23,
             'PumaStudios\\' => 12,
             'Psr\\Container\\' => 14,
+        ),
+        'L' => 
+        array (
+            'League\\Csv\\' => 11,
         ),
         'D' => 
         array (
@@ -54,6 +59,10 @@ class ComposerStaticInit9222f19021011fa34cc7c190c8a894d7
         'Psr\\Container\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'League\\Csv\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/league/csv/src',
         ),
         'Doctrine\\Instantiator\\' => 
         array (
