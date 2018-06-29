@@ -237,10 +237,24 @@ class SCCSVTable {
 		return self::sc_docmgr_csv_table( $_attrs, $content );
 	}
 
-
+	/**
+	 * Render CSS required to apply colors to rows of table
+	 *
+	 * The colors will stay with the row as the table is sorted.
+	 *
+	 * @param array $row_colors Array of sanitized row colors
+	 * @return string HTML
+	 */
 	private static function render_row_color_css( $row_colors ) {
-		$result = '';
+		if ( empty( $row_colors ) ) {
+			return '';
+		}
 
+		$result = '<style>';
+		foreach ( $row_colors as $index => $row_color ) {
+			$result .= '#aad-doc-manager-csv-' . self::$index . ' tr.color-' . $index . ' { background-color: ' . $row_color . '; }';
+		}
+		$result .= '</style>';
 		return $result;
 	}
 
@@ -281,20 +295,26 @@ class SCCSVTable {
 		$result	 = '';
 		$row_num = 0;
 		foreach ( $document->get_csv_records() as $row ) {
-			$row_num++;
 
-			$result .= '<tr>';
+			if ( empty( $row_colors ) ) {
+				$class = '';
+			} else {
+				$class = ' class="color-' . $row_num % count($row_colors) . '"';
+			}
+
+			$result .= '<tr' . $class . '>';
 			/**
 			 * Include table row # if requested
 			 */
 			if ( $number_rows ) {
-				$result .= "<td>$row_num</td>";
+				$result .= '<td>' . ($row_num + 1) . '</td>';
 			}
 
 			foreach ( $headers as $index ) {
 				$result .= '<td>' . self::nl2list( $row[$index] ) . '</td>';
 			}
 			$result .= '</tr>';
+			$row_num++;
 		}
 
 		return $result;

@@ -281,7 +281,6 @@ class TestSCCSVTable extends WP_UnitTestCase {
 
 		$attrs		 = [ 'id' => $post_id, 'date' => $date ];
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '';
 		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Date caption disabled" );
 	}
 
@@ -290,8 +289,11 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 */
 	function test_sc_csv_table_row_colors() {
 		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+		$post_id	 = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/color_rows.csv' ] );
 
-		self::markTestIncomplete( 'Row Coloring Enabled' );
+		$attrs = [ 'id' => $post_id, 'row-colors' => 'red, #AABBCC  , #135, blue, black' ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Row Coloring Enabled" );
 	}
 
 	/**
