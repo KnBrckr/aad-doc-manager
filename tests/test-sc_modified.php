@@ -91,7 +91,6 @@ class TestSCModified extends WP_UnitTestCase {
 	 */
 	function test_sc_modified() {
 		$doc_attrs	 = [
-			'post_type'		 => Document::POST_TYPE,
 			'post_date'		 => '2018-06-13 05:37:30',
 			'post_date_gmt'	 => '2018-06-13 12:37:30',
 			'target_file' => __DIR__ . '/samples/small.pdf'

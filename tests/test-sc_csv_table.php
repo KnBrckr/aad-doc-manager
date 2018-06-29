@@ -197,10 +197,51 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test date option in csv_table
+	 * Display of date field in caption enabled
+	 *
+	 * @param string $date
+	 * @testWith [ 1 ]
+	 *           [ "1" ]
+	 *           [ "yes" ]
+	 *           [ "true" ]
+	 *           [ "On" ]
 	 */
-	function test_sc_csv_table_date() {
-		self::markTestIncomplete();
+	function test_sc_csv_table_date_enabled( $date ) {
+		$doc_attrs	 = [
+			'post_date'		 => '2018-06-13 05:37:30',
+			'post_date_gmt'	 => '2018-06-13 12:37:30',
+			'target_file' => __DIR__ . '/samples/simple.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		$attrs		 = [ 'id' => $post_id, 'date' => $date ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>Created: June 13, 2018</caption><tr>%a</tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
+	}
+
+	/**
+	 * Display of date field in caption disabled
+	 *
+	 * @param string $date
+	 * @testWith [ 0 ]
+	 *           [ "0" ]
+	 *           [ "n" ]
+	 *           [ "No" ]
+	 *           [ "false" ]
+	 * 			 [ "abc" ]
+	 *           [ "off" ]
+	 */
+	function test_sc_csv_table_date_disabled( $date ) {
+		$doc_attrs	 = [
+			'target_file' => __DIR__ . '/samples/simple.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		$attrs		 = [ 'id' => $post_id, 'date' => $date ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><tr>%a</tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
 	}
 
 	/**
@@ -217,6 +258,7 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * @testWith [ 1 ]
 	 *           [ "1" ]
 	 *           [ "yes" ]
+	 *			 [ "YES" ]
 	 *           [ "true" ]
 	 *           [ "On" ]
 	 */
@@ -241,7 +283,6 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * @param string $number_rows Input values to test
 	 * @testWith [ 0 ]
 	 *           [ "0" ]
-	 *           [ "n" ]
 	 *           [ "No" ]
 	 *           [ "false" ]
 	 * 			 [ "abc" ]
@@ -288,7 +329,7 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * @testWith ["abc"]
 	 *           [-1]
 	 *           [0]
-	 *			 [""]
+	 * 			 [""]
 	 */
 	function test_sc_csv_table_invalid_page_length( $length ) {
 		$doc_attrs	 = [
