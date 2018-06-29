@@ -49,12 +49,12 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * @param string $msg Assert message
 	 */
 	private function _assertStringMatchesFormatFile( string $file, string $result, string $msg ) {
-		$handle = fopen( $file, "r" );
-		$expected = '';
-		while ( ( $line = fgets($handle)) !== false ) {
-			$expected .= trim($line);
+		$handle		 = fopen( $file, "r" );
+		$expected	 = '';
+		while ( ( $line		 = fgets( $handle )) !== false ) {
+			$expected .= trim( $line );
 		}
-		fclose($handle);
+		fclose( $handle );
 
 		$this->assertStringMatchesFormat( $expected, $result, $msg );
 	}
@@ -155,10 +155,32 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		$this->assertEquals( "", SCCSVTable::sc_docmgr_csv_table( $attrs ), "Wrong mime type" );
 	}
 
+	function test_sc_csv_table_header() {
+		$expected_files = [
+			__DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '_0.html',
+			__DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '_1.html',
+			__DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '_2.html'
+		];
+
+		$post_ids = [
+			$this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/simple.csv' ] ),
+			$this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/td-list.csv' ] ),
+			$this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/english_monarchs.csv' ] )
+		];
+
+		foreach ( $post_ids as $index => $post_id ) {
+			$attrs = [ 'id' => $post_id ];
+			$result = SCCSVTable::sc_docmgr_csv_table( $attrs );
+			$this->_assertStringMatchesFormatFile( $expected_files[$index], $result, "Test table headers #$index");
+		}
+	}
+
 	/**
 	 * Test SCCSVTable shortcode with simple csv file
 	 */
 	function test_sc_csv_table_simple() {
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
@@ -167,17 +189,16 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		/**
 		 * Test Valid Table
 		 */
-		$attrs		 = [ 'id' => $post_id ];
-		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>#</th><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>1</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>2</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>3</td><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Simple 3-line CSV file, no extra options" );
+		$attrs	 = [ 'id' => $post_id ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Simple 3-line CSV file, no extra options" );
 	}
 
 	/**
 	 * Test SCCSVTable shortcode with multi-line entry in a column
 	 */
 	function test_sc_csv_table_td_list() {
-		$expected_file = __DIR__ . '/data/td-list.html';
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
 
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/td-list.csv'
@@ -187,30 +208,30 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		/**
 		 * Test Valid Table
 		 */
-		$attrs		 = [ 'id' => $post_id ];
-		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$this->_assertStringMatchesFormatFile($expected_file, $result, "Column with new-lines" );
+		$attrs	 = [ 'id' => $post_id ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Column with new-lines" );
 	}
 
 	/**
 	 * Test CSV storage format 1
 	 */
 	function test_sc_csv_table_format_1() {
-		self::markTestIncomplete('Test csv table format 1');
+		self::markTestIncomplete( 'Test csv table format 1' );
 	}
 
 	/**
 	 * Test CSV storage format 2
 	 */
 	function test_sc_csv_table_format_2() {
-		self::markTestIncomplete('Test csv table format 2');
+		self::markTestIncomplete( 'Test csv table format 2' );
 	}
 
 	/**
 	 * Test CSV storage format 3
 	 */
 	function test_sc_csv_table_format_3() {
-		self::markTestIncomplete('Test csv table format 3');
+		self::markTestIncomplete( 'Test csv table format 3' );
 	}
 
 	/**
@@ -224,17 +245,18 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 *           [ "On" ]
 	 */
 	function test_sc_csv_table_date_enabled( $date ) {
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
 		$doc_attrs	 = [
 			'post_date'		 => '2018-06-13 05:37:30',
 			'post_date_gmt'	 => '2018-06-13 12:37:30',
-			'target_file' => __DIR__ . '/samples/simple.csv'
+			'target_file'	 => __DIR__ . '/samples/simple.csv'
 		];
 		$post_id	 = $this->factory->document->create( $doc_attrs );
 
-		$attrs		 = [ 'id' => $post_id, 'date' => $date ];
-		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>Created: June 13, 2018</caption><tr>%a</tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
+		$attrs	 = [ 'id' => $post_id, 'date' => $date ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Date Caption Enabled" );
 	}
 
 	/**
@@ -250,6 +272,8 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 *           [ "off" ]
 	 */
 	function test_sc_csv_table_date_disabled( $date ) {
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
@@ -257,15 +281,17 @@ class TestSCCSVTable extends WP_UnitTestCase {
 
 		$attrs		 = [ 'id' => $post_id, 'date' => $date ];
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><tr>%a</tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
+		$expected	 = '';
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Date caption disabled" );
 	}
 
 	/**
 	 * Test row-colors option in csv_table
 	 */
 	function test_sc_csv_table_row_colors() {
-		self::markTestIncomplete('Test row coloring');
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
+		self::markTestIncomplete( 'Row Coloring Enabled' );
 	}
 
 	/**
@@ -275,11 +301,13 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * @testWith [ 1 ]
 	 *           [ "1" ]
 	 *           [ "yes" ]
-	 *			 [ "YES" ]
+	 * 			 [ "YES" ]
 	 *           [ "true" ]
 	 *           [ "On" ]
 	 */
 	function test_sc_csv_table_row_number_enabled( string $number_rows ) {
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
@@ -288,10 +316,9 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		/**
 		 * Test Valid Table
 		 */
-		$attrs		 = [ 'id' => $post_id, 'row-number' => $number_rows ];
-		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>#</th><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>1</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>2</td><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>3</td><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Simple 3-line CSV file with row numbers" );
+		$attrs	 = [ 'id' => $post_id, 'row-number' => $number_rows ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Simple 3-line CSV file with row numbers" );
 	}
 
 	/**
@@ -306,15 +333,16 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 *           [ "off" ]
 	 */
 	function test_sc_csv_table_row_number_disabled( string $number_rows ) {
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
 		$post_id	 = $this->factory->document->create( $doc_attrs );
 
-		$attrs		 = [ 'id' => $post_id, 'row-number' => $number_rows ];
-		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Simple 3-line CSV file without row numbers" );
+		$attrs	 = [ 'id' => $post_id, 'row-number' => $number_rows ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Simple 3-line CSV file without row numbers" );
 	}
 
 	/**
@@ -334,8 +362,8 @@ class TestSCCSVTable extends WP_UnitTestCase {
 
 		$attrs		 = [ 'id' => $post_id, 'page-length' => $length ];
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="' . $length . '"><caption>%s</caption>%a</tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
+		$expected	 = '<div%S><table %s data-page-length="' . $length . '"><caption>%s</caption>%a</tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Valid modified page-length" );
 	}
 
 	/**
@@ -349,6 +377,8 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * 			 [""]
 	 */
 	function test_sc_csv_table_invalid_page_length( $length ) {
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
@@ -356,15 +386,17 @@ class TestSCCSVTable extends WP_UnitTestCase {
 
 		$attrs		 = [ 'id' => $post_id, 'page-length' => $length ];
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption>%a</tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
+		$expected	 = '<div%S><table %s data-page-length="10"><caption>%s</caption>%a</tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Invalid modified page-length" );
 	}
 
 	/**
 	 * Test rows option in csv_table
 	 */
 	function test_sc_csv_table_rows() {
-		self::markTestIncomplete('Test limited set of rows to include');
+		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+
+		self::markTestIncomplete( 'Test limited set of rows to include' );
 	}
 
 }

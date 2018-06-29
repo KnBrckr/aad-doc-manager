@@ -29,6 +29,11 @@ namespace PumaStudios\DocManager;
 class SCCSVTable {
 
 	/**
+	 * @var int Increments for each table on current page
+	 */
+	static $index = 0;
+
+	/**
 	 * Plug into WP
 	 *
 	 * @since 1.0
@@ -170,8 +175,8 @@ class SCCSVTable {
 		$row_colors		 = self::sanitize_row_colors( $attrs['row-colors'] );
 		$include_rows	 = self::parse_numbers( $attrs['rows'] );
 
-		$_page_length = intval( $attrs['page-length'] );
-		$page_length	 = $_page_length > 0 ? $_page_length : 10 ;
+		$_page_length	 = intval( $attrs['page-length'] );
+		$page_length	 = $_page_length > 0 ? $_page_length : 10;
 
 		/**
 		 * Retrieve the post
@@ -189,7 +194,8 @@ class SCCSVTable {
 		 *     *******************************************************************
 		 */
 		$result	 = '<div class="aad-doc-manager">';
-		$result	 .= '<table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="' . $page_length . '">';
+		$result	 .= self::render_row_color_css( $row_colors );
+		$result	 .= '<table id="aad-doc-manager-csv-' . self::$index++ . '" class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="' . $page_length . '">';
 
 		/**
 		 * Include caption if needed
@@ -231,6 +237,13 @@ class SCCSVTable {
 		return self::sc_docmgr_csv_table( $_attrs, $content );
 	}
 
+
+	private static function render_row_color_css( $row_colors ) {
+		$result = '';
+
+		return $result;
+	}
+
 	/**
 	 * Render the table header
 	 *
@@ -247,7 +260,7 @@ class SCCSVTable {
 
 		$headers = $document->get_csv_header();
 		foreach ( $headers as $header ) {
-			$result .= '<th>' . esc_html(trim($header)) . '</th>';
+			$result .= '<th>' . esc_html( trim( $header ) ) . '</th>';
 		}
 		$result .= '</tr>';
 		return $result;
@@ -307,10 +320,10 @@ class SCCSVTable {
 			 */
 			return '<ul class="aad-doc-manager-csv-cell-list">' .
 				implode( array_map( function( $li ) {
-						return '<li>' . esc_html( trim($li) );
+						return '<li>' . esc_html( trim( $li ) );
 					}, $list ) ) . '</ul>';
 		} else {
-			return esc_attr( trim($text) );
+			return esc_attr( trim( $text ) );
 		}
 	}
 
