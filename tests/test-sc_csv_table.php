@@ -221,8 +221,6 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 *           [ "On" ]
 	 */
 	function test_sc_csv_table_row_number_enabled( string $number_rows ) {
-		$_number_rows = filter_var( $number_rows, FILTER_VALIDATE_BOOLEAN );
-
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
@@ -250,16 +248,11 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 *           [ "off" ]
 	 */
 	function test_sc_csv_table_row_number_disabled( string $number_rows ) {
-		$_number_rows = filter_var( $number_rows, FILTER_VALIDATE_BOOLEAN );
-
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
 		$post_id	 = $this->factory->document->create( $doc_attrs );
 
-		/**
-		 * Test Valid Table
-		 */
 		$attrs		 = [ 'id' => $post_id, 'row-number' => $number_rows ];
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
 		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
@@ -268,9 +261,45 @@ class TestSCCSVTable extends WP_UnitTestCase {
 
 	/**
 	 * Test page-length option in csv_table
+	 *
+	 * @param int $length
+	 *
+	 * @testWith [1]
+	 *           [10]
+	 *           [100]
 	 */
-	function test_sc_csv_table_page_length() {
-		self::markTestIncomplete();
+	function test_sc_csv_table_valid_page_length( $length ) {
+		$doc_attrs	 = [
+			'target_file' => __DIR__ . '/samples/simple.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		$attrs		 = [ 'id' => $post_id, 'page-length' => $length ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="' . $length . '"><caption>%s</caption>%a</tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
+	}
+
+	/**
+	 * Test page-length option in csv_table
+	 *
+	 * @param int $length
+	 *
+	 * @testWith ["abc"]
+	 *           [-1]
+	 *           [0]
+	 *			 [""]
+	 */
+	function test_sc_csv_table_invalid_page_length( $length ) {
+		$doc_attrs	 = [
+			'target_file' => __DIR__ . '/samples/simple.csv'
+		];
+		$post_id	 = $this->factory->document->create( $doc_attrs );
+
+		$attrs		 = [ 'id' => $post_id, 'page-length' => $length ];
+		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption>%a</tr></table></div>';
+		$this->assertStringMatchesFormat( $expected, $result, "Modified page-length" );
 	}
 
 	/**

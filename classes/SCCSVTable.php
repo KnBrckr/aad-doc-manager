@@ -27,6 +27,7 @@ namespace PumaStudios\DocManager;
  * @author Kenneth J. Brucker <ken@pumastudios.com>
  */
 class SCCSVTable {
+
 	/**
 	 * Plug into WP
 	 *
@@ -163,19 +164,14 @@ class SCCSVTable {
 		 */
 		$attrs = shortcode_atts( $default_attrs, $_attrs );
 
-		// FIXME sanitize array of attrs
+		$doc_id			 = intval( $attrs['id'] );
+		$caption_date	 = filter_var( $attrs['date'], FILTER_VALIDATE_BOOLEAN );
+		$number_rows	 = filter_var( $attrs['row-number'], FILTER_VALIDATE_BOOLEAN );
+		$row_colors		 = self::sanitize_row_colors( $attrs['row-colors'] );
+		$include_rows	 = self::parse_numbers( $attrs['rows'] );
 
-		$doc_id				 = intval( $attrs['id'] );
-		$caption_date		 = intval( $attrs['date'] );
-		$number_rows		 = filter_var( $attrs['row-number'], FILTER_VALIDATE_BOOLEAN );
-		$attrs['row-colors'] = self::sanitize_row_colors( $attrs['row-colors'] );
-		$page_length		 = intval( $attrs['page-length'] );
-		$attrs['rows']		 = self::parse_numbers( $attrs['rows'] );
-
-		/**
-		 * Must re-render if any options change default rendering
-		 */
-		$render_defaults = $attrs['row-colors'] == NULL && $attrs['row-number'] == 1 && $attrs['rows'] == NULL;
+		$_page_length = intval( $attrs['page-length'] );
+		$page_length	 = $_page_length > 0 ? $_page_length : 10 ;
 
 		/**
 		 * Retrieve the post
@@ -210,7 +206,7 @@ class SCCSVTable {
 		}
 
 		$result	 .= self::render_header( $document, $number_rows );
-		$result	 .= self::render_rows( $document, $number_rows );
+		$result	 .= self::render_rows( $document, $number_rows, $row_colors, $include_rows );
 
 		$result .= '</table></div>';
 
@@ -242,10 +238,10 @@ class SCCSVTable {
 	 * @param boolean $number_rows True if rows should include number
 	 * @return HTML for table header row
 	 */
-	private static function render_header( Document $document, $number_rows = false ) {
+	private static function render_header( Document $document, $number_rows ) {
 		$result = '<tr>';
 
-		if ($number_rows) {
+		if ( $number_rows ) {
 			$result .= '<th>#</th>';
 		}
 
@@ -262,9 +258,11 @@ class SCCSVTable {
 	 *
 	 * @param \PumaStudios\DocManager\Document $document
 	 * @param boolean $number_rows True if rows should include number
+	 * @param array $row_colors Array of row colors to apply in repeating sequence
+	 * @param array $include_rows rows to include in display
 	 * @return string HTML for table body
 	 */
-	private static function render_rows( Document $document, $number_rows = false ) {
+	private static function render_rows( Document $document, $number_rows, $row_colors, $include_rows ) {
 		$headers = $document->get_csv_header();
 
 		$result	 = '';
