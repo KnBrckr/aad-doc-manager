@@ -247,7 +247,7 @@ class SCCSVTable {
 
 		$headers = $document->get_csv_header();
 		foreach ( $headers as $header ) {
-			$result .= '<th>' . $header . '</th>';
+			$result .= '<th>' . esc_html(trim($header)) . '</th>';
 		}
 		$result .= '</tr>';
 		return $result;
@@ -307,10 +307,10 @@ class SCCSVTable {
 			 */
 			return '<ul class="aad-doc-manager-csv-cell-list">' .
 				implode( array_map( function( $li ) {
-						return '<li>' . esc_attr( $li );
+						return '<li>' . esc_html( trim($li) );
 					}, $list ) ) . '</ul>';
 		} else {
-			return esc_attr( $text );
+			return esc_attr( trim($text) );
 		}
 	}
 

@@ -9,7 +9,7 @@ use PumaStudios\DocManager\Document;
 use PumaStudios\DocManager\SCCSVTable;
 
 /**
- * Sample test case.
+ * Test shortcode to display a CSV table
  *
  * @group shortcode
  */
@@ -37,6 +37,26 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		 * Rollback WP environment
 		 */
 		parent::tearDown();
+	}
+
+	/**
+	 * Wrapper for assertStringMatchesFormat to use file as input
+	 *
+	 * Removes leading and trailing whitespace and collapses input file to a single line to match style of expected output
+	 *
+	 * @param string $file File containing expected HTML in easy to read format
+	 * @param string $result Result to compare against
+	 * @param string $msg Assert message
+	 */
+	private function _assertStringMatchesFormatFile( string $file, string $result, string $msg ) {
+		$handle = fopen( $file, "r" );
+		$expected = '';
+		while ( ( $line = fgets($handle)) !== false ) {
+			$expected .= trim($line);
+		}
+		fclose($handle);
+
+		$this->assertStringMatchesFormat( $expected, $result, $msg );
 	}
 
 	/**
@@ -157,43 +177,40 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * Test SCCSVTable shortcode with multi-line entry in a column
 	 */
 	function test_sc_csv_table_td_list() {
-		self::markTestIncomplete();
+		$expected_file = __DIR__ . '/data/td-list.html';
 
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/td-list.csv'
 		];
 		$post_id	 = $this->factory->document->create( $doc_attrs );
 
-		$document = Document::get_instance( $post_id );
-
 		/**
 		 * Test Valid Table
 		 */
 		$attrs		 = [ 'id' => $post_id ];
 		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
-		$expected	 = '<div class="aad-doc-manager"><table class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="10"><caption>%s</caption><tr><th>First Name</th><th>Last Name</th><th>email</th></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr><tr><td>%S</td><td>%S</td><td>%S</td></tr></table></div>';
-		$this->assertStringMatchesFormat( $expected, $result, "Column with new-lines" );
+		$this->_assertStringMatchesFormatFile($expected_file, $result, "Column with new-lines" );
 	}
 
 	/**
 	 * Test CSV storage format 1
 	 */
 	function test_sc_csv_table_format_1() {
-		self::markTestIncomplete();
+		self::markTestIncomplete('Test csv table format 1');
 	}
 
 	/**
 	 * Test CSV storage format 2
 	 */
 	function test_sc_csv_table_format_2() {
-		self::markTestIncomplete();
+		self::markTestIncomplete('Test csv table format 2');
 	}
 
 	/**
 	 * Test CSV storage format 3
 	 */
 	function test_sc_csv_table_format_3() {
-		self::markTestIncomplete();
+		self::markTestIncomplete('Test csv table format 3');
 	}
 
 	/**
@@ -248,7 +265,7 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * Test row-colors option in csv_table
 	 */
 	function test_sc_csv_table_row_colors() {
-		self::markTestIncomplete();
+		self::markTestIncomplete('Test row coloring');
 	}
 
 	/**
@@ -347,7 +364,7 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * Test rows option in csv_table
 	 */
 	function test_sc_csv_table_rows() {
-		self::markTestIncomplete();
+		self::markTestIncomplete('Test limited set of rows to include');
 	}
 
 }
