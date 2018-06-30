@@ -169,9 +169,9 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		];
 
 		foreach ( $post_ids as $index => $post_id ) {
-			$attrs = [ 'id' => $post_id ];
-			$result = SCCSVTable::sc_docmgr_csv_table( $attrs );
-			$this->_assertStringMatchesFormatFile( $expected_files[$index], $result, "Test table headers #$index");
+			$attrs	 = [ 'id' => $post_id ];
+			$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+			$this->_assertStringMatchesFormatFile( $expected_files[$index], $result, "Test table headers #$index" );
 		}
 	}
 
@@ -279,8 +279,8 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		];
 		$post_id	 = $this->factory->document->create( $doc_attrs );
 
-		$attrs		 = [ 'id' => $post_id, 'date' => $date ];
-		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$attrs	 = [ 'id' => $post_id, 'date' => $date ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
 		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Date caption disabled" );
 	}
 
@@ -288,11 +288,11 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * Test row-colors option in csv_table
 	 */
 	function test_sc_csv_table_row_colors() {
-		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
-		$post_id	 = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/color_rows.csv' ] );
+		$expected_file	 = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
+		$post_id		 = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/color_rows.csv' ] );
 
-		$attrs = [ 'id' => $post_id, 'row-colors' => 'red, #AABBCC  , #135, blue, black' ];
-		$result		 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$attrs	 = [ 'id' => $post_id, 'row-colors' => 'red, #AABBCC  , #135, blue, black' ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
 		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Row Coloring Enabled" );
 	}
 
@@ -379,8 +379,6 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	 * 			 [""]
 	 */
 	function test_sc_csv_table_invalid_page_length( $length ) {
-		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
-
 		$doc_attrs	 = [
 			'target_file' => __DIR__ . '/samples/simple.csv'
 		];
@@ -398,7 +396,26 @@ class TestSCCSVTable extends WP_UnitTestCase {
 	function test_sc_csv_table_rows() {
 		$expected_file = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
 
-		self::markTestIncomplete( 'Test limited set of rows to include' );
+		$post_id = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/cat-breeds.csv' ] );
+		$attrs	 = [
+			'id' => $post_id,
+			'rows' => '1-5, 10, 7-12, 25'
+			];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Simple 3-line CSV file without row numbers" );
+	}
+
+	/**
+	 * Test a large file
+	 */
+	function test_sc_csv_table_large() {
+		$csv_file = __DIR__ . '/samples/CA-plants.csv';
+
+		$post_id = $this->factory->document->create( [ 'target_file' => $csv_file ] );
+		$attrs	 = [ 'id' => $post_id ];
+		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
+
+		$this->assertTrue( strlen( $result ) > filesize( $csv_file ), "Output from a large file should be bigger than source file" );
 	}
 
 	/**
@@ -409,10 +426,11 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		$this->assertTrue( is_admin() );
 
 		// Try a simple CSV file - should return empty
-		$post_id	 = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
+		$post_id = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
 		$attrs	 = [ 'id' => $post_id ];
-		$this->assertEquals( '', SCCSVTable::sc_docmgr_csv_table( $attrs ), 'Empty result on Admin Screens');
+		$this->assertEquals( '', SCCSVTable::sc_docmgr_csv_table( $attrs ), 'Empty result on Admin Screens' );
 
 		set_current_screen( 'frontend' );
 	}
+
 }

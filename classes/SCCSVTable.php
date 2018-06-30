@@ -291,7 +291,7 @@ class SCCSVTable {
 	}
 
 	/**
-	 * Render the table body
+	 * Render the CSV table body
 	 *
 	 * @param \PumaStudios\DocManager\Document $document
 	 * @param boolean $number_rows True if rows should include number
@@ -300,32 +300,58 @@ class SCCSVTable {
 	 * @return string HTML for table body
 	 */
 	private static function render_rows( Document $document, $number_rows, $row_colors, $include_rows ) {
-		$headers = $document->get_csv_header();
+		$headers		 = $document->get_csv_header();
+		$row_color_count = count( $row_colors );
 
-		$result	 = '';
-		$row_num = 0;
-		foreach ( $document->get_csv_records() as $row ) {
-
-			if ( empty( $row_colors ) ) {
-				$class = '';
-			} else {
-				$class = ' class="color-' . $row_num % count($row_colors) . '"';
+		$result = '';
+		if ( empty( $include_rows ) ) {
+			// Render all rows
+			$row_number = 0;
+			foreach ( $document->get_csv_records() as $row ) {
+				$result .= self::render_row( $row_number++, $row, $headers, $number_rows, $row_color_count );
 			}
-
-			$result .= '<tr' . $class . '>';
-			/**
-			 * Include table row # if requested
-			 */
-			if ( $number_rows ) {
-				$result .= '<td>' . ($row_num + 1) . '</td>';
+		} else {
+			// Render only the given rows
+			foreach ( $include_rows as $row_number ) {
+				// On front end row numbers are 1 based
+				$row	 = $document->get_csv_record( $row_number - 1 );
+				$result	 .= self::render_row( $row_number - 1, $row, $headers, $number_rows, $row_color_count );
 			}
-
-			foreach ( $headers as $index ) {
-				$result .= '<td>' . self::nl2list( $row[$index] ) . '</td>';
-			}
-			$result .= '</tr>';
-			$row_num++;
 		}
+
+		return $result;
+	}
+
+	/**
+	 * Render a CSV table row
+	 *
+	 * @param int $row_number Row number for this row (0 based)
+	 * @param array $row Row data
+	 * @param array $headers Row headers (indexes into row data) in order of display
+	 * @param boolean $number_rows Should row include leading row number column?
+	 * @param int $row_color_count Number of different row highlight colors
+	 * @return string HTML
+	 */
+	private static function render_row( $row_number, $row, $headers, $number_rows, $row_color_count ) {
+		if ( $row_color_count > 0 ) {
+			$class = ' class="color-' . $row_number % $row_color_count . '"';
+		} else {
+			$class = '';
+		}
+
+		$result = '<tr' . $class . '>';
+
+		/**
+		 * Include table row # if requested
+		 */
+		if ( $number_rows ) {
+			$result .= '<td>' . ($row_number + 1) . '</td>';
+		}
+
+		foreach ( $headers as $index ) {
+			$result .= '<td>' . self::nl2list( $row[$index] ) . '</td>';
+		}
+		$result .= '</tr>';
 
 		return $result;
 	}
@@ -400,8 +426,9 @@ class SCCSVTable {
 	 * @return array of strings, row colors
 	 */
 	private static function sanitize_row_colors( $colors ) {
-		if ( !isset( $colors ) )
+		if ( !isset( $colors ) ) {
 			return null;
+		}
 
 		$row_colors = array_map( array( self::class, 'sanitize_row_color' ), explode( ',', $colors ) );
 		return $row_colors;
