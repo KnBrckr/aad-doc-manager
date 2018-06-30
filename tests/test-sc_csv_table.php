@@ -401,4 +401,18 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		self::markTestIncomplete( 'Test limited set of rows to include' );
 	}
 
+	/**
+	 * Test csv table in admin mode - Don't want processing to take place due to overhead of Yoast and other data handling on admin screen.
+	 */
+	function test_sc_csv_table_admin() {
+		set_current_screen( 'edit.php' );
+		$this->assertTrue( is_admin() );
+
+		// Try a simple CSV file - should return empty
+		$post_id	 = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
+		$attrs	 = [ 'id' => $post_id ];
+		$this->assertEquals( '', SCCSVTable::sc_docmgr_csv_table( $attrs ), 'Empty result on Admin Screens');
+
+		set_current_screen( 'frontend' );
+	}
 }

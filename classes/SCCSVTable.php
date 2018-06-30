@@ -155,6 +155,16 @@ class SCCSVTable {
 	 * @since 0.3
 	 */
 	public static function sc_docmgr_csv_table( $_attrs, $content = null ) {
+		/**
+		 * Large tables cause performance issues on backend, provide an empty result
+		 */
+		if ( is_admin() ) {
+			return '';
+		}
+
+		/**
+		 * Setup default shortcode attributes
+		 */
 		$default_attrs = array(
 			'id'			 => null,
 			'date'			 => 1, // Display modified date in caption by default
