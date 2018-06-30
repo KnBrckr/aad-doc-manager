@@ -420,6 +420,8 @@ class TestSCCSVTable extends WP_UnitTestCase {
 
 	/**
 	 * Test csv table in admin mode - Don't want processing to take place due to overhead of Yoast and other data handling on admin screen.
+	 *
+	 * @group admin
 	 */
 	function test_sc_csv_table_admin() {
 		set_current_screen( 'edit.php' );
