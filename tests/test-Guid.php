@@ -3,7 +3,7 @@
 /**
  * Class TestGuid
  *
- * @package Aad_Doc_Manager
+ * @package PumaStudios-DocManager
  */
 use PumaStudios\DocManager\Guid;
 

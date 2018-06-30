@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Class SCModified Tests
+ * Class TestSCModified
  *
- * @package Aad_Doc_Manager
+ * @package PumaStudios-DocManager
  */
 
 use PumaStudios\DocManager\Document;

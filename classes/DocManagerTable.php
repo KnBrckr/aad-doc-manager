@@ -130,7 +130,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param $which String Is nav for "top" or "bottom" of the table?
 	 * @return void
 	 */
-	function extra_tablenav( $which ) {
+	protected function extra_tablenav( $which ) {
 		?>
 		<div class="alignleft actions">
 			<?php
@@ -151,7 +151,7 @@ class DocManagerTable extends \WP_List_Table {
 	 *
 	 * @return array $columns, array of columns
 	 */
-	function get_columns() {
+	public function get_columns() {
 		$columns = array(
 			'cb'				 => '<input type="checkbox" />', //Render a checkbox instead of text
 			'doc_id'			 => __( 'ID' ),
@@ -187,7 +187,7 @@ class DocManagerTable extends \WP_List_Table {
 	 *
 	 * @return array $sortable, array of columns that can be sorted
 	 */
-	function get_sortable_columns() {
+	protected function get_sortable_columns() {
 		$sortable = array(
 			'doc_id'		 => array( 'ID', false ),
 			'title'			 => array( 'title', false ),
@@ -235,7 +235,7 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Prepare table items for display
 	 * */
-	function prepare_items() {
+	public function prepare_items() {
 		$num_posts		 = wp_count_posts( Document::POST_TYPE, 'readable' );
 		/**
 		 * By default, want published posts
@@ -303,7 +303,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 * */
-	function column_cb( $post ) {
+	protected function column_cb( $post ) {
 		return sprintf(
 			'<input type="checkbox" name="doc_ids[]" value="%s" />', esc_attr( $post->ID )  // The value of the checkbox should be the record's id
 		);
@@ -317,7 +317,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param $post A post object for display
 	 * @return string, Text or HTML to be placed in table cell
 	 */
-	function column_title( $post ) {
+	protected function column_title( $post ) {
 		$actions = array();
 
 		/**
@@ -381,7 +381,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_shortcode( $post ) {
+	protected function column_shortcode( $post ) {
 		if ( 'text/csv' == $post->post_mime_type ) {
 			return '[docmgr-csv-table id=' . esc_attr( $post->ID ) . ']';
 		} else {
@@ -395,7 +395,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_download_shortcode( $post ) {
+	protected function column_download_shortcode( $post ) {
 		$terms = wp_get_object_terms( $post->ID, 'aad-doc-uuid', array( 'fields' => 'names' ) );
 
 		if ( count( $terms ) > 0 ) {
@@ -411,7 +411,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_download_url( $post ) {
+	protected function column_download_url( $post ) {
 		$document = Document::get_instance( $post, '' );
 		if ( !$document ) {
 			return '';
@@ -426,7 +426,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_date( $post ) {
+	protected function column_date( $post ) {
 		return esc_attr( $this->format_date( $post->post_date ) );
 	}
 
@@ -436,7 +436,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_date_modified( $post ) {
+	protected function column_date_modified( $post ) {
 		return esc_attr( $this->format_date( $post->post_modified ) );
 	}
 
@@ -446,7 +446,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_doc_id( $post ) {
+	protected function column_doc_id( $post ) {
 		return esc_attr( $post->ID );
 	}
 
@@ -456,7 +456,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_doc_uuid( $post ) {
+	protected function column_doc_uuid( $post ) {
 		$terms = wp_get_object_terms( $post->ID, 'aad-doc-uuid', array( 'fields' => 'names' ) );
 
 		if ( count( $terms ) > 0 ) {
@@ -472,7 +472,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_type( $post ) {
+	protected function column_type( $post ) {
 		return esc_attr( $post->post_mime_type );
 	}
 
@@ -482,7 +482,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_rows( $post ) {
+	protected function column_rows( $post ) {
 		if ( 'text/csv' == $post->post_mime_type ) {
 			return esc_attr( get_post_meta( $post->ID, 'csv_rows', true ) );
 		} else {
@@ -496,7 +496,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_download_cnt( $post ) {
+	protected function column_download_cnt( $post ) {
 		return get_post_meta( $post->ID, 'download_count', true );
 	}
 
@@ -506,7 +506,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_columns( $post ) {
+	protected function column_columns( $post ) {
 		if ( 'text/csv' == $post->post_mime_type ) {
 			return esc_attr( get_post_meta( $post->ID, 'csv_cols', true ) );
 		} else {
@@ -520,7 +520,7 @@ class DocManagerTable extends \WP_List_Table {
 	 * @param WP_post $post A post object for display
 	 * @return string Text or HTML to be placed in table cell
 	 */
-	function column_csv_storage_format( $post ) {
+	protected function column_csv_storage_format( $post ) {
 		if ( 'text/csv' == $post->post_mime_type ) {
 			return esc_attr( get_post_meta( $post->ID, 'csv_storage_format', true ) );
 		} else {

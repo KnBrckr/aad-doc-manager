@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Class SCCSVTableTest
+ * Class TestSCCSVTable
  *
- * @package Aad_Doc_Manager
+ * @package PumaStudios-DocManager
  */
 use PumaStudios\DocManager\Document;
 use PumaStudios\DocManager\SCCSVTable;

@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Class SCDownloadURL Tests
+ * Class TestSCDownloadURL
  *
- * @package Aad_Doc_Manager
+ * @package PumaStudios-DocManager
  */
 use PumaStudios\DocManager\Document;
 use PumaStudios\DocManager\DocumentDownload;
