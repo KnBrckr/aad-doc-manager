@@ -143,7 +143,7 @@ class DocumentAdmin {
 		 * User must be able to edit posts
 		 */
 		if ( !current_user_can( 'edit_posts' ) ) {
-			return;
+			return false;
 		}
 
 		/**
@@ -318,6 +318,8 @@ class DocumentAdmin {
 
 		$container = plugin_container();
 		$container->set( 'doc_table', $doc_table );
+
+		return true;
 	}
 
 	/**
@@ -509,7 +511,7 @@ class DocumentAdmin {
 					Plugin::admin_error( $document->get_error_message() );
 					return;
 				}
-				
+
 				break;
 
 			case 'update':
