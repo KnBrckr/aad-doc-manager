@@ -27,6 +27,9 @@ class TestDocumentAdmin extends WP_UnitTestCase {
 		$factory->document = new \WP_UnitTest_Factory_For_Document( $factory );
 	}
 
+	/**
+	 * Per test setup
+	 */
 	function setUp() {
 		/**
 		 * Run as admin role
@@ -45,6 +48,9 @@ class TestDocumentAdmin extends WP_UnitTestCase {
 		parent::setUp();
 	}
 
+	/**
+	 * Per test teardown
+	 */
 	function tearDown() {
 		/**
 		 * Remove document attachments before rolling back the DB
