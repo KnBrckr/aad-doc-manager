@@ -398,9 +398,9 @@ class TestSCCSVTable extends WP_UnitTestCase {
 
 		$post_id = $this->factory->document->create( [ 'target_file' => __DIR__ . '/samples/cat-breeds.csv' ] );
 		$attrs	 = [
-			'id' => $post_id,
-			'rows' => '1-5, 10, 7-12, 25'
-			];
+			'id'	 => $post_id,
+			'rows'	 => '1-5, 10, 7-12, 25'
+		];
 		$result	 = SCCSVTable::sc_docmgr_csv_table( $attrs );
 		$this->_assertStringMatchesFormatFile( $expected_file, $result, "Simple 3-line CSV file without row numbers" );
 	}
@@ -432,7 +432,7 @@ class TestSCCSVTable extends WP_UnitTestCase {
 		$attrs	 = [ 'id' => $post_id ];
 		$this->assertEquals( '', SCCSVTable::sc_docmgr_csv_table( $attrs ), 'Empty result on Admin Screens' );
 
-		set_current_screen( 'frontend' );
+		set_current_screen( 'front' );
 	}
 
 }
