@@ -43,26 +43,19 @@ class DocumentAdmin {
 	const NONCE = 'pumastudios-docmgr-nonce';
 
 	/**
-	 * Instantiate
-	 */
-	public function __construct() {
-
-	}
-
-	/**
 	 * Plug into WP
 	 */
-	public static function run() {
+	public function run() {
 		/**
 		 * Setup admin page for managing Documents
 		 */
-		add_action( 'admin_menu', array( DocumentAdmin::class, 'action_create_menu' ) );
+		add_action( 'admin_menu', array( $this, 'action_create_menu' ) );
 	}
 
 	/**
 	 * Create admin menu section for managing Documents
 	 */
-	public static function action_create_menu() {
+	public function action_create_menu() {
 
 		/**
 		 * Get post object for access to Document post type labels
@@ -76,7 +69,7 @@ class DocumentAdmin {
 								$obj->labels->menu_name, // Menu Title,
 								'edit_posts', // User must be able to edit posts for menu to display
 								self::DOCUMENT_MENU_SLUG, // Slug name for this menu page
-								[ DocumentAdmin::class, 'render_document_table' ], // Function to render the menu content
+								[ $this, 'render_document_table' ], // Function to render the menu content
 								'dashicons-media-spreadsheet', // Icon for  menu
 								21.215 // Position - After Pages(20), try for a unique number
 		);
@@ -89,12 +82,12 @@ class DocumentAdmin {
 			/**
 			 * Pre-render processing for the table screen
 			 */
-			add_action( 'load-' . $hook_suffix, [ self::class, 'action_prerender_table_page' ] );
+			add_action( 'load-' . $hook_suffix, [ $this, 'action_prerender_table_page' ] );
 
 			/**
 			 * Add plugin styles for table screen
 			 */
-			add_action( 'admin_print_styles-' . $hook_suffix, array( self::class, 'action_enqueue_admin_styles' ) );
+			add_action( 'admin_print_styles-' . $hook_suffix, array( $this, 'action_enqueue_admin_styles' ) );
 
 			/**
 			 * Create first sub-page as a duplicate of the main page
@@ -105,7 +98,7 @@ class DocumentAdmin {
 					 $obj->labels->all_items, // Menu Title
 					 'edit_posts', // Capability
 					 self::DOCUMENT_MENU_SLUG, // Menu slug - match the parent
-					 [ self::class, 'render_document_table' ]
+					 [ $this, 'render_document_table' ]
 			);
 
 			/**
@@ -116,18 +109,18 @@ class DocumentAdmin {
 									$obj->labels->add_new, // Menu Title
 									'edit_posts', // User must be able to edit posts for menu to display
 									self::UPLOAD_PAGE_SLUG, // Slug for this Menu Page
-									[ self::class, 'render_upload_page' ]
+									[ $this, 'render_upload_page' ]
 			);
 
 			/**
 			 * Setup form handler to receive new/updated documents
 			 */
-			add_action( 'load-' . $hook_suffix, array( self::class, 'action_process_upload_form' ) );
+			add_action( 'load-' . $hook_suffix, [ $this, 'action_process_upload_form' ] );
 
 			/**
 			 * Add plugin styles for upload screen
 			 */
-			add_action( 'admin_print_styles-' . $hook_suffix, array( self::class, 'action_enqueue_admin_styles' ) );
+			add_action( 'admin_print_styles-' . $hook_suffix, [ $this, 'action_enqueue_admin_styles' ] );
 		}
 	}
 
@@ -136,7 +129,7 @@ class DocumentAdmin {
 	 *
 	 * Done before render during page load to apply any admin notice feedback that might be needed
 	 */
-	public static function action_prerender_table_page() {
+	public function action_prerender_table_page() {
 		global $wpdb;
 
 		/**
@@ -149,19 +142,24 @@ class DocumentAdmin {
 		/**
 		 * Get post object for access to Document post type labels
 		 */
-		$obj = get_post_type_object( Document::POST_TYPE );
+		$post_type_object = get_post_type_object( Document::POST_TYPE );
 
 		/**
 		 * To avoid a processing loop, remove action to catch media deletion via wp-admin/upload.php
 		 */
 		remove_action( 'delete_attachment', array( self::class, 'action_delete_document' ) );
 
-		$doc_table = new DocManagerTable( array(
-			'singular'				 => $obj->labels->singular_name,
-			'plural'				 => $obj->labels->name, // Plural label
-			'ajax'					 => false, // Will not support AJAX on this table
-			'upload_url'			 => menu_page_url( self::UPLOAD_PAGE_SLUG, false ),
-			'table_url'				 => menu_page_url( self::DOCUMENT_MENU_SLUG, false )
+		/**
+		 * Initialize table object for later display
+		 */
+		$screen		 = get_plugin_page_hookname( DocumentAdmin::DOCUMENT_MENU_SLUG, '' );
+		$doc_table	 = new DocManagerTable( array(
+			'singular'	 => $post_type_object->labels->singular_name,
+			'plural'	 => $post_type_object->labels->name, // Plural label
+			'ajax'		 => false, // Will not support AJAX on this table
+			'upload_url' => menu_page_url( self::UPLOAD_PAGE_SLUG, false ),
+			'table_url'	 => menu_page_url( self::DOCUMENT_MENU_SLUG, false ),
+			'screen'	 => $screen
 			) );
 
 		$pagenum = $doc_table->get_pagenum();
@@ -176,14 +174,14 @@ class DocumentAdmin {
 			/**
 			 * Verify nonce - Setup by WP_List_Table base class based on the plural label
 			 */
-			check_admin_referer( 'bulk-' . sanitize_key( self::$post_type_labels['name'] ) );
+			check_admin_referer( 'bulk-' . sanitize_key( $post_type_object->labels->name ) );
 
 			/**
 			 * Prepare redirect URL
 			 */
 			$sendback	 = remove_query_arg( array( 'trashed', 'untrashed', 'deleted', 'locked', 'doc_ids', 'ids', 'action', 'action2' ), wp_get_referer() );
 			if ( !$sendback )
-				$sendback	 = menu_page_url( self::parent_slug, false ); // FIXME This works only if URL contains no embedded '&'
+				$sendback	 = menu_page_url( self::DOCUMENT_MENU_SLUG, false ); // FIXME This works only if URL contains no embedded '&'
 			$sendback	 = add_query_arg( 'paged', $pagenum, $sendback );
 
 			/**
@@ -196,9 +194,8 @@ class DocumentAdmin {
 			} elseif ( !empty( $_REQUEST['doc_ids'] ) )
 				$doc_ids = array_map( 'intval', $_REQUEST['doc_ids'] );
 			else {
-				wp_safe_redirect( $sendback ); // List of posts not provided, bail out
-				exit;
-				// NOT REACHED
+				$this->call_wp_redirect( $sendback ); // List of posts not provided, bail out
+				return false;
 			}
 
 			/**
@@ -285,14 +282,14 @@ class DocumentAdmin {
 					break;
 			}
 
-			wp_safe_redirect( $sendback );
-			exit;
+			$this->call_wp_redirect( $sendback );
+			return false;
 		} elseif ( !empty( $_REQUEST['_wp_http_referer'] ) ) {
 			/**
 			 * No action provided, if nonce was given, redirect back without nonce
 			 */
-			wp_safe_redirect( remove_query_arg( array( '_wp_http_referer', '_wpnonce' ), wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
-			exit;
+			$this->call_wp_redirect( remove_query_arg( array( '_wp_http_referer', '_wpnonce' ), wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
+			return false;
 		}
 
 		/**
@@ -330,7 +327,7 @@ class DocumentAdmin {
 	 * @uses self::upload_slug, slug for upload page
 	 * @return void
 	 */
-	public static function render_document_table() {
+	public function render_document_table() {
 		/**
 		 * User must be able to edit posts
 		 */
@@ -341,7 +338,7 @@ class DocumentAdmin {
 		/**
 		 * Get post object for access to Document post type labels
 		 */
-		$obj = get_post_type_object( Document::POST_TYPE );
+		$post_type_object = get_post_type_object( Document::POST_TYPE );
 
 		/**
 		 * Perform table query
@@ -351,7 +348,7 @@ class DocumentAdmin {
 		?>
 
 		<div class="wrap">
-			<h2><?php echo $obj->name; ?> <a href="<?php menu_page_url( self::UPLOAD_PAGE_SLUG, true ); ?>" class="add-new-h2"><?php echo $obj->labels->add_new_item; ?></a></h2>
+			<h2><?php echo $post_type_object->name; ?> <a href="<?php menu_page_url( self::UPLOAD_PAGE_SLUG, true ); ?>" class="add-new-h2"><?php echo $post_type_object->labels->add_new_item; ?></a></h2>
 			<?php $doc_table->views(); // Display the views available on the table     ?>
 			<form action method="post" accept-charset="utf-8">
 				<input type="hidden" name="page" value="<?php echo self::DOCUMENT_MENU_SLUG ?>">
@@ -367,7 +364,7 @@ class DocumentAdmin {
 	/**
 	 * Enqueue style sheet needed on admin page
 	 */
-	public static function action_enqueue_admin_styles() {
+	public function action_enqueue_admin_styles() {
 		$container = plugin_container();
 		/**
 		 * Enqueue Admin area CSS for table
@@ -390,7 +387,7 @@ class DocumentAdmin {
 	 *
 	 * Redirects back to document list page if a form was processed
 	 */
-	public static function action_process_upload_form() {
+	public function action_process_upload_form() {
 		// FIXME If upload fails, don't update post! Need to refactor order of operations?
 		// FIXME CSV file upload does not create attachment/guid for download operation. Maybe only an issue on updating files?
 		/**
@@ -403,7 +400,7 @@ class DocumentAdmin {
 		/**
 		 * Has an action been requested?
 		 */
-		$action = self::get_action();
+		$action = $this->get_action();
 		if ( !$action ) {
 			return;
 		}
@@ -428,8 +425,6 @@ class DocumentAdmin {
 				/**
 				 * Adding a new document
 				 */
-
-
 				break;
 
 			case 'update';
@@ -480,8 +475,6 @@ class DocumentAdmin {
 					 */
 					$post['post_content'] = $doc_content['post_content'];
 					break;
-
-
 			}
 		} else {
 			$have_upload = false;
@@ -507,7 +500,7 @@ class DocumentAdmin {
 				 * Insert new post
 				 */
 				$document = Document::create_document( $post, 'document' );
-				if ( is_wp_error( $document )) {
+				if ( is_wp_error( $document ) ) {
 					Plugin::admin_error( $document->get_error_message() );
 					return;
 				}
@@ -544,7 +537,7 @@ class DocumentAdmin {
 	 * @uses self::upload_slug, slug for this page
 	 * @return void
 	 */
-	public static function render_upload_page() {
+	public function render_upload_page() {
 		/**
 		 * User must be able to edit posts
 		 */
@@ -655,7 +648,7 @@ class DocumentAdmin {
 	 *
 	 * @return string, name of action or NULL
 	 */
-	private static function get_action() {
+	private function get_action() {
 		if ( empty( $_REQUEST ) || !isset( $_REQUEST['submit'] ) )
 			return NULL;
 		elseif ( $_REQUEST['submit'] == self::$post_type_labels['new_item'] )
@@ -666,4 +659,13 @@ class DocumentAdmin {
 			return NULL;
 	}
 
+	/**
+	 * Redirect to given URL and exit
+	 *
+	 * @param string $redirect_url target redirect URL
+	 */
+	protected function call_wp_redirect( $redirect_url ) {
+		wp_safe_redirect( $redirect_url );
+		exit;
+	}
 }

@@ -119,7 +119,9 @@ class Plugin {
 		 */
 		Document::run();
 		if ( is_admin() ) {
-			DocumentAdmin::run();
+			$document_admin = new DocumentAdmin();
+			$document_admin->run();
+			$container->set( 'document_admin', $document_admin );
 		}
 		DocumentDownload::run();
 
