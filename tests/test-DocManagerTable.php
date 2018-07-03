@@ -139,7 +139,10 @@ class TestDocManagerTable extends WP_UnitTestCase {
 		$this->assertEquals( '', $table->current_action(), 'No action requested' );
 
 		$_REQUEST['action'] = 'edit';
-		$this->assertEquals( 'edit', $table->current_action(), 'Edit action requested' );
+		$action = $table->current_action();
+		unset( $_REQUEST['action']);
+
+		$this->assertEquals( 'edit', $action, 'Edit action requested' );
 	}
 
 	/**
@@ -203,17 +206,6 @@ class TestDocManagerTable extends WP_UnitTestCase {
 		$this->assertEquals( 20, $table->get_pagination_arg( 'per_page' ), 'Default of 20 items per page' );
 	}
 
-	function test_display_items() {
-		$ids = $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
-
-		$table = $this->get_table();
-
-		$table->prepare_items();
-
-		self::markTestIncomplete();
-		$table->display();
-	}
-
 	function test_display_row() {
 		$expected_file	 = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
 		$ids			 = $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
@@ -228,4 +220,14 @@ class TestDocManagerTable extends WP_UnitTestCase {
 		$table->single_row( $item );
 	}
 
+	function test_display_items() {
+		$ids = $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
+
+		$table = $this->get_table();
+
+		$table->prepare_items();
+
+		self::markTestIncomplete();
+		$table->display();
+	}
 }
