@@ -1,0 +1,39 @@
+{
+	"name": "pumastudios/doc-manager",
+	"description": "Custom post type to manage documents for display and download",
+	"keywords": ["wordpress", "plugin"],
+	"homepage": "https://pumastudios.com",
+	"license": "GPL2",
+	"authors": [
+		{
+			"name": "Kenneth J. Brucker",
+			"email": "ken@pumastudios.com",
+			"homepage": "https://pumastudios.com"
+		}
+	],
+	"type": "wordpress-plugin",
+	"repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/KnBrckr/container.git"
+        }
+    ],
+	"require": {
+		"php": ">=7.0",
+		"pumastudios/container": "^1.0",
+		"league/csv": "^9.0"
+	},
+    "autoload": {
+        "psr-4": {
+            "PumaStudios\\DocManager\\": ["classes"]
+        }
+    },
+	"autoload-dev": {
+		"psr-4": {
+			"": ["tests/factory"]
+		}
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^6"
+	}
+}
