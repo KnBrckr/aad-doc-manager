@@ -55,6 +55,10 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= 0.9.1 =
+* FIX: Difficult to edit pages that include large CSV tables
+* Add composer.json
+
 = 0.9 =
 * Add rows option to docmgr-csv-table shortcode.
 
