@@ -597,6 +597,10 @@ if ( ! class_exists( "aadDocManager" ) ) {
 		 */
 		function sc_docmgr_csv_table( $_attrs, $content = null )
 		{
+			// FIXME - Better longterm solution may be to use ajax to download csv table content to build table dynamically
+			if (is_admin()) {
+				return "";
+			}
 			$default_attrs = array(
 				'id'         => null,
 				'date'       => 1,		// Display modified date in caption by default
