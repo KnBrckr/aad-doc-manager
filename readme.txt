@@ -55,6 +55,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
+= 0.9.3 =
+* FIX: Document manager installing in the wrong directory when using composer
+
 = 0.9.1 =
 * FIX: Difficult to edit pages that include large CSV tables
 * Add composer.json
@@ -122,8 +125,9 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 * RFE Allow multiple document types to be managed
 * RFE Allow classes of users to download a file
-* RFE Organize documents in folders
-* RFE Connect with media selctor to provide correct URL to files
+* RFE Organize documents in folders or via tags
+* RFE Connect with media selector to provide correct URL to files
 * RFE Delete from Media folder should completely deleted the related document entry
 * RFE Filter list by document type
 * RFE Sort on mime type using filter 'posts_orderby'
+* TODO Address hard coded plugin name references in directory structure
