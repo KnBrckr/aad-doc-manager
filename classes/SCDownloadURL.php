@@ -44,6 +44,7 @@ class SCDownloadURL {
 	 *
 	 * @param array $_attrs associative array of shortcode parameters
 	 * @param string $content
+	 *
 	 * @return string HTML content
 	 *
 	 * @since 1.0
@@ -51,10 +52,10 @@ class SCDownloadURL {
 	public static function sc_docmgr_download_url( $_attrs, $content = null ) {
 		$default_attrs = array( 'id' => null );
 
-		$attrs	 = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
-		$doc_id	 = intval( $attrs['id'] );
+		$attrs  = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
+		$doc_id = intval( $attrs['id'] );
 
-		if ( !$doc_id ) {
+		if ( ! $doc_id ) {
 			return $content;
 		} // No id value received - nothing to do
 
@@ -62,7 +63,7 @@ class SCDownloadURL {
 		 * Retrieve the post
 		 */
 		$document = Document::get_instance( $doc_id );
-		if ( !$document ) {
+		if ( ! $document ) {
 			return $content;
 		}
 

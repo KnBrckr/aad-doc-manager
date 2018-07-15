@@ -56,7 +56,10 @@ class DocumentDownload {
 			/**
 			 * Add a woocommerce filter to enable the use of Document Manager documents as downloadable content
 			 */
-			add_filter( 'woocommerce_downloadable_file_exists', array( self::class, 'filter_woo_downloadable_file_exists' ), 10, 2 );
+			add_filter( 'woocommerce_downloadable_file_exists', [
+				self::class,
+				'filter_woo_downloadable_file_exists'
+			], 10, 2 );
 
 			/**
 			 * Fixup document path for woocommerce downloadable products
@@ -75,21 +78,22 @@ class DocumentDownload {
 		 * Does query match taxonomy endpoint?
 		 */
 		$requested_doc = $wp_query->get( self::DOWNLOAD_SLUG );
-		if ( !$requested_doc )
+		if ( ! $requested_doc ) {
 			return;
+		}
 
 		/**
 		 * Get Document to be downloaded
 		 */
 		$document = Document::get_document_by_guid( $requested_doc );
-		if ( !$document ) {
-			$this->error_404();
+		if ( ! $document ) {
+			self::error_404();
 			// Not Reached
 		}
 
 		$file = $document->get_attachment_realpath();
 
-		if ( NULL != $file && file_exists( $file ) ) {
+		if ( null != $file && file_exists( $file ) ) {
 			/**
 			 * Log download of the file
 			 */
@@ -99,7 +103,7 @@ class DocumentDownload {
 			 * Output headers and dump the file
 			 */
 			header( 'Content-Description: File Transfer' );
-			header( 'Content-Type: ' . esc_attr( $document->post_mime_type ) );
+			header( 'Content-Type: ' . esc_attr( get_post_mime_type( $document ) ) );
 			header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
 			header( 'Content-Length: ' . filesize( $file ) );
 			nocache_headers();
@@ -123,6 +127,7 @@ class DocumentDownload {
 	 * Get escaped download URL for Document instance
 	 *
 	 * @param Document $document Document on which to operate
+	 *
 	 * @return string escaped URL or '' if unable to create URL
 	 */
 	public static function get_download_url( $document ) {
@@ -139,6 +144,7 @@ class DocumentDownload {
 	 * Log download of a file
 	 *
 	 * @param int $doc_id document ID that was downloaded
+	 *
 	 * @return void
 	 */
 	private static function log_download( $doc_id ) {
@@ -146,9 +152,9 @@ class DocumentDownload {
 		 * Atomic Increment download count
 		 */
 		do {
-			$value	 = $old	 = get_post_meta( $doc_id, 'download_count', true );
-			$value++;
-		} while ( !update_post_meta( $doc_id, 'download_count', $value, $old ) );
+			$value = $old = get_post_meta( $doc_id, 'download_count', true );
+			$value ++;
+		} while ( ! update_post_meta( $doc_id, 'download_count', $value, $old ) );
 	}
 
 	/**
@@ -171,6 +177,7 @@ class DocumentDownload {
 	 *
 	 * @param boolean $file_exists Earlier filters may have already decided if file exists
 	 * @param string $file_url path to the downloadable file
+	 * @return boolean
 	 */
 	public static function filter_woo_downloadable_file_exists( $file_exists, $file_url ) {
 		if ( '/' . self::DOWNLOAD_SLUG !== substr( $file_url, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
@@ -194,48 +201,55 @@ class DocumentDownload {
 	 * TODO Is this function needed?
 	 *
 	 * @param string $file file path recorded in woocommerce downloadable product
-	 * @param WC_product $product_id woocommerce product id
+	 * @param \WC_product $product woocommerce product id
 	 * @param string $key woocommerce download document key
+	 *
 	 * @return string path to file
 	 */
-	private function filter_woo_file_download_path( $file, $product, $key ) {
-		if ( '/' . self::DOWNLOAD_SLUG === substr( $file, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
-			/**
-			 * link is for the plugin. Confirm GUID provided is valid
-			 */
-			$guid = substr( $file, strlen( self::DOWNLOAD_SLUG ) + 2 );
-
-			if ( !$this->is_guidv4( $guid ) )
-				return $file;
-
-			$document = $this->get_document_by_guid( $guid );
-			if ( !is_a( $document, 'WP_post' ) )
-				return $file;
-
-			$attachment	 = $this->get_attachment_by_docid( $document->ID );
-			$fileurl	 = $this->get_url_by_attachment( $attachment );
-
-			return $fileurl ? $fileurl : $file;
-		} else
-			return $file;
-	}
+//	private function filter_woo_file_download_path( $file, $product, $key ) {
+//		if ( '/' . self::DOWNLOAD_SLUG === substr( $file, 0, strlen( self::DOWNLOAD_SLUG ) + 1 ) ) {
+//			/**
+//			 * link is for the plugin. Confirm GUID provided is valid
+//			 */
+//			$guid = substr( $file, strlen( self::DOWNLOAD_SLUG ) + 2 );
+//
+//			if ( ! Guid::is_guidv4( $guid ) ) {
+//				return $file;
+//			}
+//
+//			$document = Document::get_document_by_guid( $guid );
+//			if ( ! is_a( $document, 'WP_post' ) ) {
+//				return $file;
+//			}
+//
+//			$attachment = $document->get_attachment_by_docid( $document->ID );
+//			$fileurl    = $this->get_url_by_attachment( $attachment );
+//
+//			return $fileurl ? $fileurl : $file;
+//		} else {
+//			return $file;
+//		}
+//	}
 
 	/**
 	 * Get url to an attachment
 	 *
-	 * @param WP_post $attachment attachment object
+	 * TODO Is this function needed?
+	 *
+	 * @param \WP_post $attachment attachment object
+	 *
 	 * @return string File URL
 	 */
-	private function get_url_by_attachment( $attachment ) {
-		$filename = $this->get_realpath_by_attachment( $attachment );
-
-		/* Strip off content directory */
-		$real_content_dir = realpath( WP_CONTENT_DIR );
-		if ( substr( $filename, 0, strlen( $real_content_dir ) ) == $real_content_dir ) {
-			$filename = substr( $filename, strlen( $real_content_dir ) );
-		}
-
-		return WP_CONTENT_URL . $filename;
-	}
+//	private function get_url_by_attachment( $attachment ) {
+//		$filename = $this->get_realpath_by_attachment( $attachment );
+//
+//		/* Strip off content directory */
+//		$real_content_dir = realpath( WP_CONTENT_DIR );
+//		if ( substr( $filename, 0, strlen( $real_content_dir ) ) == $real_content_dir ) {
+//			$filename = substr( $filename, strlen( $real_content_dir ) );
+//		}
+//
+//		return WP_CONTENT_URL . $filename;
+//	}
 
 }

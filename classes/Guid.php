@@ -48,7 +48,8 @@ class Guid {
 	/**
 	 * Turn 128 bit blob into a UUD string
 	 *
-	 * @param blob $data 16 bytes binary data
+	 * @param string $data 16 bytes binary data
+	 *
 	 * @return string
 	 */
 	private static function guidv4( $data ) {
@@ -64,11 +65,13 @@ class Guid {
 	 * Is $uuid a valid GUID V4 string?
 	 *
 	 * @param string $guid GUID to test
+	 *
 	 * @return boolean true if string is valid GUID v4 format
 	 */
 	public static function is_guidv4( $guid ) {
 		$UUIDv4 = '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i';
-		return preg_match( $UUIDv4, $guid ) ? true : false ;
+
+		return preg_match( $UUIDv4, $guid ) ? true : false;
 	}
 
 }

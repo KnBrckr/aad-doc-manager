@@ -53,29 +53,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 include_once __DIR__ . '/vendor/autoload.php';
 
 /**
- * @var const Version of this plugin
+ * @var string Version of this plugin
  */
 const PLUGIN_VERSION = "0.9";
 
 /**
- * @var const Minimum Wordpress version supported
+ * @var string Minimum Wordpress version supported
  */
 const MIN_WP_VERSION = "4.6";
 
 /**
- * @var const Minimum PHP version supported
+ * @var string Minimum PHP version supported
  */
 const MIN_PHP_VERSION = "7.0";
 
 /**
- * @var const Text domain for i18n
+ * @var string Text domain for i18n
  */
 const TEXT_DOMAIN = "aad-doc-manager-locale"; //FIXME
 
 /**
  * Connect plugin to WordPress
  */
-add_action( 'plugins_loaded', function() {
+add_action( 'plugins_loaded', function () {
 	( new Plugin( __FILE__ ) )->register_services( plugin_container() );
 } );
 
@@ -86,9 +86,9 @@ add_action( 'plugins_loaded', function() {
  * @return \PumaStudios\Container
  */
 function plugin_container() {
-	static $container = NULL;
+	static $container = null;
 
-	if ( !$container ) {
+	if ( ! $container ) {
 		$container = new \PumaStudios\Container;
 	}
 

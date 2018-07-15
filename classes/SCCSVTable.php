@@ -63,10 +63,10 @@ class SCCSVTable {
 		 */
 		wp_register_script(
 			'aad-doc-manager-datatable-js', // handle
-   Plugin::get_asset_url( 'DataTables', 'datatables.min.js' ), // script URL
-						  [ 'jquery' ], // Dependencies
-						  '1.10.16', // Datatables version
-						  true  // Enqueue in footer
+			Plugin::get_asset_url( 'DataTables', 'datatables.min.js' ), // script URL
+			[ 'jquery' ], // Dependencies
+			'1.10.16', // Datatables version
+			true  // Enqueue in footer
 		);
 
 		/**
@@ -78,10 +78,10 @@ class SCCSVTable {
 		 */
 		wp_register_script(
 			'aad-doc-manager-mark-js', //handle
-   Plugin::get_asset_url( 'DataTables', '/jquery.mark.min.js' ), // script URL
-						  [], // Dependencies
-						  '8.9.1', // Version of mark.js
-						  true  // Enqueue in footer
+			Plugin::get_asset_url( 'DataTables', '/jquery.mark.min.js' ), // script URL
+			[], // Dependencies
+			'8.9.1', // Version of mark.js
+			true  // Enqueue in footer
 		);
 		wp_enqueue_script( 'aad-doc-manager-mark-js' );
 
@@ -93,10 +93,10 @@ class SCCSVTable {
 		 */
 		wp_register_script(
 			'aad-doc-manager-datatable-mark-js', //handle
-   Plugin::get_asset_url( 'DataTables', '/datatables.mark.js' ), // Script URL
-						  [ 'aad-doc-manager-datatable-js', 'aad-doc-manager-mark-js' ], // Dependencies
-						  '1.10.16', // Datatables version
-						  true  // Enqueue in footer
+			Plugin::get_asset_url( 'DataTables', '/datatables.mark.js' ), // Script URL
+			[ 'aad-doc-manager-datatable-js', 'aad-doc-manager-mark-js' ], // Dependencies
+			'1.10.16', // Datatables version
+			true  // Enqueue in footer
 		);
 		wp_enqueue_script( 'aad-doc-manager-datatable-mark-js' );
 
@@ -107,10 +107,10 @@ class SCCSVTable {
 		 */
 		wp_register_style(
 			'aad-doc-manager-datatable-css', // Handle
-   Plugin::get_asset_url( 'DataTables', '/datatables.min.css' ), // Script URL
-						  [], // No dependencies
-						  '1.10.16', // Version of Data Tables
-						  'all'  // All media types
+			Plugin::get_asset_url( 'DataTables', '/datatables.min.css' ), // Script URL
+			[], // No dependencies
+			'1.10.16', // Version of Data Tables
+			'all'  // All media types
 		);
 		wp_enqueue_style( 'aad-doc-manager-datatable-css' );
 	}
@@ -127,13 +127,13 @@ class SCCSVTable {
 		 * Add javascript to get DataTables running with highlighting (mark) enabled
 		 */
 		?>
-		<script type="text/javascript">
-			jQuery( document ).ready( function () {
-				jQuery( '.aad-doc-manager-csv' ).DataTable( {
-					mark: true
-				} );
-			} );
-		</script>
+        <script type="text/javascript">
+            jQuery(document).ready(function () {
+                jQuery('.aad-doc-manager-csv').DataTable({
+                    mark: true
+                });
+            });
+        </script>
 		<?php
 
 	}
@@ -151,6 +151,7 @@ class SCCSVTable {
 	 *
 	 * @param array _attrs associative array of shortcode parameters
 	 * @param string $content Expected to be empty
+	 *
 	 * @return string HTML content
 	 * @since 0.3
 	 */
@@ -166,12 +167,12 @@ class SCCSVTable {
 		 * Setup default shortcode attributes
 		 */
 		$default_attrs = array(
-			'id'			 => null,
-			'date'			 => 1, // Display modified date in caption by default
-			'row-colors'	 => null, // Use default row colors
-			'row-number'	 => 1, // Display row numbers
-			'page-length'	 => 10, // Default # rows to display per page
-			'rows'			 => NULL   // List of rows to display
+			'id'          => null,
+			'date'        => 1, // Display modified date in caption by default
+			'row-colors'  => null, // Use default row colors
+			'row-number'  => 1, // Display row numbers
+			'page-length' => 10, // Default # rows to display per page
+			'rows'        => null   // List of rows to display
 		);
 
 		/**
@@ -179,20 +180,20 @@ class SCCSVTable {
 		 */
 		$attrs = shortcode_atts( $default_attrs, $_attrs );
 
-		$doc_id			 = intval( $attrs['id'] );
-		$caption_date	 = filter_var( $attrs['date'], FILTER_VALIDATE_BOOLEAN );
-		$number_rows	 = filter_var( $attrs['row-number'], FILTER_VALIDATE_BOOLEAN );
-		$row_colors		 = self::sanitize_row_colors( $attrs['row-colors'] );
-		$include_rows	 = self::parse_numbers( $attrs['rows'] );
+		$doc_id       = intval( $attrs['id'] );
+		$caption_date = filter_var( $attrs['date'], FILTER_VALIDATE_BOOLEAN );
+		$number_rows  = filter_var( $attrs['row-number'], FILTER_VALIDATE_BOOLEAN );
+		$row_colors   = self::sanitize_row_colors( $attrs['row-colors'] );
+		$include_rows = self::parse_numbers( $attrs['rows'] );
 
-		$_page_length	 = intval( $attrs['page-length'] );
-		$page_length	 = $_page_length > 0 ? $_page_length : 10;
+		$_page_length = intval( $attrs['page-length'] );
+		$page_length  = $_page_length > 0 ? $_page_length : 10;
 
 		/**
 		 * Retrieve the post
 		 */
 		$document = Document::get_instance( $doc_id );
-		if ( !( $document && $document->is_csv() ) ) {
+		if ( ! ( $document && $document->is_csv() ) ) {
 			return "";
 		}
 
@@ -203,9 +204,9 @@ class SCCSVTable {
 		 *     ******** IF table format changes, bump CSV_STORAGE_FORMAT *********
 		 *     *******************************************************************
 		 */
-		$result	 = '<div class="aad-doc-manager">';
-		$result	 .= self::render_row_color_css( $row_colors );
-		$result	 .= '<table id="aad-doc-manager-csv-' . self::$index++ . '" class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="' . $page_length . '">';
+		$result = '<div class="aad-doc-manager">';
+		$result .= self::render_row_color_css( $row_colors );
+		$result .= '<table id="aad-doc-manager-csv-' . self::$index ++ . '" class="aad-doc-manager-csv responsive no-wrap" width="100%" data-page-length="' . $page_length . '">';
 
 		/**
 		 * Include caption if needed
@@ -216,13 +217,13 @@ class SCCSVTable {
 			} else {
 				$text = __( 'Updated', TEXT_DOMAIN );
 			}
-			$result	 .= '<caption>';
-			$result	 .= "$text: " . \get_the_modified_date( '', $doc_id );
-			$result	 .= '</caption>';
+			$result .= '<caption>';
+			$result .= "$text: " . \get_the_modified_date( '', $doc_id );
+			$result .= '</caption>';
 		}
 
-		$result	 .= self::render_header( $document, $number_rows );
-		$result	 .= self::render_rows( $document, $number_rows, $row_colors, $include_rows );
+		$result .= self::render_header( $document, $number_rows );
+		$result .= self::render_rows( $document, $number_rows, $row_colors, $include_rows );
 
 		$result .= '</table></div>';
 
@@ -232,13 +233,15 @@ class SCCSVTable {
 	/**
 	 * Deprecated version of sc_docmgr_csv_table()
 	 *
-	 * @global type $post
-	 * @param type $_attrs
-	 * @param type $content
+	 * @global \WP_Post $post
+	 *
+	 * @param array $_attrs Shortcode parameters
+	 * @param string $content exepected to be empty
+	 *
 	 * @return string HTML result of shortcode
 	 * @deprecated since version 0.3
 	 */
-	public static function sc_csvview( $_attrs, $content = NULL ) {
+	public static function sc_csvview( $_attrs, $content = null ) {
 		global $post;
 
 		$message = sprintf( __( 'Deprecated shortcode [sc_csvview] used in post %d', TEXT_DOMAIN ), $post->ID );
@@ -253,6 +256,7 @@ class SCCSVTable {
 	 * The colors will stay with the row as the table is sorted.
 	 *
 	 * @param array $row_colors Array of sanitized row colors
+	 *
 	 * @return string HTML
 	 */
 	private static function render_row_color_css( $row_colors ) {
@@ -265,6 +269,7 @@ class SCCSVTable {
 			$result .= '#aad-doc-manager-csv-' . self::$index . ' tr.color-' . $index . ' { background-color: ' . $row_color . '; }';
 		}
 		$result .= '</style>';
+
 		return $result;
 	}
 
@@ -273,7 +278,8 @@ class SCCSVTable {
 	 *
 	 * @param \PumaStudios\DocManager\Document $document
 	 * @param boolean $number_rows True if rows should include number
-	 * @return HTML for table header row
+	 *
+	 * @return string HTML for table header row
 	 */
 	private static function render_header( Document $document, $number_rows ) {
 		$result = '<tr>';
@@ -287,6 +293,7 @@ class SCCSVTable {
 			$result .= '<th>' . esc_html( trim( $header ) ) . '</th>';
 		}
 		$result .= '</tr>';
+
 		return $result;
 	}
 
@@ -297,10 +304,11 @@ class SCCSVTable {
 	 * @param boolean $number_rows True if rows should include number
 	 * @param array $row_colors Array of row colors to apply in repeating sequence
 	 * @param array $include_rows rows to include in display
+	 *
 	 * @return string HTML for table body
 	 */
 	private static function render_rows( Document $document, $number_rows, $row_colors, $include_rows ) {
-		$headers		 = $document->get_csv_header();
+		$headers         = $document->get_csv_header();
 		$row_color_count = count( $row_colors );
 
 		$result = '';
@@ -308,14 +316,14 @@ class SCCSVTable {
 			// Render all rows
 			$row_number = 0;
 			foreach ( $document->get_csv_records() as $row ) {
-				$result .= self::render_row( $row_number++, $row, $headers, $number_rows, $row_color_count );
+				$result .= self::render_row( $row_number ++, $row, $headers, $number_rows, $row_color_count );
 			}
 		} else {
 			// Render only the given rows
 			foreach ( $include_rows as $row_number ) {
 				// On front end row numbers are 1 based
-				$row	 = $document->get_csv_record( $row_number - 1 );
-				$result	 .= self::render_row( $row_number - 1, $row, $headers, $number_rows, $row_color_count );
+				$row    = $document->get_csv_record( $row_number - 1 );
+				$result .= self::render_row( $row_number - 1, $row, $headers, $number_rows, $row_color_count );
 			}
 		}
 
@@ -330,6 +338,7 @@ class SCCSVTable {
 	 * @param array $headers Row headers (indexes into row data) in order of display
 	 * @param boolean $number_rows Should row include leading row number column?
 	 * @param int $row_color_count Number of different row highlight colors
+	 *
 	 * @return string HTML
 	 */
 	private static function render_row( $row_number, $row, $headers, $number_rows, $row_color_count ) {
@@ -345,11 +354,11 @@ class SCCSVTable {
 		 * Include table row # if requested
 		 */
 		if ( $number_rows ) {
-			$result .= '<td>' . ($row_number + 1) . '</td>';
+			$result .= '<td>' . ( $row_number + 1 ) . '</td>';
 		}
 
 		foreach ( $headers as $index ) {
-			$result .= '<td>' . self::nl2list( $row[$index] ) . '</td>';
+			$result .= '<td>' . self::nl2list( $row[ $index ] ) . '</td>';
 		}
 		$result .= '</tr>';
 
@@ -360,10 +369,11 @@ class SCCSVTable {
 	 * Convert block of text with embedded new lines into a list
 	 *
 	 * @param string $text with embedded new-line characters
+	 *
 	 * @return string HTML
 	 */
 	private static function nl2list( $text ) {
-		if ( !$text ) {
+		if ( ! $text ) {
 			return '';
 		}
 		/**
@@ -375,9 +385,9 @@ class SCCSVTable {
 			 * Build list of multi-line item
 			 */
 			return '<ul class="aad-doc-manager-csv-cell-list">' .
-				implode( array_map( function( $li ) {
-						return '<li>' . esc_html( trim( $li ) );
-					}, $list ) ) . '</ul>';
+			       implode( array_map( function ( $li ) {
+				       return '<li>' . esc_html( trim( $li ) );
+			       }, $list ) ) . '</ul>';
 		} else {
 			return esc_attr( trim( $text ) );
 		}
@@ -395,18 +405,19 @@ class SCCSVTable {
 	 * duplicates are removed - e.g. '5,4-7' returns 4,5,6,7
 	 *
 	 * @param string $input
+	 *
 	 * @return array Numbers as specified by provided input
 	 */
 	private static function parse_numbers( $input ) {
-		if ( NULL == $input ) {
+		if ( null == $input ) {
 			return [];
 		}
 
-		$input	 = str_replace( ' ', '', $input ); // strip out spaces
-		$output	 = array();
+		$input  = str_replace( ' ', '', $input ); // strip out spaces
+		$output = array();
 		foreach ( explode( ',', $input ) as $nums ) {
 			if ( strpos( $nums, '-' ) !== false ) {
-				list($from, $to) = explode( '-', $nums );
+				list( $from, $to ) = explode( '-', $nums );
 				$output = array_merge( $output, range( (int) $from, (int) $to ) );
 			} else {
 				$output[] = (int) $nums;
@@ -423,14 +434,16 @@ class SCCSVTable {
 	 * Sanitize text string of comma separated row colors and convert to array
 	 *
 	 * @param string $colors comma separated string of row colors
+	 *
 	 * @return array of strings, row colors
 	 */
 	private static function sanitize_row_colors( $colors ) {
-		if ( !isset( $colors ) ) {
+		if ( ! isset( $colors ) ) {
 			return null;
 		}
 
 		$row_colors = array_map( array( self::class, 'sanitize_row_color' ), explode( ',', $colors ) );
+
 		return $row_colors;
 	}
 
@@ -438,6 +451,7 @@ class SCCSVTable {
 	 * Sanitize a given row color text string
 	 *
 	 * @param string $color cell color
+	 *
 	 * @return string
 	 */
 	private static function sanitize_row_color( $color ) {

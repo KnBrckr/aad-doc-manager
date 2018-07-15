@@ -46,16 +46,17 @@ class SCModified {
 	 *
 	 * @param array _attrs associative array of shortcode parameters
 	 * @param string $content Expected to be empty
+	 *
 	 * @return string HTML content
 	 * @since 1.0
 	 */
 	public static function sc_docmgr_modified( $_attrs, $content = null ) {
 		$default_attrs = array( 'id' => null );
 
-		$attrs	 = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
-		$doc_id	 = intval( $attrs['id'] );
+		$attrs  = shortcode_atts( $default_attrs, $_attrs ); // Get shortcode parameters
+		$doc_id = intval( $attrs['id'] );
 
-		if ( !$doc_id ) {
+		if ( ! $doc_id ) {
 			return "";
 		} // No id value received - nothing to do
 
@@ -63,7 +64,7 @@ class SCModified {
 		 * Retrieve the Document
 		 */
 		$document = Document::get_instance( $doc_id );
-		if ( !$document ) {
+		if ( ! $document ) {
 			return "";
 		}
 

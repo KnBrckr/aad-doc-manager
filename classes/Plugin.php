@@ -69,6 +69,7 @@ class Plugin {
 	 *
 	 * @param string $append Pathname to append to the realpath
 	 * @return string
+	 * @since 1.0
 	 */
 	public function get_plugin_path( $append = '' ) {
 		return self::$plugin_realpath . $append;
@@ -80,6 +81,7 @@ class Plugin {
 	 * @param string $asset asset type
 	 * @param string $file name of file in asset directory
 	 * @return string|null
+	 * @since 1.0
 	 */
 	public static function get_asset_url( $asset, $file = '' ) {
 		if ( !array_key_exists( $asset, self::$urls ) ) {
@@ -93,6 +95,7 @@ class Plugin {
 	 * Add default services to container
 	 *
 	 * @param \PumaStudios\Container $container
+	 * @since 1.0
 	 */
 	public function register_services( $container ) {
 		if ( !self::version_check() ) {
@@ -195,7 +198,7 @@ class Plugin {
 	/**
 	 * Display log message in admin screen
 	 *
-	 * @param type $notice string for display in admin screen
+	 * @param string $notice string for display in admin screen
 	 * @since 1.0
 	 */
 	public static function admin_log( $notice ) {
@@ -205,7 +208,7 @@ class Plugin {
 	/**
 	 * Display warning message in admin screen
 	 *
-	 * @param type $notice string for display in admin screen
+	 * @param string $notice string for display in admin screen
 	 * @since 1.0
 	 */
 	public static function admin_warn( $notice ) {
@@ -215,7 +218,7 @@ class Plugin {
 	/**
 	 * Display error message in admin screen
 	 *
-	 * @param type $notice string for display in admin screen
+	 * @param string $notice string for display in admin screen
 	 * @since 1.0
 	 */
 	public static function admin_error( $notice ) {
@@ -244,9 +247,7 @@ class Plugin {
 	 * Add plugin CSS
 	 *
 	 * Called during WP Action 'wp_enqueue_scripts'
-	 *
-	 * @param void
-	 * @return void
+	 * @since 1.0
 	 */
 	public static function action_enqueue_styles() {
 		/**

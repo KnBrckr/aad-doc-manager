@@ -28,17 +28,17 @@ namespace PumaStudios\DocManager;
 class DocumentAdmin {
 
 	/**
-	 * @var const slug for Parent Menu page -- Table of all Document files
+	 * @var string slug for Parent Menu page -- Table of all Document files
 	 */
 	const DOCUMENT_MENU_SLUG = 'pumastudios-docmgr-table';
 
 	/**
-	 * @var const Slug for page to upload documents
+	 * @var string Slug for page to upload documents
 	 */
 	const UPLOAD_PAGE_SLUG = 'pumastudios-docmgr-upload';
 
 	/**
-	 * @var const Nonce name to use for form validation
+	 * @var string Nonce name to use for form validation
 	 */
 	const NONCE = 'pumastudios-docmgr-nonce';
 
@@ -54,6 +54,8 @@ class DocumentAdmin {
 
 	/**
 	 * Create admin menu section for managing Documents
+	 *
+	 * @since 1.0
 	 */
 	public function action_create_menu() {
 
@@ -66,12 +68,12 @@ class DocumentAdmin {
 		 * Create a new Admin Menu page
 		 */
 		$hook_suffix = add_menu_page( $obj->labels->name, // Page Title
-								$obj->labels->menu_name, // Menu Title,
-								'edit_posts', // User must be able to edit posts for menu to display
-								self::DOCUMENT_MENU_SLUG, // Slug name for this menu page
-								[ $this, 'render_document_table' ], // Function to render the menu content
-								'dashicons-media-spreadsheet', // Icon for  menu
-								21.215 // Position - After Pages(20), try for a unique number
+			$obj->labels->menu_name, // Menu Title,
+			'edit_posts', // User must be able to edit posts for menu to display
+			self::DOCUMENT_MENU_SLUG, // Slug name for this menu page
+			[ $this, 'render_document_table' ], // Function to render the menu content
+			'dashicons-media-spreadsheet', // Icon for  menu
+			21.215 // Position - After Pages(20), try for a unique number
 		);
 
 		/**
@@ -94,22 +96,22 @@ class DocumentAdmin {
 			 */
 			// RFE Change privelege to upload_files vs. edit_posts
 			add_submenu_page( 'aad-doc-manager-table', // Submenu of parent
-					 $obj->labels->name, // Page Title
-					 $obj->labels->all_items, // Menu Title
-					 'edit_posts', // Capability
-					 self::DOCUMENT_MENU_SLUG, // Menu slug - match the parent
-					 [ $this, 'render_document_table' ]
+				$obj->labels->name, // Page Title
+				$obj->labels->all_items, // Menu Title
+				'edit_posts', // Capability
+				self::DOCUMENT_MENU_SLUG, // Menu slug - match the parent
+				[ $this, 'render_document_table' ]
 			);
 
 			/**
 			 * Create menu item to upload a new Document
 			 */
 			$hook_suffix = add_submenu_page( self::DOCUMENT_MENU_SLUG, // Slug of Parent Menu
-									$obj->labels->add_new_item, // Page Title
-									$obj->labels->add_new, // Menu Title
-									'edit_posts', // User must be able to edit posts for menu to display
-									self::UPLOAD_PAGE_SLUG, // Slug for this Menu Page
-									[ $this, 'render_upload_page' ]
+				$obj->labels->add_new_item, // Page Title
+				$obj->labels->add_new, // Menu Title
+				'edit_posts', // User must be able to edit posts for menu to display
+				self::UPLOAD_PAGE_SLUG, // Slug for this Menu Page
+				[ $this, 'render_upload_page' ]
 			);
 
 			/**
@@ -128,6 +130,9 @@ class DocumentAdmin {
 	 * Perform pre-render actions associated with the Document management page
 	 *
 	 * Done before render during page load to apply any admin notice feedback that might be needed
+	 *
+	 * @return boolean true if action completed successfully
+	 * @since 1.0
 	 */
 	public function action_prerender_table_page() {
 		global $wpdb;
@@ -135,7 +140,7 @@ class DocumentAdmin {
 		/**
 		 * User must be able to edit posts
 		 */
-		if ( !current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			return false;
 		}
 
@@ -152,15 +157,15 @@ class DocumentAdmin {
 		/**
 		 * Initialize table object for later display
 		 */
-		$screen		 = get_plugin_page_hookname( DocumentAdmin::DOCUMENT_MENU_SLUG, '' );
-		$doc_table	 = new DocManagerTable( array(
-			'singular'	 => $post_type_object->labels->singular_name,
-			'plural'	 => $post_type_object->labels->name, // Plural label
-			'ajax'		 => false, // Will not support AJAX on this table
+		$screen    = get_plugin_page_hookname( DocumentAdmin::DOCUMENT_MENU_SLUG, '' );
+		$doc_table = new DocManagerTable( array(
+			'singular'   => $post_type_object->labels->singular_name,
+			'plural'     => $post_type_object->labels->name, // Plural label
+			'ajax'       => false, // Will not support AJAX on this table
 			'upload_url' => menu_page_url( self::UPLOAD_PAGE_SLUG, false ),
-			'table_url'	 => menu_page_url( self::DOCUMENT_MENU_SLUG, false ),
-			'screen'	 => $screen
-			) );
+			'table_url'  => menu_page_url( self::DOCUMENT_MENU_SLUG, false ),
+			'screen'     => $screen
+		) );
 
 		$pagenum = $doc_table->get_pagenum();
 
@@ -179,22 +184,33 @@ class DocumentAdmin {
 			/**
 			 * Prepare redirect URL
 			 */
-			$sendback	 = remove_query_arg( array( 'trashed', 'untrashed', 'deleted', 'locked', 'doc_ids', 'ids', 'action', 'action2' ), wp_get_referer() );
-			if ( !$sendback )
-				$sendback	 = menu_page_url( self::DOCUMENT_MENU_SLUG, false ); // FIXME This works only if URL contains no embedded '&'
-			$sendback	 = add_query_arg( 'paged', $pagenum, $sendback );
+			$sendback = remove_query_arg( array(
+				'trashed',
+				'untrashed',
+				'deleted',
+				'locked',
+				'doc_ids',
+				'ids',
+				'action',
+				'action2'
+			), wp_get_referer() );
+			if ( ! $sendback ) {
+				$sendback = menu_page_url( self::DOCUMENT_MENU_SLUG, false );
+			} // FIXME This works only if URL contains no embedded '&'
+			$sendback = add_query_arg( 'paged', $pagenum, $sendback );
 
 			/**
 			 * Grab the list of post ids to work with
 			 */
 			if ( 'delete_all' == $action ) {
 				// Convert 'delete_all' action to delete action with a list
-				$doc_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type=%s AND post_status = %s", self::post_type, 'trash' ) );
-				$action	 = 'delete';
-			} elseif ( !empty( $_REQUEST['doc_ids'] ) )
+				$doc_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type=%s AND post_status = %s", Document::POST_TYPE, 'trash' ) );
+				$action  = 'delete';
+			} elseif ( ! empty( $_REQUEST['doc_ids'] ) ) {
 				$doc_ids = array_map( 'intval', $_REQUEST['doc_ids'] );
-			else {
+			} else {
 				$this->call_wp_redirect( $sendback ); // List of posts not provided, bail out
+
 				return false;
 			}
 
@@ -206,28 +222,34 @@ class DocumentAdmin {
 					/**
 					 * Move posts to Trash
 					 */
-					$trashed = $locked	 = 0;
+					$trashed = $locked = 0;
 
 					foreach ( (array) $doc_ids as $doc_id ) {
-						if ( !current_user_can( 'delete_post', $doc_id ) )
+						if ( ! current_user_can( 'delete_post', $doc_id ) ) {
 							wp_die( __( 'You are not allowed to move this item to the Trash.', TEXT_DOMAIN ) );
+						}
 
 						if ( wp_check_post_lock( $doc_id ) ) { // TODO - How to lock a post?
-							$locked++;
+							$locked ++;
 							continue;
 						}
 
-						if ( !wp_trash_post( $doc_id ) )
+						if ( ! wp_trash_post( $doc_id ) ) {
 							wp_die( __( 'Error moving post to Trash.', TEXT_DOMAIN ) );
+						}
 
-						$trashed++;
+						$trashed ++;
 					}
 
 					/**
 					 * Send operation results back
 					 */
 					$sendback = add_query_arg(
-						array( 'trashed' => $trashed, 'ids' => join( ',', $doc_ids ), 'locked' => $locked ), $sendback );
+						array(
+							'trashed' => $trashed,
+							'ids'     => join( ',', $doc_ids ),
+							'locked'  => $locked
+						), $sendback );
 					break;
 
 				case 'untrash':
@@ -237,13 +259,15 @@ class DocumentAdmin {
 					$untrashed = 0;
 
 					foreach ( (array) $doc_ids as $doc_id ) {
-						if ( !current_user_can( 'delete_post', $doc_id ) )
+						if ( ! current_user_can( 'delete_post', $doc_id ) ) {
 							wp_die( __( 'You are not allowed to restore this item from the Trash.', TEXT_DOMAIN ) );
+						}
 
-						if ( !wp_untrash_post( $doc_id ) )
+						if ( ! wp_untrash_post( $doc_id ) ) {
 							wp_die( __( 'Error in restoring from Trash.', TEXT_DOMAIN ) );
+						}
 
-						$untrashed++;
+						$untrashed ++;
 					}
 
 					$sendback = add_query_arg( 'untrashed', $untrashed, $sendback );
@@ -256,26 +280,28 @@ class DocumentAdmin {
 					$deleted = 0;
 
 					foreach ( (array) $doc_ids as $doc_id ) {
-						if ( !current_user_can( 'delete_post', $doc_id ) )
+						if ( ! current_user_can( 'delete_post', $doc_id ) ) {
 							wp_die( __( 'You are not allowed to delete this item.', TEXT_DOMAIN ) );
+						}
 
 						/**
 						 * Delete related media attachment
 						 */
 						$media_id = get_post_meta( $doc_id, 'document_media_id', true );
 						if ( $media_id ) {
-							if ( !wp_delete_attachment( $media_id, true ) )
+							if ( ! wp_delete_attachment( $media_id, true ) ) {
 								wp_die( __( 'Error deleting attached document.', TEXT_DOMAIN ) );
+							}
 						}
 
 						/**
 						 * Delete the document post
 						 */
-						if ( !wp_delete_post( $doc_id ) ) {
+						if ( ! wp_delete_post( $doc_id ) ) {
 							wp_die( __( 'Error in deleting document post.', TEXT_DOMAIN ) );
 						}
 
-						$deleted++;
+						$deleted ++;
 					}
 
 					$sendback = add_query_arg( 'deleted', $deleted, $sendback );
@@ -283,22 +309,27 @@ class DocumentAdmin {
 			}
 
 			$this->call_wp_redirect( $sendback );
+
 			return false;
-		} elseif ( !empty( $_REQUEST['_wp_http_referer'] ) ) {
+		} elseif ( ! empty( $_REQUEST['_wp_http_referer'] ) ) {
 			/**
 			 * No action provided, if nonce was given, redirect back without nonce
 			 */
-			$this->call_wp_redirect( remove_query_arg( array( '_wp_http_referer', '_wpnonce' ), wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
+			$this->call_wp_redirect( remove_query_arg( array(
+				'_wp_http_referer',
+				'_wpnonce'
+			), wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
+
 			return false;
 		}
 
 		/**
 		 * Report on earlier bulk action
 		 */
-		$locked		 = isset( $_REQUEST['locked'] ) ? intval( $_REQUEST['locked'] ) : NULL;
-		$trashed	 = isset( $_REQUEST['trashed'] ) ? intval( $_REQUEST['trashed'] ) : NULL;
-		$deleted	 = isset( $_REQUEST['deleted'] ) ? intval( $_REQUEST['deleted'] ) : NULL;
-		$untrashed	 = isset( $_REQUEST['untrashed'] ) ? intval( $_REQUEST['untrashed'] ) : NULL;
+		$locked    = isset( $_REQUEST['locked'] ) ? intval( $_REQUEST['locked'] ) : null;
+		$trashed   = isset( $_REQUEST['trashed'] ) ? intval( $_REQUEST['trashed'] ) : null;
+		$deleted   = isset( $_REQUEST['deleted'] ) ? intval( $_REQUEST['deleted'] ) : null;
+		$untrashed = isset( $_REQUEST['untrashed'] ) ? intval( $_REQUEST['untrashed'] ) : null;
 
 		if ( $locked ) {
 			Plugin::admin_warn( sprintf( __( 'Skipped %d locked documents.', TEXT_DOMAIN ), $locked ) );
@@ -322,16 +353,16 @@ class DocumentAdmin {
 	/**
 	 * Render page to manage Documents
 	 *
-	 *
-	 * @uses self::parent_slug, slug for this page
-	 * @uses self::upload_slug, slug for upload page
+	 * @uses Document::POST_TYPE
 	 * @return void
+	 * @since 1.0
 	 */
 	public function render_document_table() {
 		/**
 		 * User must be able to edit posts
 		 */
-		if ( !current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			// FIXME Just report error, don't bail out completely.
 			wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
 		}
 
@@ -347,22 +378,27 @@ class DocumentAdmin {
 		$doc_table->prepare_items();
 		?>
 
-		<div class="wrap">
-			<h2><?php echo $post_type_object->name; ?> <a href="<?php menu_page_url( self::UPLOAD_PAGE_SLUG, true ); ?>" class="add-new-h2"><?php echo $post_type_object->labels->add_new_item; ?></a></h2>
+        <div class="wrap">
+            <h2><?php echo $post_type_object->name; ?>
+                <a href="<?php menu_page_url( self::UPLOAD_PAGE_SLUG, true ); ?>"
+                   class="add-new-h2"><?php echo $post_type_object->labels->add_new_item; ?></a>
+            </h2>
 			<?php $doc_table->views(); // Display the views available on the table     ?>
-			<form action method="post" accept-charset="utf-8">
-				<input type="hidden" name="page" value="<?php echo self::DOCUMENT_MENU_SLUG ?>">
+            <form action method="post" accept-charset="utf-8">
+                <input type="hidden" name="page" value="<?php echo self::DOCUMENT_MENU_SLUG ?>">
 				<?php
-//	RFE				$this->doc_table->search_box('search', 'search_id'); // Must follow prepare_items() call
+				//	RFE				$this->doc_table->search_box('search', 'search_id'); // Must follow prepare_items() call
 				$doc_table->display();
 				?>
-			</form>
-		</div>
+            </form>
+        </div>
 		<?php
 	}
 
 	/**
 	 * Enqueue style sheet needed on admin page
+	 *
+	 * @since 1.0
 	 */
 	public function action_enqueue_admin_styles() {
 		$container = plugin_container();
@@ -370,10 +406,10 @@ class DocumentAdmin {
 		 * Enqueue Admin area CSS for table
 		 */
 		wp_register_style( 'aad-doc-manager-admin-css', // Handle
-					 $container->get( 'plugin' )->get_asset_url( 'css', 'aad-doc-manager-admin.css' ), // Asset URL
-												  false, // No Dependencies
-												  PLUGIN_VERSION, // CSS Version
-												  'all'  // Use for all media types
+			$container->get( 'plugin' )->get_asset_url( 'css', 'aad-doc-manager-admin.css' ), // Asset URL
+			false, // No Dependencies
+			PLUGIN_VERSION, // CSS Version
+			'all'  // Use for all media types
 		);
 
 		wp_enqueue_style( 'aad-doc-manager-admin-css' );
@@ -386,6 +422,8 @@ class DocumentAdmin {
 	 * For updates, a new uploaded file is not required.
 	 *
 	 * Redirects back to document list page if a form was processed
+	 *
+	 * @since 1.0
 	 */
 	public function action_process_upload_form() {
 		// FIXME If upload fails, don't update post! Need to refactor order of operations?
@@ -393,7 +431,7 @@ class DocumentAdmin {
 		/**
 		 * User must be able to edit posts
 		 */
-		if ( !current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
 
@@ -401,7 +439,7 @@ class DocumentAdmin {
 		 * Has an action been requested?
 		 */
 		$action = $this->get_action();
-		if ( !$action ) {
+		if ( ! $action ) {
 			return;
 		}
 
@@ -431,9 +469,10 @@ class DocumentAdmin {
 				/**
 				 * Update existing post
 				 */
-				$doc_id = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
-				if ( !$doc_id ) {
+				$doc_id = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : null;
+				if ( ! $doc_id ) {
 					Plugin::admin_error( __( 'Bad Request - No post id to update; plugin error?', TEXT_DOMAIN ) );
+
 					return;
 				}
 				$post['ID'] = $doc_id;
@@ -444,6 +483,7 @@ class DocumentAdmin {
 				$old_post = get_post( $doc_id );
 				if ( $old_post && $old_post->post_type != self::post_type ) {
 					Plugin::admin_error( __( 'Sorry - Request to update invalid document id; plugin error?', TEXT_DOMAIN ) );
+
 					return;
 				}
 
@@ -453,7 +493,7 @@ class DocumentAdmin {
 		/**
 		 * Setup post content for uploaded file
 		 */
-		if ( !empty( $_FILES ) && isset( $_FILES['document'] ) ) {
+		if ( ! empty( $_FILES ) && isset( $_FILES['document'] ) ) {
 			switch ( $_FILES['document']['error'] ) {
 				case UPLOAD_ERR_OK:
 					/**
@@ -467,6 +507,7 @@ class DocumentAdmin {
 					$doc_content = $this->get_document_content( $doc_type, $tmp_file );
 					if ( isset( $doc_content['error'] ) ) { // FIXME - should be a thrown error
 						Plugin::admin_error( sprintf( __( 'Failed processing document content: %s', TEXT_DOMAIN ), $doc_content['error'] ) );
+
 						return;
 					}
 
@@ -491,8 +532,9 @@ class DocumentAdmin {
 				/**
 				 * New uploads require a file to be provided
 				 */
-				if ( !$have_upload ) {
+				if ( ! $have_upload ) {
 					Plugin::admin_error( __( "Required document not provided.", TEXT_DOMAIN ) );
+
 					return;
 				}
 
@@ -502,6 +544,7 @@ class DocumentAdmin {
 				$document = Document::create_document( $post, 'document' );
 				if ( is_wp_error( $document ) ) {
 					Plugin::admin_error( $document->get_error_message() );
+
 					return;
 				}
 
@@ -536,42 +579,43 @@ class DocumentAdmin {
 	 *
 	 * @uses self::upload_slug, slug for this page
 	 * @return void
+	 * @since 1.0
 	 */
 	public function render_upload_page() {
 		/**
 		 * User must be able to edit posts
 		 */
-		if ( !current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
 
 		/**
 		 * Updating an existing document?
 		 */
-		$doc_id		 = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : NULL;
-		$document	 = Document::get_instance( $doc_id );
-		$post		 = $document ? $document->get_post() : NULL;
+		$doc_id   = isset( $_REQUEST['doc_id'] ) ? intval( $_REQUEST['doc_id'] ) : null;
+		$document = Document::get_instance( $doc_id );
+		$post     = $document ? $document->get_post() : null;
 
 		/**
 		 * Setup default values for new vs. updating existing document
 		 */
-		if ( !$document ) { // Don't allow other post-types
-			$doc_id			 = NULL;
-			$post			 = NULL;
-			$title			 = isset( $_REQUEST['doc_title'] ) ? $_REQUEST['doc_title'] : "";
-			$checked		 = 'checked';
-			$file_required	 = 'required';
+		if ( ! $document ) { // Don't allow other post-types
+			$doc_id        = null;
+			$post          = null;
+			$title         = isset( $_REQUEST['doc_title'] ) ? $_REQUEST['doc_title'] : "";
+			$checked       = 'checked';
+			$file_required = 'required';
 
 			/**
 			 * All available Document types accepted for upload
 			 */
 			$accepted_doc_types = implode( Document::get_supported_mime_types(), ', ' );
 		} else {
-			$title			 = $post->post_title;
-			$csv_rows		 = get_post_meta( $doc_id, 'csv_rows', true );
-			$csv_cols		 = get_post_meta( $doc_id, 'csv_cols', true );
-			$checked		 = get_post_meta( $doc_id, 'csv_has_col_headers', true ) ? 'checked' : '';
-			$file_required	 = '';
+			$title         = $post->post_title;
+			$csv_rows      = get_post_meta( $doc_id, 'csv_rows', true );
+			$csv_cols      = get_post_meta( $doc_id, 'csv_cols', true );
+			$checked       = get_post_meta( $doc_id, 'csv_has_col_headers', true ) ? 'checked' : '';
+			$file_required = '';
 
 			/**
 			 * When updating an existing file, only allow the same mime type to be uploaded
@@ -580,66 +624,69 @@ class DocumentAdmin {
 		}
 
 		$document_object = get_post_type_object( Document::POST_TYPE );
-		$action			 = $document ? $document_object->labels->edit_item : $document_object->labels->new_item;
+		$action          = $document ? $document_object->labels->edit_item : $document_object->labels->new_item;
 		?>
-		<div class="wrap">
-			<h2><?php echo esc_attr( $action ); ?></h2>
-			<form action method="post" accept-charset="utf-8" enctype="multipart/form-data">
-				<input type="hidden" name="page" value="<?php echo self::UPLOAD_PAGE_SLUG ?>">
+        <div class="wrap">
+            <h2><?php echo esc_attr( $action ); ?></h2>
+            <form action method="post" accept-charset="utf-8" enctype="multipart/form-data">
+                <input type="hidden" name="page" value="<?php echo self::UPLOAD_PAGE_SLUG ?>">
 				<?php if ( $doc_id ) : ?>
-					<input type="hidden" name="doc_id" value="<?php echo esc_attr( $doc_id ); ?>" id="doc_id">
+                    <input type="hidden" name="doc_id" value="<?php echo esc_attr( $doc_id ); ?>" id="doc_id">
 				<?php endif; ?>
 				<?php wp_nonce_field( self::UPLOAD_PAGE_SLUG, self::NONCE ); ?>
-				<div class="titlewrap">
-					<label for="title" class="title-prompt-text"><?php _e( 'Document Title:', TEXT_DOMAIN ); ?></label>
-					<input type="text" name="doc_title" value="<?php echo esc_attr( $title ); ?>" id="title" size="50" autocomplete="off" placeholder="Defaults to name of uploaded file if none specified">
-				</div>
+                <div class="titlewrap">
+                    <label for="title" class="title-prompt-text"><?php _e( 'Document Title:', TEXT_DOMAIN ); ?></label>
+                    <input type="text" name="doc_title" value="<?php echo esc_attr( $title ); ?>" id="title" size="50"
+                           autocomplete="off" placeholder="Defaults to name of uploaded file if none specified">
+                </div>
 				<?php if ( $doc_id ) : ?>
-					<div class="postbox">
-						<h3><?php _e( 'Uploaded Document Info', TEXT_DOMAIN ); ?></h3>
-						<div class="inside">
-							<dl>
-								<dt><?php _e( 'Document ID', TEXT_DOMAIN ); ?></dt>
-								<dd><?php esc_html_e( $doc_id ); ?></dd>
-								<dt><?php _e( 'Document Type', TEXT_DOMAIN ); ?></dt>
-								<dd><?php esc_html_e( $post->post_mime_type ); ?></dd>
-								<dt><?php _e( 'Date Created', TEXT_DOMAIN ); ?></dt>
-								<dd><?php esc_html_e( $post->post_date ); ?></dd>
-								<dt><?php _e( 'Date Last Modified', TEXT_DOMAIN ); ?></dt>
-								<dd><?php esc_html_e( $post->post_modified ); ?></dd>
+                    <div class="postbox">
+                        <h3><?php _e( 'Uploaded Document Info', TEXT_DOMAIN ); ?></h3>
+                        <div class="inside">
+                            <dl>
+                                <dt><?php _e( 'Document ID', TEXT_DOMAIN ); ?></dt>
+                                <dd><?php esc_html_e( $doc_id ); ?></dd>
+                                <dt><?php _e( 'Document Type', TEXT_DOMAIN ); ?></dt>
+                                <dd><?php esc_html_e( $post->post_mime_type ); ?></dd>
+                                <dt><?php _e( 'Date Created', TEXT_DOMAIN ); ?></dt>
+                                <dd><?php esc_html_e( $post->post_date ); ?></dd>
+                                <dt><?php _e( 'Date Last Modified', TEXT_DOMAIN ); ?></dt>
+                                <dd><?php esc_html_e( $post->post_modified ); ?></dd>
 								<?php if ( 'text/csv' == $post->post_mime_type ): ?>
-									<dt><?php _e( 'Rows', TEXT_DOMAIN ); ?></dt>
-									<dd><?php echo intval( $csv_rows ); ?></dd>
-									<dt><?php _e( 'Columns', TEXT_DOMAIN ); ?></dt>
-									<dd><?php echo intval( $csv_cols ); ?></dd>
+                                    <dt><?php _e( 'Rows', TEXT_DOMAIN ); ?></dt>
+                                    <dd><?php echo intval( $csv_rows ); ?></dd>
+                                    <dt><?php _e( 'Columns', TEXT_DOMAIN ); ?></dt>
+                                    <dd><?php echo intval( $csv_cols ); ?></dd>
 								<?php endif; ?>
-							</dl>
-						</div>
-					</div>
+                            </dl>
+                        </div>
+                    </div>
 				<?php endif; ?>
-				<div class="postbox">
-					<h3>Upload</h3>
-					<div class="inside">
-						<div>
-							<label for="document"><?php _e( 'Select document to upload', TEXT_DOMAIN ); ?></label><br>
-							<input type="file" id="document" name="document" value="" size="40" accept="<?php echo esc_attr( $accepted_doc_types ); ?>" <?php echo esc_attr( $file_required ); ?>/>
-							<div>
+                <div class="postbox">
+                    <h3>Upload</h3>
+                    <div class="inside">
+                        <div>
+                            <label for="document"><?php _e( 'Select document to upload', TEXT_DOMAIN ); ?></label><br>
+                            <input type="file" id="document" name="document" value="" size="40"
+                                   accept="<?php echo esc_attr( $accepted_doc_types ); ?>" <?php echo esc_attr( $file_required ); ?>/>
+                            <div>
 								<?php
 								_e( 'Supported file types: ', TEXT_DOMAIN );
 								esc_html_e( $accepted_doc_types );
 								?>
-							</div>
-						</div>
-						<div class="upload_option">
-							<?php _e( 'For CSV File Upload (ignored for other document types):', TEXT_DOMAIN ); ?><br />
-							<input type="checkbox" <?php echo esc_attr( $checked ); ?> id="csv-has-col-headers" name="csv-has-col-headers" value="yes">
-							<label for="csv-has-col-headers"><?php _e( 'First Row contains column names', TEXT_DOMAIN ); ?></label>
-						</div>
-					</div>
-				</div>
+                            </div>
+                        </div>
+                        <div class="upload_option">
+							<?php _e( 'For CSV File Upload (ignored for other document types):', TEXT_DOMAIN ); ?><br/>
+                            <input type="checkbox" <?php echo esc_attr( $checked ); ?> id="csv-has-col-headers"
+                                   name="csv-has-col-headers" value="yes">
+                            <label for="csv-has-col-headers"><?php _e( 'First Row contains column names', TEXT_DOMAIN ); ?></label>
+                        </div>
+                    </div>
+                </div>
 				<?php submit_button( $action, 'apply', 'submit', false ); ?>
-			</form>
-		</div>
+            </form>
+        </div>
 		<?php
 	}
 
@@ -649,14 +696,15 @@ class DocumentAdmin {
 	 * @return string, name of action or NULL
 	 */
 	private function get_action() {
-		if ( empty( $_REQUEST ) || !isset( $_REQUEST['submit'] ) )
-			return NULL;
-		elseif ( $_REQUEST['submit'] == self::$post_type_labels['new_item'] )
+		if ( empty( $_REQUEST ) || ! isset( $_REQUEST['submit'] ) ) {
+			return null;
+		} elseif ( $_REQUEST['submit'] == self::$post_type_labels['new_item'] ) {
 			return 'new';
-		elseif ( $_REQUEST['submit'] == self::$post_type_labels['edit_item'] )
+		} elseif ( $_REQUEST['submit'] == self::$post_type_labels['edit_item'] ) {
 			return 'update';
-		else
-			return NULL;
+		} else {
+			return null;
+		}
 	}
 
 	/**

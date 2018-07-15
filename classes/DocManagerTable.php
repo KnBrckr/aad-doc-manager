@@ -50,37 +50,32 @@ class DocManagerTable extends \WP_List_Table {
 	private $is_trash;
 
 	/**
-	 * Callback to build URL to a downloadable document
-	 *
-	 * @var string | array to use as argument to call_user_func()
-	 */
-	private $download_url_callback;
-
-	/**
 	 * Constructor, we override the parent to pass our own arguments
 	 * We usually focus on three parameters: singular and plural labels, as well as whether the class supports AJAX.
+     *
+     * @param array $args associative array of table parameters
 	 */
 	function __construct( $args ) {
 		parent::__construct( $args );
 
-		$args						 = wp_parse_args( $args, array(
-			'singular'	 => '',
-			'ajax'		 => false,
-			'screen'	 => null,
-			) );
-		$this->upload_url			 = $args['upload_url'];
-		$this->table_url			 = $args['table_url'];
+		$args             = wp_parse_args( $args, [
+			'singular' => '',
+			'ajax'     => false,
+			'screen'   => null,
+		] );
+		$this->upload_url = $args['upload_url'];
+		$this->table_url  = $args['table_url'];
 	}
 
 	/**
 	 * Create links to be used in the views output of the table.
 	 * Used to display number of posts in various states
 	 *
-	 * @return associative array (id => link)
+	 * @return array (id => link)
 	 */
 	protected function get_views() {
-		$states	 = [ 'publish', 'trash' ]; // States that will be used in available views
-		$views	 = [];   // Associative array of views to return
+		$states = [ 'publish', 'trash' ]; // States that will be used in available views
+		$views  = [];   // Associative array of views to return
 
 		/**
 		 * Get the number of posts in each state and calculate total number
@@ -100,25 +95,30 @@ class DocManagerTable extends \WP_List_Table {
 
 			$status_name = $status->name;
 
-			if ( !in_array( $status_name, $states ) )
+			if ( ! in_array( $status_name, $states ) ) {
 				continue;
+			}
 
-			if ( empty( $num_posts->$status_name ) )
+			if ( empty( $num_posts->$status_name ) ) {
 				continue;
+			}
 
 			/**
 			 * If post status is not set it's the same as displaying the "Published" view
 			 */
 			if ( ( isset( $_REQUEST['post_status'] ) && $status_name == $_REQUEST['post_status'] ) ||
-				(!isset( $_REQUEST['post_status'] ) && "publish" == $status_name ) )
-				$class = ' class="current"';
+			     ( ! isset( $_REQUEST['post_status'] ) && "publish" == $status_name ) ) {
+				$class = 'class="current"';
+			}
 
 			/**
 			 * Setup view link
 			 */
-// FIXME - Need table_url?			$url					 = add_query_arg( 'post_status', $status_name, $this->table_url );
-			$url				 = esc_url( add_query_arg( 'post_status', urlencode( $status_name ) ) );
-			$views[$status_name] = "<a href='$url'$class>" . sprintf( translate_nooped_plural( $status->label_count, $num_posts->$status_name ), number_format_i18n( $num_posts->$status_name ) ) . '</a>';
+// FIXME - Need table_url?			$url = add_query_arg( 'post_status', $status_name, $this->table_url );
+			$url                   = esc_url( add_query_arg( 'post_status', urlencode( $status_name ) ) );
+			$views[ $status_name ] = "<a href='$url' $class>" .
+                                     sprintf( translate_nooped_plural( $status->label_count, $num_posts->$status_name ), number_format_i18n( $num_posts->$status_name ) ) .
+                                     '</a>';
 		}
 
 		return $views;
@@ -127,18 +127,19 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * HTML for controls placed between bulk actions and pagination elements
 	 *
-	 * @param $which String Is nav for "top" or "bottom" of the table?
+	 * @param string $which Is nav for "top" or "bottom" of the table?
+	 *
 	 * @return void
 	 */
 	protected function extra_tablenav( $which ) {
 		?>
-		<div class="alignleft actions">
+        <div class="alignleft actions">
 			<?php
 			if ( $this->is_trash && current_user_can( 'delete_posts' ) ) {
 				submit_button( __( 'Empty Trash' ), 'apply', 'delete_all', false );
 			}
 			?>
-		</div>
+        </div>
 		<?php
 	}
 
@@ -149,21 +150,21 @@ class DocManagerTable extends \WP_List_Table {
 	 *
 	 * The values's provided for bulk actions are defined in $this->column_cb()
 	 *
-	 * @return array $columns, array of columns
+	 * @return array table columns
 	 */
 	public function get_columns() {
 		$columns = array(
-			'cb'				 => '<input type="checkbox" />', //Render a checkbox instead of text
-			'doc_id'			 => __( 'ID' ),
-			'title'				 => __( 'Title' ),
-			'download_cnt'		 => '<span class="dashicons dashicons-download"></span>' . __( ' Count', 'aad-doc-manager' ),
-			'shortcode'			 => __( 'Table Shortcode', 'aad-doc-manager' ),
+			'cb'                 => '<input type="checkbox" />', //Render a checkbox instead of text
+			'doc_id'             => __( 'ID' ),
+			'title'              => __( 'Title' ),
+			'download_cnt'       => '<span class="dashicons dashicons-download"></span>' . __( ' Count', 'aad-doc-manager' ),
+			'shortcode'          => __( 'Table Shortcode', 'aad-doc-manager' ),
 			'download_shortcode' => __( 'Download Shortcode', 'aad-doc-manager' ),
-			'download_url'		 => __( 'Download URL', 'aad-doc-manager' ),
-			'date_modified'		 => __( 'Date Modified', 'aad-doc-manager' ),
-			'type'				 => __( 'Document Type', 'aad-doc-manager' ),
-			'rows'				 => __( 'Rows', 'aad-doc-manager' ),
-			'columns'			 => __( 'Columns', 'aad-doc-manager' )
+			'download_url'       => __( 'Download URL', 'aad-doc-manager' ),
+			'date_modified'      => __( 'Date Modified', 'aad-doc-manager' ),
+			'type'               => __( 'Document Type', 'aad-doc-manager' ),
+			'rows'               => __( 'Rows', 'aad-doc-manager' ),
+			'columns'            => __( 'Columns', 'aad-doc-manager' )
 		);
 
 		/**
@@ -171,8 +172,8 @@ class DocManagerTable extends \WP_List_Table {
 		 */
 		if ( WP_DEBUG ) {
 			$columns = array_merge( $columns, array(
-				'csv_storage_format' => __( 'CSV Storage Fmt', 'aad-doc-manger' ),
-				'doc_uuid'			 => __( 'Document UUID', 'aad-doc-manager' )
+					'csv_storage_format' => __( 'CSV Storage Fmt', 'aad-doc-manger' ),
+					'doc_uuid'           => __( 'Document UUID', 'aad-doc-manager' )
 				)
 			);
 		}
@@ -185,13 +186,13 @@ class DocManagerTable extends \WP_List_Table {
 	 *
 	 * Array in form 'column_name' => 'database_field_name'
 	 *
-	 * @return array $sortable, array of columns that can be sorted
+	 * @return array columns that can be sorted
 	 */
 	protected function get_sortable_columns() {
 		$sortable = array(
-			'doc_id'		 => array( 'ID', false ),
-			'title'			 => array( 'title', false ),
-			'date_modified'	 => array( 'modified', false )
+			'doc_id'        => array( 'ID', false ),
+			'title'         => array( 'title', false ),
+			'date_modified' => array( 'modified', false )
 		);
 
 		return $sortable;
@@ -212,7 +213,7 @@ class DocManagerTable extends \WP_List_Table {
 		}
 
 		if ( current_user_can( 'delete_posts' ) ) {
-			if ( $this->is_trash || !EMPTY_TRASH_DAYS ) {
+			if ( $this->is_trash || ! EMPTY_TRASH_DAYS ) {
 				$actions['delete'] = __( 'Delete Permanently' );
 			} else {
 				$actions['trash'] = __( 'Move to Trash' );
@@ -226,8 +227,9 @@ class DocManagerTable extends \WP_List_Table {
 	 * Overload current_action to detect additional buttons applied to table
 	 */
 	public function current_action() {
-		if ( isset( $_REQUEST['delete_all'] ) || isset( $_REQUEST['delete_all2'] ) )
+		if ( isset( $_REQUEST['delete_all'] ) || isset( $_REQUEST['delete_all2'] ) ) {
 			return 'delete_all';
+		}
 
 		return parent::current_action();
 	}
@@ -236,23 +238,24 @@ class DocManagerTable extends \WP_List_Table {
 	 * Prepare table items for display
 	 * */
 	public function prepare_items() {
-		$num_posts		 = wp_count_posts( Document::POST_TYPE, 'readable' );
 		/**
 		 * By default, want published posts
 		 */
-		$post_status	 = isset( $_REQUEST['post_status'] ) ? $_REQUEST['post_status'] : 'publish';
-		$this->is_trash	 = ( 'trash' === $post_status );
+		$post_status    = isset( $_REQUEST['post_status'] ) ? $_REQUEST['post_status'] : 'publish';
+		$this->is_trash = ( 'trash' === $post_status );
 
 		/**
 		 * Sort order
 		 */
-		$orderby = !empty( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : 'title';
-		$order	 = !empty( $_REQUEST["order"] ) ? $_REQUEST["order"] : 'asc';
+		$orderby = ! empty( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : 'title';
+		$order   = ! empty( $_REQUEST["order"] ) ? $_REQUEST["order"] : 'asc';
 
 		/**
 		 * Search string, if specified
+         *
+         * TODO Add support for search
 		 */
-		$search = !empty( $_REQUEST["s"] ) ? $_REQUEST["s"] : '';
+		//$search = ! empty( $_REQUEST["s"] ) ? $_REQUEST["s"] : '';
 
 		/**
 		 * Pagination of table elements
@@ -260,19 +263,19 @@ class DocManagerTable extends \WP_List_Table {
 		//How many to display per page?
 		$perpage = $this->get_items_per_page( 'cvs_files_per_page', 20 ); // RFE Allow admin screen to set per page
 		//Which page is this?
-		$paged	 = $this->get_pagenum();
+		$paged = $this->get_pagenum();
 
 		/**
 		 * Get the table items
 		 */
 		$query = new \WP_Query( array(
-			'post_type'		 => Document::POST_TYPE,
-			'post_status'	 => $post_status,
+			'post_type'      => Document::POST_TYPE,
+			'post_status'    => $post_status,
 			'posts_per_page' => $perpage,
-			'offset'		 => ( $paged - 1 ) * $perpage,
-			'orderby'		 => $orderby,
-			'order'			 => $order
-			) );
+			'offset'         => ( $paged - 1 ) * $perpage,
+			'orderby'        => $orderby,
+			'order'          => $order
+		) );
 
 		if ( $query ) {
 			$total_items = $query->found_posts;
@@ -288,9 +291,9 @@ class DocManagerTable extends \WP_List_Table {
 		 * Setup pagination links
 		 */
 		$this->set_pagination_args( array(
-			"total_items"	 => $total_items,
-			"total_pages"	 => $total_pages,
-			"per_page"		 => $perpage,
+			"total_items" => $total_items,
+			"total_pages" => $total_pages,
+			"per_page"    => $perpage,
 		) );
 	}
 
@@ -300,7 +303,9 @@ class DocManagerTable extends \WP_List_Table {
 	 * Provides the REQUEST variable that will contain the selected values
 	 *
 	 * @see WP_List_Table::::single_row_columns()
-	 * @param $post A post object for display
+	 *
+	 * @param \WP_Post $post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 * */
 	protected function column_cb( $post ) {
@@ -314,7 +319,8 @@ class DocManagerTable extends \WP_List_Table {
 	 *
 	 * Includes set of actions that can be used on the item
 	 *
-	 * @param $post A post object for display
+	 * @param \WP_Post $post post object for display
+	 *
 	 * @return string, Text or HTML to be placed in table cell
 	 */
 	protected function column_title( $post ) {
@@ -323,9 +329,9 @@ class DocManagerTable extends \WP_List_Table {
 		/**
 		 * Actions for published documents
 		 */
-		if ( !$this->is_trash ) {
-			$url				 = add_query_arg( 'doc_id', $post->ID, $this->upload_url );
-			$actions['update']	 = "<a title='" . esc_attr__( "Update", TEXT_DOMAIN ) . "' href='$url'>" . __("Update", TEXT_DOMAIN ) . "</a>";
+		if ( ! $this->is_trash ) {
+			$url               = add_query_arg( 'doc_id', $post->ID, $this->upload_url );
+			$actions['update'] = "<a title='" . esc_attr__( "Update", TEXT_DOMAIN ) . "' href='$url'>" . __( "Update", TEXT_DOMAIN ) . "</a>";
 		}
 
 		/**
@@ -336,25 +342,25 @@ class DocManagerTable extends \WP_List_Table {
 				/**
 				 * Trash view -- Generate "Restore" link
 				 */
-				$url				 = $this->get_trash_action_post_link( $post->ID, 'untrash' );
-				$actions['untrash']	 = '<a  class="submitdelete" title="' . esc_attr__( 'Restore this item from the Trash' ) . '" href="' . esc_url( $url ) . '">' .
-					__( 'Restore' ) . '</a>';
+				$url                = $this->get_trash_action_post_link( $post->ID, 'untrash' );
+				$actions['untrash'] = '<a  class="submitdelete" title="' . esc_attr__( 'Restore this item from the Trash' ) . '" href="' . esc_url( $url ) . '">' .
+				                      __( 'Restore' ) . '</a>';
 			} elseif ( EMPTY_TRASH_DAYS ) {
 				/**
 				 * Not on Trash view -- If EMPTY_TRASH_DAYS > 0 then generate a "Trash" link for the document
 				 */
-				$url				 = $this->get_trash_action_post_link( $post->ID, 'trash' );
-				$actions['trash']	 = '<a class="submitdelete" title="' . esc_attr__( 'Move this item to the Trash' ) . '" href="' . esc_url( $url ) . '">'
-					. __( 'Trash' ) . '</a>';
+				$url              = $this->get_trash_action_post_link( $post->ID, 'trash' );
+				$actions['trash'] = '<a class="submitdelete" title="' . esc_attr__( 'Move this item to the Trash' ) . '" href="' . esc_url( $url ) . '">'
+				                    . __( 'Trash' ) . '</a>';
 			}
 
 			/**
 			 * Add Delete Permanently Option for Trash view or if Trash is not being used (EMPTY_TRASH_DAYS == 0)
 			 */
-			if ( 'trash' == $post->post_status || !EMPTY_TRASH_DAYS ) {
-				$url				 = $this->get_trash_action_post_link( $post->ID, 'delete' );
-				$actions['delete']	 = '<a class="submitdelete" title="' . esc_attr__( 'Delete this item permanently' ) . '" href="' . esc_url( $url ) . '">'
-					. __( 'Delete Permanently' ) . '</a>';
+			if ( 'trash' == $post->post_status || ! EMPTY_TRASH_DAYS ) {
+				$url               = $this->get_trash_action_post_link( $post->ID, 'delete' );
+				$actions['delete'] = '<a class="submitdelete" title="' . esc_attr__( 'Delete this item permanently' ) . '" href="' . esc_url( $url ) . '">'
+				                     . __( 'Delete Permanently' ) . '</a>';
 			}
 		}
 
@@ -364,12 +370,14 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Create URL to perform trash/un-trash action on a post
 	 *
-	 * @param $post_id, int - Post ID
-	 * @param $action, string - name of action
-	 * @return string, URL
+	 * @param int $post_id Post ID
+	 * @param string $action name of action
+	 *
+	 * @return string URL
 	 */
 	private function get_trash_action_post_link( $post_id, $action ) {
 		$url = add_query_arg( 'action', $action, admin_url( 'post.php?post=' . strval( $post_id ) ) );
+
 		return wp_nonce_url( $url, $action . '-post_' . $post_id );
 	}
 
@@ -378,21 +386,19 @@ class DocManagerTable extends \WP_List_Table {
 	 *
 	 * Only supported for CSV files
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_shortcode( $post ) {
-		if ( 'text/csv' == $post->post_mime_type ) {
-			return '[docmgr-csv-table id=' . esc_attr( $post->ID ) . ']';
-		} else {
-			return '';
-		}
+		return 'text/csv' == get_post_mime_type( $post ) ? '[docmgr-csv-table id=' . esc_attr( $post->ID ) . ']' : '';
 	}
 
 	/**
 	 * Provide download shortcode to use in other pages
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_download_shortcode( $post ) {
@@ -408,22 +414,24 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide download URL for copy/paste
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_Post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_download_url( $post ) {
 		$document = Document::get_instance( $post, '' );
-		if ( !$document ) {
+		if ( ! $document ) {
 			return '';
 		}
 
-		return esc_url( DocumentDownload::get_download_url($document) );
+		return esc_url( DocumentDownload::get_download_url( $document ) );
 	}
 
 	/**
 	 * Provide formatted Post Date
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_Post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_date( $post ) {
@@ -433,7 +441,8 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide formatted Post Modified Date
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_date_modified( $post ) {
@@ -443,7 +452,8 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide formatted CVS spreadsheet ID
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_doc_id( $post ) {
@@ -453,7 +463,8 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide formatted document UUID
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_doc_uuid( $post ) {
@@ -469,17 +480,19 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide formatted document type
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_type( $post ) {
-		return esc_attr( $post->post_mime_type );
+		return esc_attr( get_post_mime_type( $post ) );
 	}
 
 	/**
 	 * Provide formatted number of rows for CSV files
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_rows( $post ) {
@@ -493,7 +506,8 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide formatted download count
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_download_cnt( $post ) {
@@ -503,7 +517,8 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide formatted number of columns for CSV files
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_columns( $post ) {
@@ -517,7 +532,8 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Provide formatted CSV Storage format -- For WP_DEBUG mode
 	 *
-	 * @param WP_post $post A post object for display
+	 * @param \WP_post $post A post object for display
+	 *
 	 * @return string Text or HTML to be placed in table cell
 	 */
 	protected function column_csv_storage_format( $post ) {
@@ -531,13 +547,14 @@ class DocManagerTable extends \WP_List_Table {
 	/**
 	 * Format a date/time using WP General Settings format
 	 *
-	 * @param $date, string - Date+Time YYYY-MM-DD HH:MM:SS
+	 * @param string $date Date+Time in format 'YYYY-MM-DD HH:MM:SS'
+	 *
 	 * @return string, formatted date + time
 	 */
 	private function format_date( $date ) {
 		static $format;
 
-		if ( !isset( $format ) ) {
+		if ( ! isset( $format ) ) {
 			$format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 		}
 

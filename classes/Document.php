@@ -52,7 +52,7 @@ class Document {
 	private $post = NULL;
 
 	/**
-	 * @var WP_Attachment The attached document
+	 * @var \WP_Post The attached document
 	 */
 	private $attachment = NULL;
 
@@ -80,7 +80,7 @@ class Document {
 	/**
 	 * Constructor
 	 *
-	 * @param WP_post $post Wordpress Post to treat as a document
+	 * @param \WP_post $post Wordpress Post to treat as a document
 	 * @since 1.0
 	 */
 	public function __construct( \WP_Post $post ) {
@@ -93,7 +93,7 @@ class Document {
 	 * get object properties
 	 *
 	 * @param string $name object value requested
-	 * @return various
+	 * @return string|null
 	 * @since 1.0 'ID', 'post_modified', 'post_modified_gmt', 'post_date_gmt', 'post_mime_type', 'post_title'
 	 */
 	public function __get( $name ) {
@@ -130,7 +130,7 @@ class Document {
 	/**
 	 * Retrieve Document instance for an existing Document
 	 *
-	 * @param int|WP_Post|NULL $_post get a new Document instance for the given post id
+	 * @param int|\WP_Post|NULL $_post get a new Document instance for the given post id
 	 * @param string $status requested status to retrieve
 	 * @return Document|NULL
 	 * @since 1.0
@@ -158,7 +158,7 @@ class Document {
 	 *
 	 * @param array $_postarr Post creation parameters
 	 * @param string $file_id Index of the `$_FILES` array that the file was sent.
-	 * @return Document|WP_Error Document object on success
+	 * @return Document|\WP_Error Document object on success
 	 * @since 1.0
 	 */
 	public static function create_document( $_postarr, $file_id ) {
@@ -337,7 +337,7 @@ class Document {
 	 *
 	 * @param string $guid GUID for requested document
 	 * @param string $status request post status
-	 * @return WP_post of the requested document
+	 * @return Document|null Document object matching GUID
 	 * @since 1.0
 	 */
 	public static function get_document_by_guid( $guid, $status = 'publish' ) {
@@ -375,7 +375,7 @@ class Document {
 	/**
 	 * Get the attachment for a downloadable document
 	 *
-	 * @return WP_Attachment Object
+	 * @return \WP_Post Post object for Attachment
 	 */
 	private function get_attachment() {
 		if ( $this->attachment ) {
