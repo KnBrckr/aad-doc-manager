@@ -194,7 +194,7 @@ class TestDocumentAdmin extends WP_UnitTestCase {
 		self::markTestIncomplete();
 	}
 
-	function test_action_render_document_table() {
+	function test_render_document_table() {
 		self::markTestIncomplete();
 	}
 
