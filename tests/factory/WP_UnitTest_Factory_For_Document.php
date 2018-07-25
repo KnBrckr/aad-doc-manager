@@ -28,48 +28,82 @@ use PumaStudios\DocManager\Document;
  */
 class WP_UnitTest_Factory_For_Document extends WP_UnitTest_Factory_For_Thing {
 
+	/**
+	 * Create document attachment
+	 *
+	 * @param string $file
+	 * @param int $parent_post_id
+	 *
+	 * @return int|WP_Error
+	 */
+	function make_attachment(string $file, int $parent_post_id) {
+		$contents = file_get_contents($file);
+		$upload = wp_upload_bits(basename($file), null, $contents);
+		$type = '';
+
+		if ( !empty( $upload['type'])) {
+			$type = $upload['type'];
+		} else {
+			$mime = wp_check_filetype($upload['file']);
+			if ($mime) {
+				$type = $mime['type'];
+			}
+		}
+
+		$attachment = array(
+			'post_title' => basename( $upload['file'] ),
+			'post_content' => '',
+			'post_type' => 'attachment',
+			'post_parent' => $parent_post_id,
+			'post_mime_type' => $type,
+			'guid' => $upload[ 'url' ],
+		);
+
+		// Save the data
+		$id = wp_insert_attachment( $attachment, $upload[ 'file' ], $parent_post_id );
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload['file'] ) );
+
+		return $id;
+	}
+
 	function __construct( $factory = null ) {
 		parent::__construct( $factory );
 		$this->default_generation_definitions = array(
-			'post_status'	 => 'publish',
-			'post_title'	 => new WP_UnitTest_Generator_Sequence( 'Document title %s' ),
-			'post_content'	 => '',
-			'post_excerpt'	 => '',
-			'post_type'		 => Document::POST_TYPE,
+			'post_status'    => 'publish',
+			'post_title'     => new WP_UnitTest_Generator_Sequence( 'Document title %s' ),
+			'post_content'   => '',
+			'post_excerpt'   => '',
+			'post_type'      => Document::POST_TYPE,
 			'post_mime_type' => 'application/pdf'
 		);
+
 	}
 
 	function create_object( $args ) {
 
 		$file = $args['target_file'];
+		unset( $args['target_file'] );
 
-		$tmpfile = tempnam( sys_get_temp_dir(), 'phpunit-uploadtest' );
-		copy( $file, $tmpfile );
-
-		$_FILES = [
-			'document' => [
-				'error'		 => UPLOAD_ERR_OK,
-				'name'		 => basename( $file ),
-				'type'		 => mime_content_type( $file ),
-				'size'		 => filesize( $file ),
-				'tmp_name'	 => $tmpfile
-			]
-		];
-
-		$document = Document::create_document( $args, 'document' );
-
-		@unlink( $tmpfile );
-
-		if ( $document ) {
-			return $document->ID;
-		} else {
-			return NULL;
+		$type = 'unknown';
+		$mime = wp_check_filetype($file);
+		if ($mime) {
+			$type = $mime['type'];
 		}
+
+		$args['post_mime_type'] = $type;
+
+		$post_id = $this->factory->post->create( $args );
+
+		$attachment_id = $this->make_attachment($file, $post_id);
+
+		update_post_meta( $post_id, 'document_media_id', $attachment_id );
+
+		return $post_id;
 	}
 
 	function update_object( $post_id, $fields ) {
 		$fields['ID'] = $post_id;
+
 		return wp_update_post( $fields );
 	}
 
@@ -82,7 +116,7 @@ class WP_UnitTest_Factory_For_Document extends WP_UnitTest_Factory_For_Thing {
 	 */
 	function destroy() {
 
-		$query = new \WP_Query( [ 'post_type' => Document::POST_TYPE ] );
+		$query     = new \WP_Query( [ 'post_type' => Document::POST_TYPE ] );
 		$documents = $query->get_posts();
 
 		foreach ( $documents as $document ) {
