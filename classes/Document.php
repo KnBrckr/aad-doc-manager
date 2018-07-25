@@ -62,11 +62,6 @@ class Document {
 	public $ID;
 
 	/**
-	 * @var string The document mime type
-	 */
-	private $post_mime_type;
-
-	/**
 	 * @var \League\Csv\Reader
 	 */
 	private $csv = NULL;
@@ -86,7 +81,6 @@ class Document {
 	public function __construct( \WP_Post $post ) {
 		$this->post				 = $post;
 		$this->ID				 = $post->ID;
-		$this->post_mime_type	 = get_post_mime_type( $post->ID );
 	}
 
 	/**
