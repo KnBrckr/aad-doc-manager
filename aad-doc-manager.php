@@ -10,7 +10,7 @@
  * Plugin Name: Document Manager
  * Plugin URI:  http://pumastudios.com/document-manager-wordpress-plugin/
  * Description: Custom post type to manage documents for display and download
- * Version:     0.9
+ * Version:     0.10
  * Author:      Kenneth J. Brucker
  * Author URI:  https://pumastudios.com
  * License:     GPL-2.0+
