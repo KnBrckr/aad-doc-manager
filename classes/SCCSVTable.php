@@ -158,6 +158,7 @@ class SCCSVTable {
 	public static function sc_docmgr_csv_table( $_attrs, $content = null ) {
 		/**
 		 * Large tables cause performance issues on backend, provide an empty result
+         * TODO explore async table load using AJAX - useful for large tables
 		 */
 		if ( is_admin() ) {
 			return '';

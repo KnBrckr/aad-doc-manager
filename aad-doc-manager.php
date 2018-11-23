@@ -55,7 +55,7 @@ include_once __DIR__ . '/vendor/autoload.php';
 /**
  * @var string Version of this plugin
  */
-const PLUGIN_VERSION = "0.9";
+const PLUGIN_VERSION = "0.10";
 
 /**
  * @var string Minimum Wordpress version supported

@@ -23,8 +23,6 @@ Custom post type to manage and display uploaded documents. A Shortcode is availa
     page-length => integer, number of rows to display in table by default
 	rows => string, list of rows to include in resulting table. e.g. "1-10,23,100-199"
 
-TODO Add method to disable sorting
-
 [docmgr-created id=<post_id>]
 	Displays created date for document
 
@@ -55,7 +53,7 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 
 == Changelog ==
 
-= NEXT =
+= 0.10 =
 * Refactored code
 
 = 0.9.3 =
@@ -135,4 +133,6 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 * RFE Sort on mime type using filter 'posts_orderby'
 * RFE Improve download activity log
 * RFE Support versions of a document
-* TODO Address hard coded plugin name references in directory structure
+* RFE Address hard coded plugin name references in directory structure
+* RFE Add parameter to control/disable sorting for [docmgr-csv-table]
+
