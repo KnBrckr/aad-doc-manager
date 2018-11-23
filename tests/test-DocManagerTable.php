@@ -18,7 +18,7 @@ class TestDocManagerTable extends WP_UnitTestCase {
 	/**
 	 * Setup for entire class of tests
 	 *
-	 * @param Factor $factory Factory class used to create objects
+	 * @param Factory $factory Factory class used to create objects
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
 		/**
@@ -106,7 +106,7 @@ class TestDocManagerTable extends WP_UnitTestCase {
 
 	private function _expectOutputRegexFile( string $file, string $msg ) {
 		$expected = $this->get_file_contents( $file );
-		$this->expectOutputRegex( $expected, $msg );
+		$this->expectOutputRegex( $expected );
 	}
 
 	function test_instantiate() {
@@ -170,7 +170,7 @@ class TestDocManagerTable extends WP_UnitTestCase {
 
 		// In Debug mode there will be additional columns
 		$columns = $doc_table->get_columns();
-		$this->assertEqualSets( $expected_keys, array_keys( $columns ), 'Document table columns' );
+		$this->assertEqualSets( $expected_keys, array_keys( $columns ) );
 	}
 
 	/**
@@ -192,7 +192,7 @@ class TestDocManagerTable extends WP_UnitTestCase {
 	 * Test prepare works correctly with a valid document list
 	 */
 	function test_prepare_items() {
-		$ids = $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
+		/* $ids = */ $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
 
 		$table = $this->get_table();
 
@@ -208,7 +208,7 @@ class TestDocManagerTable extends WP_UnitTestCase {
 
 	function test_display_row() {
 		$expected_file	 = __DIR__ . '/data/' . __CLASS__ . '/' . __FUNCTION__ . '.html';
-		$ids			 = $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
+		/* $ids = */ $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
 
 		$table = $this->get_table();
 
@@ -221,7 +221,7 @@ class TestDocManagerTable extends WP_UnitTestCase {
 	}
 
 	function test_display_items() {
-		$ids = $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
+		/* $ids = */ $this->factory->document->create_many( 5, [ 'target_file' => __DIR__ . '/samples/simple.csv' ] );
 
 		$table = $this->get_table();
 
