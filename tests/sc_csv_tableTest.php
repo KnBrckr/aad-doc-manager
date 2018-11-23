@@ -1,24 +1,22 @@
 <?php
 
-/**
- * Class TestSCCSVTable
- *
- * @package PumaStudios-DocManager
- */
 use PumaStudios\DocManager\Document;
 use PumaStudios\DocManager\SCCSVTable;
 
 /**
+ * Class SCCSVTableTest
+ *
  * Test shortcode to display a CSV table
  *
+ * @package PumaStudios-DocManager
  * @group shortcode
  */
-class TestSCCSVTable extends WP_UnitTestCase {
+class SCCSVTableTest extends WP_UnitTestCase {
 
 	/**
 	 * Setup for entire class
 	 *
-	 * @param Factor $factory Factory class used to create objects
+	 * @param Factory $factory Factory class used to create objects
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
 		/**

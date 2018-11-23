@@ -1,24 +1,23 @@
 <?php
 
-/**
- * Class TestSCCreated
- *
- * @package PumaStudios-DocManager
- */
+
 use PumaStudios\DocManager\Document;
-use PumaStudios\DocManager\SCCreated;
+use PumaStudios\DocManager\SCModified;
 
 /**
- * Test shortcode displaying created date
+ * Class TestSCModified
  *
+ * Test shortcode displaying modified date
+ *
+ * @package PumaStudios-DocManager
  * @group shortcode
  */
-class TestSCCreated extends WP_UnitTestCase {
+class SCModifiedTest extends WP_UnitTestCase {
 
 	/**
 	 * Setup for entire class
 	 *
-	 * @param Factor $factory Factory class used to create objects
+	 * @param Factory $factory Factory class used to create objects
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
 		/**
@@ -43,7 +42,7 @@ class TestSCCreated extends WP_UnitTestCase {
 	 * Test class initialized
 	 */
 	function test_run() {
-		$this->assertTrue( shortcode_exists( 'docmgr-created' ), 'Shortcode docmgr-created exists' );
+		$this->assertTrue( shortcode_exists( 'docmgr-modified' ), 'Shortcode docmgr-modified exists' );
 	}
 
 	/**
@@ -55,7 +54,7 @@ class TestSCCreated extends WP_UnitTestCase {
 	 *           [ { } ]
 	 */
 	function test_bad_input( $attrs ) {
-		$this->assertEquals( "", SCCreated::sc_docmgr_created( $attrs ), "Test invalid input" );
+		$this->assertEquals( "", SCModified::sc_docmgr_modified( $attrs ), "Test invalid input" );
 	}
 
 
@@ -66,7 +65,7 @@ class TestSCCreated extends WP_UnitTestCase {
 		$post_id = $this->factory->post->create();
 
 		$attrs['id'] = $post_id;
-		$this->assertEquals( "", SCCreated::sc_docmgr_created( $attrs ), "Wrong post type" );
+		$this->assertEquals( "", SCModified::sc_docmgr_modified( $attrs ), "Wrong post type" );
 	}
 
 	/**
@@ -82,13 +81,13 @@ class TestSCCreated extends WP_UnitTestCase {
 		$post_id	 = $this->factory->post->create( $doc_attrs );
 
 		$attrs['id'] = $post_id;
-		$this->assertEquals( "", SCCreated::sc_docmgr_created( $attrs ), "Wrong post status" );
+		$this->assertEquals( "", SCModified::sc_docmgr_modified( $attrs ), "Wrong post status" );
 	}
 
 	/**
-	 * Test SCCreated shortcode with valid id
+	 * Test SCModified shortcode with valid id
 	 */
-	function test_sc_created() {
+	function test_sc_modified() {
 		$doc_attrs	 = [
 			'post_date'		 => '2018-06-13 05:37:30',
 			'post_date_gmt'	 => '2018-06-13 12:37:30',
@@ -97,7 +96,7 @@ class TestSCCreated extends WP_UnitTestCase {
 		$post_id	 = $this->factory->document->create( $doc_attrs );
 
 		$attrs['id'] = $post_id;
-		$this->assertEquals( 'June 13, 2018', SCCreated::sc_docmgr_created( $attrs ), "Valid post" );
+		$this->assertEquals( 'June 13, 2018', SCModified::sc_docmgr_modified( $attrs ), "Valid post" );
 	}
 
 }

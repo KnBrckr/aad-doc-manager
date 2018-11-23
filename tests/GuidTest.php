@@ -1,18 +1,15 @@
 <?php
-
-/**
- * Class TestGuid
- *
- * @package PumaStudios-DocManager
- */
 use PumaStudios\DocManager\Guid;
 
 /**
+ * Class GuidTest
+ *
  * Test Guid class used for Document taxonomy
  *
+ * @package PumaStudios-DocManager
  * @group document
  */
-class TestGuid extends WP_UnitTestCase {
+class GuidTest extends WP_UnitTestCase {
 
 	/**
 	 * Test generation of GUID

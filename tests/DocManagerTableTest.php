@@ -1,16 +1,14 @@
 <?php
 
-/**
- * Class DocManagerTableTest
- *
- * @package PumaStudios-DocManager
- */
 use PumaStudios\DocManager\DocManagerTable;
 use PumaStudios\DocManager\DocumentAdmin;
 
 /**
+ * Class DocManagerTableTest
+ *
  * Test support for list of Documents on admin page
  *
+ * @package PumaStudios-DocManager
  * @group admin
  */
 class DocManagerTableTest extends WP_UnitTestCase {

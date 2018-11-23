@@ -1,15 +1,11 @@
 <?php
 
 /**
- * Class TestDocumumentDownload
+ * Class DocumumentDownloadTest
  *
  * @package PumaStudios-DocManager
  */
-
-/**
- * Sample test case.
- */
-class TestDocumentDownload extends WP_UnitTestCase {
+class DocumentDownloadTest extends WP_UnitTestCase {
 
 	function test_run() {
 		self::markTestIncomplete();

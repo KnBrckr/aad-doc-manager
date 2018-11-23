@@ -44,7 +44,11 @@ function media_handle_upload( $file_id, $post_id, $post_data = array(), $_overri
 	return \media_handle_upload( $file_id, $post_id, $post_data, $overrides );
 }
 
-
+/**
+ * Class DocumentTest
+ *
+ * @package PumaStudios\DocManager
+ */
 class DocumentTest extends \WP_UnitTestCase {
 	/**
 	 * Setup for entire class

@@ -1,25 +1,23 @@
 <?php
 
-/**
- * Class TestDocumentAdmin
- *
- * @package PumaStudios-DocManager
- */
 use PumaStudios\DocManager\DocumentAdmin;
 use PumaStudios\DocManager\Document;
 
 /**
+ * Class DocumentAdminTest
+ *
  * Test Admin portion of Document support
  *
+ * @package PumaStudios-DocManager
  * @group admin
  * @group document
  */
-class TestDocumentAdmin extends WP_UnitTestCase {
+class DocumentAdminTest extends WP_UnitTestCase {
 
 	/**
 	 * Setup for entire class
 	 *
-	 * @param Factor $factory Factory class used to create objects
+	 * @param Factory $factory Factory class used to create objects
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
 		/**

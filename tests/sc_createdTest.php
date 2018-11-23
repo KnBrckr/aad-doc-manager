@@ -1,25 +1,22 @@
 <?php
 
-/**
- * Class TestSCDownloadURL
- *
- * @package PumaStudios-DocManager
- */
 use PumaStudios\DocManager\Document;
-use PumaStudios\DocManager\DocumentDownload;
-use PumaStudios\DocManager\SCDownloadURL;
+use PumaStudios\DocManager\SCCreated;
 
 /**
- * Test shortcode displaying modified date
+ * Class SCCreatedTest
  *
+ * Test shortcode displaying created date
+ *
+ * @package PumaStudios-DocManager
  * @group shortcode
  */
-class TestSCDownloadURL extends WP_UnitTestCase {
+class SCCreatedTest extends WP_UnitTestCase {
 
 	/**
 	 * Setup for entire class
 	 *
-	 * @param Factor $factory Factory class used to create objects
+	 * @param Factory $factory Factory class used to create objects
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
 		/**
@@ -44,14 +41,7 @@ class TestSCDownloadURL extends WP_UnitTestCase {
 	 * Test class initialized
 	 */
 	function test_run() {
-		$this->assertTrue( shortcode_exists( 'docmgr-download-url' ), 'Shortcode docmgr-download-url exists' );
-	}
-
-	/**
-	 * Test shortcode with empty input
-	 */
-	function test_sc_download_url_null() {
-		$this->assertEquals( "", SCDownloadURL::sc_docmgr_download_url( [] ), "Null input returns empty string" );
+		$this->assertTrue( shortcode_exists( 'docmgr-created' ), 'Shortcode docmgr-created exists' );
 	}
 
 	/**
@@ -63,8 +53,9 @@ class TestSCDownloadURL extends WP_UnitTestCase {
 	 *           [ { } ]
 	 */
 	function test_bad_input( $attrs ) {
-		$this->assertEquals( "", SCDownloadURL::sc_docmgr_download_url( $attrs ), "Test invalid input" );
+		$this->assertEquals( "", SCCreated::sc_docmgr_created( $attrs ), "Test invalid input" );
 	}
+
 
 	/**
 	 * Wrong post type
@@ -73,7 +64,7 @@ class TestSCDownloadURL extends WP_UnitTestCase {
 		$post_id = $this->factory->post->create();
 
 		$attrs['id'] = $post_id;
-		$this->assertEquals( "", SCDownloadURL::sc_docmgr_download_url( $attrs ), "Wrong post type" );
+		$this->assertEquals( "", SCCreated::sc_docmgr_created( $attrs ), "Wrong post type" );
 	}
 
 	/**
@@ -89,29 +80,22 @@ class TestSCDownloadURL extends WP_UnitTestCase {
 		$post_id	 = $this->factory->post->create( $doc_attrs );
 
 		$attrs['id'] = $post_id;
-		$this->assertEquals( "", SCDownloadURL::sc_docmgr_download_url( $attrs ), "Wrong post status" );
+		$this->assertEquals( "", SCCreated::sc_docmgr_created( $attrs ), "Wrong post status" );
 	}
 
 	/**
-	 * Test shortcode with valid id
-	 *
-	 * @param string $content Content for the link
-	 * @testWith [ "Link" ]
-	 * 		     [ "" ]
+	 * Test SCCreated shortcode with valid id
 	 */
-	function test_sc_download_url( $content ) {
+	function test_sc_created() {
 		$doc_attrs	 = [
+			'post_date'		 => '2018-06-13 05:37:30',
+			'post_date_gmt'	 => '2018-06-13 12:37:30',
 			'target_file' => __DIR__ . '/samples/small.pdf'
 		];
 		$post_id	 = $this->factory->document->create( $doc_attrs );
 
-		$document	 = Document::get_instance( $post_id );
-		$url		 = DocumentDownload::get_download_url( $document );
-
-
-		$attrs		 = [ 'id' => $post_id ];
-		$expected	 = sprintf( '<a href="%s">%s</a>', $url, $content );
-		$this->assertEquals( $expected, SCDownloadURL::sc_docmgr_download_url( $attrs, $content ), "HTMLized download URL for document" );
+		$attrs['id'] = $post_id;
+		$this->assertEquals( 'June 13, 2018', SCCreated::sc_docmgr_created( $attrs ), "Valid post" );
 	}
 
 }
