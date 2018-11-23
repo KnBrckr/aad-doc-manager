@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class TestDocManagerTable
+ * Class DocManagerTableTest
  *
  * @package PumaStudios-DocManager
  */
@@ -13,7 +13,7 @@ use PumaStudios\DocManager\DocumentAdmin;
  *
  * @group admin
  */
-class TestDocManagerTable extends WP_UnitTestCase {
+class DocManagerTableTest extends WP_UnitTestCase {
 
 	/**
 	 * Setup for entire class of tests
