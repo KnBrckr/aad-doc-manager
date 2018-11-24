@@ -21,10 +21,9 @@
 namespace PumaStudios\DocManager;
 
 /**
- * Description of DocumentDownload
+ * Class DocumentDownload
  *
  * @package PumaStudios-DocManager
- * @author Kenneth J. Brucker <ken@pumastudios.com>
  */
 class DocumentDownload {
 
